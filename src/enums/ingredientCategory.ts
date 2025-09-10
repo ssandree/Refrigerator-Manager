@@ -1,0 +1,62 @@
+export enum IngredientCategory {
+  MEAT = "MEAT",
+  FISH = "FISH",
+  VEGETABLE = "VEGETABLE",
+  FRUIT = "FRUIT",
+  DAIRY = "DAIRY",
+  GRAIN = "GRAIN",
+  SEASONING = "SEASONING",
+  NOODLE = "NOODLE",
+  SIDE = "SIDE",
+  SEAFOOD = "SEAFOOD",
+  NUT = "NUT",
+  BREAD = "BREAD",
+  RICE_CAKE = "RICE_CAKE",
+  SAUCE = "SAUCE",
+  FROZEN = "FROZEN",
+  DRINK = "DRINK",
+  INSTANT = "INSTANT",
+  OTHER = "OTHER"
+}
+
+export const IngredientCategoryLabel: Record<IngredientCategory, string> = {
+  [IngredientCategory.MEAT]: "육류",
+  [IngredientCategory.FISH]: "어류",
+  [IngredientCategory.VEGETABLE]: "채소",
+  [IngredientCategory.FRUIT]: "과일",
+  [IngredientCategory.DAIRY]: "유제품",
+  [IngredientCategory.GRAIN]: "곡물",
+  [IngredientCategory.SEASONING]: "조미료",
+  [IngredientCategory.NOODLE]: "면류",
+  [IngredientCategory.SIDE]: "반찬",
+  [IngredientCategory.SEAFOOD]: "해산물",
+  [IngredientCategory.NUT]: "견과류",
+  [IngredientCategory.BREAD]: "빵류",
+  [IngredientCategory.RICE_CAKE]: "떡류",
+  [IngredientCategory.SAUCE]: "소스",
+  [IngredientCategory.FROZEN]: "냉동식품",
+  [IngredientCategory.DRINK]: "음료",
+  [IngredientCategory.INSTANT]: "인스턴트",
+  [IngredientCategory.OTHER]: "기타"
+};
+
+export const IngredientCategoryColor: Record<IngredientCategory, string> = {
+  [IngredientCategory.MEAT]: "#FF6B6B",
+  [IngredientCategory.FISH]: "#4ECDC4",
+  [IngredientCategory.VEGETABLE]: "#45B7D1",
+  [IngredientCategory.FRUIT]: "#96CEB4",
+  [IngredientCategory.DAIRY]: "#FFEAA7",
+  [IngredientCategory.GRAIN]: "#DDA0DD",
+  [IngredientCategory.SEASONING]: "#98D8C8",
+  [IngredientCategory.NOODLE]: "#FFB347",
+  [IngredientCategory.SIDE]: "#87CEEB",
+  [IngredientCategory.SEAFOOD]: "#20B2AA",
+  [IngredientCategory.NUT]: "#D2B48C",
+  [IngredientCategory.BREAD]: "#F0E68C",
+  [IngredientCategory.RICE_CAKE]: "#FFA07A",
+  [IngredientCategory.SAUCE]: "#98FB98",
+  [IngredientCategory.FROZEN]: "#B0C4DE",
+  [IngredientCategory.DRINK]: "#FF69B4",
+  [IngredientCategory.INSTANT]: "#DDA0DD",
+  [IngredientCategory.OTHER]: "#F7DC6F"
+};
