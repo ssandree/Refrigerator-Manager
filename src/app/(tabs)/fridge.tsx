@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import FoodCard from "../../components/foodCard";
@@ -137,7 +138,7 @@ export default function FridgeScreen() {
       </ScrollView>
 
       {/* 추가 버튼 */}
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity style={styles.addButton}  onPress={() => router.push("../screens/fridgeRegister")}>
         <Text style={styles.addButtonText}>+ 재료 추가</Text>
       </TouchableOpacity>
     </View>

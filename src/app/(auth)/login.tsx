@@ -1,16 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-   Alert,
-   KeyboardAvoidingView,
-   Platform,
-   ScrollView,
-   StyleSheet,
-   Text,
-   TextInput,
-   TouchableOpacity,
-   View
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
+import { Colors } from "../../constants/Colors";
+import { authStyles } from "./styles";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -29,21 +30,21 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={authStyles.container as any}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="snow" size={60} color="#4CAF50" />
-          <Text style={styles.logoText}>냉장고 매니징</Text>
-          <Text style={styles.subtitle}>스마트한 냉장고 관리의 시작</Text>
+      <ScrollView contentContainerStyle={authStyles.scrollContent as any}>
+        <View style={authStyles.logoContainer as any}>
+          <Ionicons name="snow" size={60} color={Colors.primary[500]} />
+          <Text style={authStyles.logoText as any}>냉장고 매니징</Text>
+          <Text style={authStyles.subtitle as any}>스마트한 냉장고 관리의 시작</Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>이메일</Text>
+        <View style={authStyles.formContainer as any}>
+          <View style={authStyles.inputContainer as any}>
+            <Text style={authStyles.inputLabel as any}>이메일</Text>
             <TextInput
-              style={styles.input}
+              style={authStyles.input as any}
               placeholder="이메일을 입력하세요"
               value={email}
               onChangeText={setEmail}
@@ -53,11 +54,11 @@ export default function LoginScreen() {
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>비밀번호</Text>
-            <View style={styles.passwordContainer}>
+          <View style={authStyles.inputContainer as any}>
+            <Text style={authStyles.inputLabel as any}>비밀번호</Text>
+            <View style={authStyles.passwordContainer as any}>
               <TextInput
-                style={styles.passwordInput}
+                style={authStyles.passwordInput as any}
                 placeholder="비밀번호를 입력하세요"
                 value={password}
                 onChangeText={setPassword}
@@ -66,42 +67,42 @@ export default function LoginScreen() {
                 autoCorrect={false}
               />
               <TouchableOpacity
-                style={styles.eyeButton}
+                style={authStyles.eyeButton as any}
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Ionicons 
                   name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={20} 
-                  color="#666" 
+                  color={Colors.textSecondary} 
                 />
               </TouchableOpacity>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>로그인</Text>
+          <TouchableOpacity style={authStyles.loginButton as any} onPress={handleLogin}>
+            <Text style={authStyles.loginButtonText as any}>로그인</Text>
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>또는</Text>
-            <View style={styles.dividerLine} />
+          <View style={authStyles.divider as any}>
+            <View style={authStyles.dividerLine as any} />
+            <Text style={authStyles.dividerText as any}>또는</Text>
+            <View style={authStyles.dividerLine as any} />
           </View>
 
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={authStyles.socialButton as any}>
             <Ionicons name="logo-google" size={20} color="#DB4437" />
-            <Text style={styles.socialButtonText}>Google로 계속하기</Text>
+            <Text style={authStyles.socialButtonText as any}>Google로 계속하기</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={authStyles.socialButton as any}>
             <Ionicons name="logo-apple" size={20} color="#000" />
-            <Text style={styles.socialButtonText}>Apple로 계속하기</Text>
+            <Text style={authStyles.socialButtonText as any}>Apple로 계속하기</Text>
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>계정이 없으신가요? </Text>
+          <View style={authStyles.footer as any}>
+            <Text style={authStyles.footerText as any}>계정이 없으신가요? </Text>
             <TouchableOpacity>
-              <Text style={styles.linkText}>회원가입</Text>
+              <Text style={authStyles.linkText as any}>회원가입</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -110,125 +111,3 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FDFBE8",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2D2D2D",
-    marginTop: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 4,
-  },
-  formContainer: {
-    width: "100%",
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#2D2D2D",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-  },
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  eyeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  loginButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E0E0E0",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: "#666",
-    fontSize: 14,
-  },
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginBottom: 12,
-    backgroundColor: "#FFFFFF",
-  },
-  socialButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: "#2D2D2D",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  linkText: {
-    fontSize: 14,
-    color: "#4CAF50",
-    fontWeight: "500",
-  },
-});
