@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import FoodCard from "../../components/foodCard";
+import FoodCard from "../../components/FoodCard";
 import { mockIngredients } from "../../data/mockFood";
 import { IngredientCategory, IngredientCategoryLabel } from "../../enums/ingredientCategory";
 import { StorageLocation, StorageLocationLabel } from "../../enums/storageLocation";

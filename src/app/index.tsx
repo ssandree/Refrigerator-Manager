@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Index() {
   const handleGoToHome = () => {
-    router.push("/(tabs)/home");
+    router.push("../onboarding/GetBasicInfo");
   };
 
   return (

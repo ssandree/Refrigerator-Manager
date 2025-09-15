@@ -11,7 +11,6 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@expo/cli": "^0.24.20",
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
@@ -42,6 +41,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@expo/cli": "^0.24.20",
     "@types/react": "~19.0.10",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",

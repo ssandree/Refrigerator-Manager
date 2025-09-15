@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import FridgeRegisterQuick from "../../components/fridgeRegisterQuick";
+import FridgeRegisterQuick from "../../components/FridgeRegisterQuick";
 import Header from "../../components/Header";
 import { Colors } from "../../styles/common";
 import { tabsStyles } from "./styles";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import RecipeCard from "../../components/recipeCard";
+import RecipeCard from "../../components/RecipeCard";
 import { mockRecipes } from "../../data/mockRecipes";
 
 export default function RecipeScreen() {

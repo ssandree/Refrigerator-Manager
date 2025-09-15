@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import DailyDietCard from "../../components/dailyDietCard";
+import DailyDietCard from "../../components/DailyDietCard";
 
 export default function DietScreen() {
   const today = new Date();
