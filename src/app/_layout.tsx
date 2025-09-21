@@ -11,15 +11,11 @@ export default function RootLayout() {
         <Stack.Screen 
           name="(auth)" 
           options={{ 
-            headerShown: false,
             presentation: "modal" 
           }} 
         />
         <Stack.Screen 
           name="screens" 
-          options={{ 
-            headerShown: false 
-          }} 
         />
       </Stack>
     </>

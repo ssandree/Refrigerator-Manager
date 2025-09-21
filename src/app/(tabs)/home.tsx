@@ -1,19 +1,28 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import FridgeRegisterQuick from "../../components/FridgeRegisterQuick";
-import Header from "../../components/Header";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import QuickFoodAdd from "../../components/QuickFoodAdd";
 import { Colors } from "../../styles/common";
 import { tabsStyles } from "./styles";
 
 export default function HomeScreen() {
   return (
     <View style={tabsStyles.container}>
-      <Header
-        title="홈"
-        onNotificationPress={() => console.log("알림 클릭")}
-        onProfilePress={() => console.log("프로필 클릭")}
-      />
+      {/* 헤더 */}
+      <View style={tabsStyles.header}>
+        <Text style={tabsStyles.headerTitle}>홈</Text>
+        <View style={tabsStyles.headerRight}>
+          <TouchableOpacity style={tabsStyles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity style={tabsStyles.profileButton}>
+            <Image 
+              source={require("../../assets/images/tomato.jpg")} 
+              style={tabsStyles.profileImage}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
       
       <ScrollView style={tabsStyles.content}>
         {/* 오늘의 레시피 추천 */}
@@ -102,7 +111,7 @@ export default function HomeScreen() {
       </ScrollView>
       
       {/* 플로팅 버튼 */}
-      <FridgeRegisterQuick />
+      <QuickFoodAdd />
     </View>
   );
 }

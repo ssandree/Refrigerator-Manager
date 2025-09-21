@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import FoodCard from "../../components/FoodCard";
+import QuickFoodAdd from "../../components/QuickFoodAdd";
 import { mockIngredients } from "../../data/mockFood";
 import { IngredientCategory, IngredientCategoryLabel } from "../../enums/ingredientCategory";
 import { StorageLocation, StorageLocationLabel } from "../../enums/storageLocation";
+import { Colors, FontSizes } from "../../styles/common";
 
 export default function FridgeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<IngredientCategory | "ALL">("ALL");
@@ -42,128 +43,131 @@ export default function FridgeScreen() {
   });
 
   return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>냉장고</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton}>
-            <Image 
-              source={require("../../assets/images/tomato.jpg")} 
-              style={styles.profileImage}
-            />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>냉장고</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Ionicons name="notifications-outline" size={24} color="#333" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.profileButton}>
+              <Image 
+                source={require("../../assets/images/tomato.jpg")} 
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* 보관 위치 탭 */}
-      <View style={styles.storageTabs}>
-        {Object.values(StorageLocation).map((storage) => {
-          const count = mockIngredients.filter(ingredient => ingredient.storageLocation === storage).length;
-          return (
-            <TouchableOpacity
-              key={storage}
-              style={[
-                styles.storageTab,
-                selectedStorage === storage && styles.storageTabActive
-              ]}
-              onPress={() => setSelectedStorage(storage)}
-            >
-              <Text style={[
-                styles.storageTabText,
-                selectedStorage === storage && styles.storageTabTextActive
-              ]}>
-                {StorageLocationLabel[storage]} {count}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+        {/* 보관 위치 탭 */}
+        <View style={styles.storageTabs}>
+          {Object.values(StorageLocation).map((storage) => {
+            const count = mockIngredients.filter(ingredient => ingredient.storageLocation === storage).length;
+            return (
+              <TouchableOpacity
+                key={storage}
+                style={[
+                  styles.storageTab,
+                  selectedStorage === storage && styles.storageTabActive
+                ]}
+                onPress={() => setSelectedStorage(storage)}
+              >
+                <Text style={[
+                  styles.storageTabText,
+                  selectedStorage === storage && styles.storageTabTextActive
+                ]}>
+                  {StorageLocationLabel[storage]} {count}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      {/* 카테고리 섹션 */}
-      <View style={styles.categorySection}>
-        <Text style={styles.categoryTitle}>카테고리</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryFilter}
-          contentContainerStyle={styles.categoryFilterContent}
-        >
-          {categoryOptions.map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.categoryButton,
-                selectedCategory === option.key && styles.categoryButtonActive
-              ]}
-              onPress={() => setSelectedCategory(option.key as IngredientCategory | "ALL")}
-            >
-              <Text style={[
-                styles.categoryButtonText,
-                selectedCategory === option.key && styles.categoryButtonTextActive
-              ]}>
-                {option.label} {option.count}
+        {/* 카테고리 섹션 */}
+        <View style={styles.categorySection}>
+          <Text style={styles.categoryTitle}>카테고리</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryFilter}
+            contentContainerStyle={styles.categoryFilterContent}
+          >
+            {categoryOptions.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === option.key && styles.categoryButtonActive
+                ]}
+                onPress={() => setSelectedCategory(option.key as IngredientCategory | "ALL")}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedCategory === option.key && styles.categoryButtonTextActive
+                ]}>
+                  {option.label} {option.count}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* 재료 목록 */}
+        <ScrollView style={styles.ingredientsList} contentContainerStyle={styles.ingredientsGrid}>
+          {filteredIngredients.length > 0 ? (
+            filteredIngredients.map((ingredient) => (
+              <View key={ingredient.id} style={styles.foodCardContainer}>
+                <FoodCard
+                  ingredient={ingredient}
+                  onPress={() => console.log("재료 클릭:", ingredient.name)}
+                  onEdit={() => console.log("재료 수정:", ingredient.name)}
+                  onDelete={() => console.log("재료 삭제:", ingredient.name)}
+                />
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {selectedCategory === "ALL" 
+                  ? `${StorageLocationLabel[selectedStorage]}에 재료가 없습니다.`
+                  : `${IngredientCategoryLabel[selectedCategory]} 재료가 없습니다.`
+                }
               </Text>
-            </TouchableOpacity>
-          ))}
+            </View>
+          )}
         </ScrollView>
       </View>
-
-      {/* 재료 목록 */}
-      <ScrollView style={styles.ingredientsList} contentContainerStyle={styles.ingredientsGrid}>
-        {filteredIngredients.length > 0 ? (
-          filteredIngredients.map((ingredient) => (
-            <View key={ingredient.id} style={styles.foodCardContainer}>
-              <FoodCard
-                ingredient={ingredient}
-                onPress={() => console.log("재료 클릭:", ingredient.name)}
-                onEdit={() => console.log("재료 수정:", ingredient.name)}
-                onDelete={() => console.log("재료 삭제:", ingredient.name)}
-              />
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              {selectedCategory === "ALL" 
-                ? `${StorageLocationLabel[selectedStorage]}에 재료가 없습니다.`
-                : `${IngredientCategoryLabel[selectedCategory]} 재료가 없습니다.`
-              }
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* 추가 버튼 */}
-      <TouchableOpacity style={styles.addButton}  onPress={() => router.push("../screens/fridgeRegister")}>
-        <Text style={styles.addButtonText}>+ 재료 추가</Text>
-      </TouchableOpacity>
-    </View>
+      <QuickFoodAdd />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    paddingBottom: 60, // 하단 탭바 높이만큼 여백
+  },
   container: {
     flex: 1,
-    backgroundColor: "#FDFBE8",
+    backgroundColor: Colors.background,
   },
-  header: {
+  header: { // 헤더
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: 'transparent',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: FontSizes.xl,
     fontWeight: "bold",
-    color: "#333",
+    color: Colors.text,
   },
   headerRight: {
     flexDirection: "row",
@@ -185,41 +189,39 @@ const styles = StyleSheet.create({
   },
   storageTabs: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   storageTab: {
     flex: 1,
     alignItems: "center",
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    paddingHorizontal: 8,
+    borderBottomWidth: 4,
+    borderBottomColor: "transparent",
   },
   storageTabActive: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    borderBottomColor: Colors.primary[500],
   },
   storageTabText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: FontSizes.base,
+    fontWeight: "500",
+    color: Colors.textSecondary,
   },
   storageTabTextActive: {
-    color: "#FFFFFF",
+    color: Colors.primary[500],
+    fontWeight: "600",
   },
   categorySection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     paddingVertical: 16,
   },
   categoryTitle: {
-    fontSize: 18,
+    fontSize: FontSizes.xl,
     fontWeight: "bold",
-    color: "#333",
+    color: Colors.text,
     paddingHorizontal: 20,
     marginBottom: 12,
   },
@@ -234,21 +236,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.border,
   },
   categoryButtonActive: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   categoryButtonText: {
-    fontSize: 14,
+    fontSize: FontSizes.base,
     fontWeight: "600",
-    color: "#333",
+    color: Colors.text,
   },
   categoryButtonTextActive: {
-    color: "#FFFFFF",
+    color: Colors.surface,
   },
   ingredientsList: {
     flex: 1,
@@ -257,13 +259,13 @@ const styles = StyleSheet.create({
   ingredientsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 80,
+    paddingBottom: 100, // 하단 탭바와 플로팅 버튼을 위한 공간
   },
   foodCardContainer: {
-    width: "50%",
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    width: "48%",
+    marginBottom: 12,
   },
   emptyState: {
     flex: 1,
@@ -272,30 +274,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyStateText: {
-    fontSize: 16,
-    color: "#999",
+    fontSize: FontSizes.lg,
+    color: Colors.textTertiary,
     textAlign: "center",
-  },
-  addButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#4CAF50",
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

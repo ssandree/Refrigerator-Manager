@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors, commonStyles, FontSizes } from "../../styles/common";
 
 const healthGoals = [
   { id: 1, title: "체중 유지", description: "현재 체중을 건강하게 유지", icon: "scale-outline", color: "#4CAF50" },
@@ -13,7 +14,7 @@ const healthGoals = [
   { id: 7, title: "체력 유지/향상", description: "전반적인 체력 증진", icon: "flash-outline", color: "#FF5722" },
 ];
 
-export default function GetGoalInfo() {
+export default function GetHealthGoal() {
   const [selectedGoals, setSelectedGoals] = useState<number[]>([]);
 
   const toggleGoal = (goalId: number) => {
@@ -36,14 +37,34 @@ export default function GetGoalInfo() {
       };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>건강 목표 설정</Text>
-        <Text style={styles.subtitle}>나에게 맞는 건강 목표를 선택해주세요</Text>
-        <Text style={styles.limitText}>최대 3개까지 선택 가능</Text>
-      </View>
+    <>
+      <Stack.Screen 
+        options={{
+          title: "건강 목표",
+          headerBackVisible: true,
+          headerStyle: {
+            backgroundColor: "#FFFFFF",
+          },
+          headerTintColor: "#333",
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: "bold",
+          },
+        }}
+      />
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.progress}>
+            <Text style={styles.progressDotInactive}>●</Text>
+            <Text style={styles.progressDotInactive}>●</Text>
+            <Text style={styles.progressDot}>●</Text>
+          </View>
 
-      <ScrollView style={styles.goalsContainer} showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>건강 목표 설정</Text>
+          <Text style={styles.subtitle}>나에게 맞는 건강 목표를 선택해주세요</Text>
+          <Text style={styles.limitText}>최대 3개까지 선택 가능</Text>
+
+          <ScrollView style={styles.goalsContainer} showsVerticalScrollIndicator={false}>
         {healthGoals.map((goal) => {
           const isSelected = selectedGoals.includes(goal.id);
           const isDisabled = !isSelected && selectedGoals.length >= 3;
@@ -96,7 +117,7 @@ export default function GetGoalInfo() {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+          </ScrollView>
 
       <View style={styles.footer}>
         <Text style={styles.selectedCount}>
@@ -117,53 +138,76 @@ export default function GetGoalInfo() {
             시작하기
           </Text>
       </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    ...commonStyles.container,
+    justifyContent: "flex-start",
+  },
+  content: {
     flex: 1,
-    backgroundColor: "#FDFBE8",
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  progress: {
+    flexDirection: "row",
+    marginBottom: 20,
+    alignSelf: "flex-start",
+  },
+  progressDot: {
+    fontSize: 16,
+    marginRight: 8,
+    color: Colors.text,
+  },
+  progressDotInactive: {
+    fontSize: 16,
+    marginRight: 8,
+    color: Colors.textTertiary,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 20,
     paddingHorizontal: 24,
     paddingBottom: 20,
     alignItems: "center",
   },
   title: {
-    fontSize: 28,
+    fontSize: FontSizes['2xl'],
     fontWeight: "bold",
-    color: "#2D2D2D",
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: "center",
+    color: Colors.text,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 8,
+    fontSize: FontSizes.lg,
+    marginBottom: 12,
+    color: Colors.textSecondary,
     textAlign: "center",
-    lineHeight: 24,
   },
   limitText: {
-    fontSize: 14,
-    color: "#999",
+    fontSize: FontSizes.base,
+    color: Colors.textTertiary,
     textAlign: "center",
+    marginBottom: 24,
   },
   goalsContainer: {
     flex: 1,
     paddingHorizontal: 20,
   },
   goalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     marginBottom: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: "#E0E0E0",
-    shadowColor: "#000",
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -173,12 +217,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   goalCardSelected: {
-    borderColor: "#4CAF50",
-    backgroundColor: "#F8FFF8",
+    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary[50],
   },
   goalCardDisabled: {
     opacity: 0.5,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.background,
   },
   goalContent: {
     flexDirection: "row",
@@ -196,63 +240,64 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalTitle: {
-    fontSize: 18,
+    fontSize: FontSizes.xl,
     fontWeight: "600",
-    color: "#2D2D2D",
+    color: Colors.text,
     marginBottom: 4,
   },
   goalTitleSelected: {
-    color: "#4CAF50",
+    color: Colors.primary[500],
   },
   goalTitleDisabled: {
-    color: "#999",
+    color: Colors.textTertiary,
   },
   goalDescription: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: FontSizes.base,
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   goalDescriptionSelected: {
-    color: "#4CAF50",
+    color: Colors.primary[500],
   },
   goalDescriptionDisabled: {
-    color: "#999",
+    color: Colors.textTertiary,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 12,
   },
   checkboxSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   checkboxDisabled: {
-    borderColor: "#CCC",
+    borderColor: Colors.textTertiary,
   },
   footer: {
     padding: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
+    borderTopColor: Colors.border,
   },
   selectedCount: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: FontSizes.base,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
     paddingVertical: 16,
+    paddingHorizontal: 60,
     borderRadius: 25,
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -262,16 +307,16 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonDisabled: {
-    backgroundColor: "#E0E0E0",
+    backgroundColor: Colors.border,
     shadowOpacity: 0,
     elevation: 0,
   },
   buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
+    color: Colors.surface,
+    fontSize: FontSizes.xl,
     fontWeight: "600",
   },
   buttonTextDisabled: {
-    color: "#999",
+    color: Colors.textTertiary,
   },
 });

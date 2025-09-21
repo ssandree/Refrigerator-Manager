@@ -1,23 +1,55 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "../../styles/common";
 
 export default function MyInfoScreen() {
   return (
     <View style={styles.container}>
-      {/* 프로필 섹션 */}
-      <View style={styles.profileSection}>
-        <View style={styles.profileImageContainer}>
-          <Ionicons name="person" size={40} color="#666" />
+      
+      <ScrollView style={styles.scrollContainer}>
+        {/* 프로필 섹션 */}
+        <View style={styles.profileSection}>
+        {/* 사용자 정보 */}
+        <View style={styles.userInfo}>
+          <View style={styles.profileImageContainer}>
+            <Ionicons name="person" size={40} color="#666" />
+          </View>
+          <View style={styles.userDetails}>
+            <Text style={styles.userName}>사용자</Text>
+            <Text style={styles.userEmail}>user@example.com</Text>
+          </View>
         </View>
-        <Text style={styles.userName}>사용자</Text>
-        <Text style={styles.userEmail}>user@example.com</Text>
+        
+        {/* 프로필 메뉴 */}
+        <View style={styles.profileMenu}>
+          <TouchableOpacity style={styles.profileMenuItem}>
+            <Ionicons name="heart-outline" size={20} color="#666" />
+            <Text style={styles.profileMenuText}>즐겨찾기 레시피</Text>
+            <Ionicons name="chevron-forward" size={16} color="#999" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileMenuItem}>
+            <Ionicons name="trophy-outline" size={20} color="#666" />
+            <Text style={styles.profileMenuText}>업적 및 배지</Text>
+            <Ionicons name="chevron-forward" size={16} color="#999" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileMenuItem}>
+            <Ionicons name="analytics-outline" size={20} color="#666" />
+            <Text style={styles.profileMenuText}>상세 통계</Text>
+            <Ionicons name="chevron-forward" size={16} color="#999" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         {/* 건강 목표 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎯 건강 목표</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🎯 건강 목표</Text>
+            <TouchableOpacity style={styles.editButton}>
+              <Text style={styles.editButtonText}>목표 수정</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.goalCard}>
             <View style={styles.goalItem}>
               <Text style={styles.goalLabel}>일일 칼로리 목표</Text>
@@ -31,9 +63,6 @@ export default function MyInfoScreen() {
               <Text style={styles.goalLabel}>채소 섭취 목표</Text>
               <Text style={styles.goalValue}>5 서빙</Text>
             </View>
-            <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.editButtonText}>목표 수정</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -99,21 +128,6 @@ export default function MyInfoScreen() {
           <Text style={styles.sectionTitle}>⚙️ 설정</Text>
           <View style={styles.menuCard}>
             <TouchableOpacity style={styles.menuItem}>
-              <Ionicons name="heart-outline" size={20} color="#666" />
-              <Text style={styles.menuText}>즐겨찾기 레시피</Text>
-              <Ionicons name="chevron-forward" size={16} color="#999" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Ionicons name="trophy-outline" size={20} color="#666" />
-              <Text style={styles.menuText}>업적 및 배지</Text>
-              <Ionicons name="chevron-forward" size={16} color="#999" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Ionicons name="analytics-outline" size={20} color="#666" />
-              <Text style={styles.menuText}>상세 통계</Text>
-              <Ionicons name="chevron-forward" size={16} color="#999" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
               <Ionicons name="help-circle-outline" size={20} color="#666" />
               <Text style={styles.menuText}>도움말</Text>
               <Ionicons name="chevron-forward" size={16} color="#999" />
@@ -125,11 +139,7 @@ export default function MyInfoScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* 로그아웃 버튼 */}
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutButtonText}>로그아웃</Text>
-        </TouchableOpacity>
+      </View>
       </ScrollView>
     </View>
   );
@@ -138,34 +148,65 @@ export default function MyInfoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FDFBE8",
+    backgroundColor: Colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
   },
   profileSection: {
     backgroundColor: "#FFFFFF",
-    alignItems: "center",
+    flexDirection: "row",
     paddingVertical: 24,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+    alignItems: "flex-start",
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   profileImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#F5F5F5",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
     color: "#2D2D2D",
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666",
+  },
+  profileMenu: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  profileMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  profileMenuText: {
+    fontSize: 12,
+    color: "#2D2D2D",
+    marginLeft: 8,
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -174,11 +215,16 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#2D2D2D",
-    marginBottom: 12,
   },
   goalCard: {
     backgroundColor: "#FFFFFF",
@@ -211,17 +257,16 @@ const styles = StyleSheet.create({
     color: "#2D2D2D",
   },
   editButton: {
-    backgroundColor: "#2196F3",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: "flex-end",
-    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   editButtonText: {
-    color: "#FFFFFF",
+    color: "#666",
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   settingCard: {
     backgroundColor: "#FFFFFF",

@@ -6,7 +6,7 @@ import { Colors } from "../styles/common";
 
 export default function FridgeRegisterQuick() {
   const handlePress = () => {
-    router.push("/screens/fridgeRegister");
+    router.push("../screens/AddFood");
   };
 
   return (
@@ -21,8 +21,8 @@ export default function FridgeRegisterQuick() {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 20, // 하단 바 위에 위치
-    right: 30,
+    bottom: 75, // 하단에서 20px 위에 위치
+    right: 20,
     zIndex: 1000,
   },
   floatingButton: {

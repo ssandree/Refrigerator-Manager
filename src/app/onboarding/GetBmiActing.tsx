@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React, { useState } from "react";
 import {
    Pressable,
@@ -8,63 +8,68 @@ import {
    TouchableOpacity,
    View,
 } from "react-native";
+import { Colors, commonStyles, FontSizes } from "../../styles/common";
 
-export default function GetBasicInfo() {
-  const [gender, setGender] = useState<"male" | "female" | null>(null);
-  const [age, setAge] = useState("");
+export default function GetBmiActing() {
   const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
   const [activity, setActivity] = useState<"low" | "medium" | "high" | "veryHigh" | null>(null);
 
   const handleGoToNext = () => {
-    router.push("./GetGoalInfo");
+    router.push("./GetHealthGoal");
   };
 
-  const isFormValid = gender && age && height && activity;
+  const isFormValid = height && weight && activity;
 
   return (
-    <View style={styles.container}>
-      {/* 진행 단계 */}
-      <View style={styles.progress}>
+    <>
+      <Stack.Screen 
+        options={{
+          title: "기본정보 입력",
+          headerBackVisible: true,
+          headerStyle: {
+            backgroundColor: "#FFFFFF",
+          },
+          headerTintColor: "#333",
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: "bold",
+          },
+        }}
+      />
+      <View style={styles.container}>
+        {/* 컨텐츠 */}
+        <View style={styles.content}>
+        {/* 진행 단계 */}
+        <View style={styles.progress}>
+        <Text style={styles.progressDotInactive}>●</Text>
         <Text style={styles.progressDot}>●</Text>
         <Text style={styles.progressDotInactive}>●</Text>
-        <Text style={styles.progressDotInactive}>●</Text>
-        <Text style={styles.progressDotInactive}>●</Text>
       </View>
 
-      <Text style={styles.title}>맞춤 목표 계산 시작!</Text>
-      <Text style={styles.subtitle}>기본 정보를 알려주세요</Text>
+      <Text style={styles.title}>키, 몸무게, 활동량을 알려주세요</Text>
+      <Text style={styles.subtitle}>BMI 계산과 칼로리 목표 설정을 위한 정보입니다</Text>
 
-      {/* 성별 선택 */}
-      <Text style={styles.label}>성별</Text>
-      <View style={styles.row}>
-        <Pressable
-          style={[styles.option, gender === "female" && styles.optionSelected]}
-          onPress={() => setGender("female")}
-        >
-          <Text style={styles.optionText}>여성</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.option, gender === "male" && styles.optionSelected]}
-          onPress={() => setGender("male")}
-        >
-          <Text style={styles.optionText}>남성</Text>
-        </Pressable>
-      </View>
-
-      {/* 나이, 키 */}
+      {/* 키 */}
+      <Text style={styles.label}>키</Text>
       <View style={styles.row}>
         <TextInput
-          style={[styles.input, { flex: 1, marginRight: 10 }]}
-          placeholder="나이"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={[styles.input, { flex: 1, marginLeft: 10 }]}
+          style={[styles.input, { flex: 1 }]}
           placeholder="키(cm)"
           value={height}
           onChangeText={setHeight}
+          keyboardType="numeric"
+        />
+      </View>
+      
+      {/* 몸무게 */}
+      <Text style={styles.label}>몸무게</Text>
+      <View style={styles.row}>
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="몸무게(kg)"
+          value={weight}
+          onChangeText={setWeight}
           keyboardType="numeric"
         />
       </View>
@@ -106,45 +111,57 @@ export default function GetBasicInfo() {
       >
         <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
-    </View>
+      </View>
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    padding: 20,
+    ...commonStyles.container,
     justifyContent: "flex-start",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    alignItems: "center",
   },
   progress: {
     flexDirection: "row",
     marginBottom: 20,
+    alignSelf: "flex-start",
   },
   progressDot: {
     fontSize: 16,
     marginRight: 8,
-    color: "#000",
+    color: Colors.text,
   },
   progressDotInactive: {
     fontSize: 16,
     marginRight: 8,
-    color: "#ccc",
+    color: Colors.textTertiary,
   },
   title: {
-    fontSize: 22,
+    fontSize: FontSizes['2xl'],
     fontWeight: "bold",
     marginBottom: 4,
+    textAlign: "center",
+    color: Colors.text,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: FontSizes.lg,
     marginBottom: 24,
-    color: "#555",
+    color: Colors.textSecondary,
+    textAlign: "center",
   },
   label: {
-    fontSize: 16,
+    fontSize: FontSizes.lg,
+    marginTop: 24,
     marginBottom: 8,
-    fontWeight: "600",
+    textAlign: "center",
+    color: Colors.text,
   },
   row: {
     flexDirection: "row",
@@ -153,39 +170,38 @@ const styles = StyleSheet.create({
   },
   option: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.border,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginRight: 10,
     marginBottom: 10,
+    backgroundColor: Colors.surface,
   },
   optionSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   optionText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: FontSizes.lg,
+    color: Colors.text,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    ...commonStyles.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 16,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
     paddingVertical: 16,
+    paddingHorizontal: 60,
     borderRadius: 25,
     alignItems: "center",
     marginTop: "auto",
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 18,
+    color: Colors.surface,
+    fontSize: FontSizes.xl,
     fontWeight: "600",
   },
 });

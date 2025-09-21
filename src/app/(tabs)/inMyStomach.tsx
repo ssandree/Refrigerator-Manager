@@ -1,6 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import DailyDietCard from "../../components/DailyDietCard";
+import { Colors } from "../../styles/common";
 
 export default function DietScreen() {
   const today = new Date();
@@ -14,12 +16,33 @@ export default function DietScreen() {
   return (
     <View style={styles.container}>
       {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>🍽️ 오늘의 식단</Text>
+      <View style={styles.pageHeader}>
+        <Text style={styles.headerTitle}>오늘의 식단</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileButton}>
+            <Image 
+              source={{ uri: "https://via.placeholder.com/32x32" }}
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 날짜 헤더 */}
+      <View style={styles.dateHeader}>
         <Text style={styles.date}>{todayString}</Text>
       </View>
 
+
       <ScrollView style={styles.content}>
+
+        {/* 추가 버튼 */}
+        <TouchableOpacity style={styles.addMealButton}>
+          <Text style={styles.addMealButtonText}>+ 식사 추가</Text>
+        </TouchableOpacity>
         {/* 아침 */}
         <View style={styles.mealSection}>
           <Text style={styles.mealTitle}>🌅 아침</Text>
@@ -103,10 +126,6 @@ export default function DietScreen() {
           </View>
         </View>
 
-        {/* 추가 버튼 */}
-        <TouchableOpacity style={styles.addMealButton}>
-          <Text style={styles.addMealButtonText}>+ 식사 추가</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -115,24 +134,54 @@ export default function DietScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FDFBE8",
+    backgroundColor: Colors.background,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
+  // 페이지 헤더
+  pageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D2D2D",
-    marginBottom: 4,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  notificationButton: {
+    padding: 8,
+  },
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+  },
+  // 날짜 헤더
+  dateHeader: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
   },
   date: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
+    textAlign: "center",
   },
   content: {
     flex: 1,

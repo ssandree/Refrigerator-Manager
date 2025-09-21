@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ingredient } from "../data/mockFood";
 import { IngredientCategoryColor } from "../enums/ingredientCategory";
 import { StorageLocationIcon } from "../enums/storageLocation";
-import { Colors, componentsStyles } from './styles';
+import { Colors, FontSizes, commonStyles } from '../styles/common';
 interface FoodCardProps {
   ingredient: Ingredient;
   onPress?: () => void;
@@ -18,77 +18,148 @@ export default function FoodCard({
   onEdit,
   onDelete,
 }: FoodCardProps) {
-  const isExpiringSoon = () => {
-    const today = new Date();
-    const expiryDate = new Date(ingredient.expiryDate);
-    const diffTime = expiryDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= ingredient.alertBeforeDays;
-  };
 
   return (
-    <TouchableOpacity style={componentsStyles.foodCardContainer} onPress={onPress}>
-      {/* 이미지 */}
-      <View style={componentsStyles.foodCardImageContainer}>
-        <Image source={require("../assets/images/tomato.jpg")} style={componentsStyles.foodCardImage} />
-        {isExpiringSoon() && (
-          <View style={componentsStyles.foodCardExpiryBadge}>
-            <Text style={componentsStyles.foodCardExpiryText}>임박</Text>
-          </View>
-        )}
+    <TouchableOpacity style={styles.foodCardContainer} onPress={onPress}>
+      {/* 카테고리 상단 바 */}
+      <View
+        style={[
+          styles.categoryBar,
+          { backgroundColor: IngredientCategoryColor[ingredient.category] },
+        ]}
+      />
+
+      {/* 상단 행: 사진과 저장위치 */}
+      <View style={styles.topRow}>
+        <View style={styles.foodCardImageContainer}>
+          <Image source={require("../assets/images/tomato.jpg")} style={styles.foodCardImage} />
+        </View>
+        <View style={styles.storageIconContainer}>
+          <Ionicons
+            name={StorageLocationIcon[ingredient.storageLocation] as any}
+            size={16}
+            color={Colors.textSecondary}
+          />
+        </View>
       </View>
 
-      {/* 정보 섹션 */}
-      <View style={componentsStyles.foodCardInfoSection}>
-        <View style={componentsStyles.foodCardHeader}>
-          <Text style={componentsStyles.foodCardName} numberOfLines={1}>
+      {/* 하단 행: 재료 정보와 액션 버튼들 */}
+      <View style={styles.bottomRow}>
+        <View style={styles.foodCardInfoSection}>
+          <Text style={styles.foodCardName} numberOfLines={1}>
             {ingredient.name}
           </Text>
-          <View style={componentsStyles.foodCardActions}>
-            {onEdit && (
-              <TouchableOpacity onPress={onEdit} style={componentsStyles.foodCardActionBtn}>
-                <Ionicons name="create-outline" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-            {onDelete && (
-              <TouchableOpacity onPress={onDelete} style={componentsStyles.foodCardActionBtn}>
-                <Ionicons name="trash-outline" size={16} color={Colors.error} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        <View style={componentsStyles.foodCardDetails}>
-          <Text style={componentsStyles.foodCardQuantity}>
+          <Text style={styles.foodCardQuantity}>
             {ingredient.quantity}개 · {ingredient.weight}
           </Text>
-          <Text style={componentsStyles.foodCardExpiryDate}>
-            유통기한: {ingredient.expiryDate}
+          <Text style={styles.foodCardExpiryDate}>
+            {ingredient.expiryDate}까지
           </Text>
         </View>
-
-        <View style={componentsStyles.foodCardFooter}>
-          <View
-            style={[
-              componentsStyles.foodCardCategoryTag,
-              { backgroundColor: IngredientCategoryColor[ingredient.category] },
-            ]}
-          >
-            <Text style={componentsStyles.foodCardCategoryText}>{ingredient.category}</Text>
-          </View>
-          <View style={componentsStyles.foodCardStorageInfo}>
-            <Ionicons
-              name={StorageLocationIcon[ingredient.storageLocation] as any}
-              size={14}
-              color={Colors.textSecondary}
-            />
-            <Text style={componentsStyles.foodCardStorageText}>
-              {ingredient.storageLocation}
-            </Text>
-          </View>
+        <View style={styles.foodCardActions}>
+          {onEdit && (
+            <TouchableOpacity onPress={onEdit} style={styles.foodCardActionBtn}>
+              <Ionicons name="create-outline" size={12} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity onPress={onDelete} style={styles.foodCardActionBtn}>
+              <Ionicons name="trash-outline" size={12} color={Colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 
+const styles = StyleSheet.create({
+  foodCardContainer: {
+    ...commonStyles.card,
+    position: 'relative',
+    marginVertical: 0,
+    marginHorizontal: 0,
+    overflow: 'hidden',
+    padding: 12,
+    height: 120,
+    minHeight: 120,
+    maxHeight: 120,
+  },
+  categoryBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6, // 바 두께 (원하는 만큼 조정 가능)
+    borderTopLeftRadius: 8,  // 카드 라운드와 맞추기
+    borderTopRightRadius: 8,
+  },
+  foodCardExpiryBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: Colors.error,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 2,
+  },
+  foodCardExpiryText: {
+    color: Colors.surface,
+    fontSize: FontSizes.xs,
+    fontWeight: 'bold',
+  },
+  topRow: { // 사진이랑 아이콘
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+    marginTop: 2,
+  },
+  foodCardImageContainer: {
+    position: 'relative',
+  },
+  foodCardImage: {
+    width: 35,
+    height: 35,
+    borderRadius: 6,
+    backgroundColor: '#F5F5F5',
+  },
+  storageIconContainer: {
+    padding: 2,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    flex: 1,
+  },
+  foodCardInfoSection: {
+    flex: 1,
+    marginRight: 8,
+    justifyContent: 'space-between',
+  },
+  foodCardName: {
+    fontSize: FontSizes.base,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  foodCardQuantity: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: 1,
+  },
+  foodCardExpiryDate: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  foodCardActions: {
+    flexDirection: 'row',
+    gap: 2,
+    alignItems: 'center',
+  },
+  foodCardActionBtn: {
+    padding: 2,
+  },
+});

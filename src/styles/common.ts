@@ -33,17 +33,14 @@ export const Colors = {
   info: '#2196F3',
   
   // UI 색상
-  background: '#FDFBE8',
+  background: '#FEFDFB',
   surface: '#FFFFFF',
   text: '#2D2D2D',
   textSecondary: '#666666',
   textTertiary: '#999999',
   border: '#E0E0E0',
   shadow: '#000000',
-  
-  // 헤더 색상 (primary 100 사용)
-  header: '#D5ECB0',
-  headerBorder: '#B8D4A0',
+
 } as const;
 
 // 폰트 크기 상수

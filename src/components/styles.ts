@@ -15,6 +15,12 @@ export const componentsStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.headerBorder,
   },
+  headerLeftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
   headerTitle: {
     fontSize: FontSizes['2xl'],
     fontWeight: 'bold',

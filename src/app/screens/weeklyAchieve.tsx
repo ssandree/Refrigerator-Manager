@@ -1,16 +1,26 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Header from "../../components/Header";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors, FontSizes, commonStyles } from "../../styles/common";
 
 export default function WeeklyAchieveScreen() {
   return (
     <View style={styles.container}>
-      <Header
-        title="주간 달성"
-        onNotificationPress={() => console.log("알림 클릭")}
-        onProfilePress={() => console.log("프로필 클릭")}
-      />
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>주간 달성</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileButton}>
+            <Image 
+              source={{ uri: "https://via.placeholder.com/32x32" }}
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
       
       <ScrollView style={styles.content}>
         {/* 주간 선택기 */}
@@ -80,6 +90,40 @@ export default function WeeklyAchieveScreen() {
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
+  },
+  // 헤더
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  notificationButton: {
+    padding: 8,
+  },
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
   },
   content: {
     flex: 1,

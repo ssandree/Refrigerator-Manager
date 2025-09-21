@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { Colors, FontSizes, commonStyles } from "../styles/common";
 
 interface DailyDietCardProps {
   recipeName: string;
@@ -88,19 +89,9 @@ export default function DailyDietCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 12,
+    ...commonStyles.card,
     marginVertical: 4,
     marginHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   header: {
     flexDirection: "row",
@@ -109,9 +100,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   recipeName: {
-    fontSize: 16,
+    fontSize: FontSizes.lg,
     fontWeight: "600",
-    color: "#2D2D2D",
+    color: Colors.text,
     flex: 1,
     marginRight: 8,
   },
@@ -121,8 +112,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   timeText: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
   },
   infoRow: {
     flexDirection: "row",
@@ -134,18 +125,18 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 6,
     paddingHorizontal: 8,
-    backgroundColor: "#FFF5F5",
+    backgroundColor: Colors.error + "10",
     borderRadius: 8,
     minWidth: 80,
   },
   caloriesText: {
-    fontSize: 14,
+    fontSize: FontSizes.base,
     fontWeight: "600",
-    color: "#FF6B6B",
+    color: Colors.error,
   },
   caloriesUnit: {
-    fontSize: 10,
-    color: "#FF6B6B",
+    fontSize: FontSizes.xs,
+    color: Colors.error,
     fontWeight: "500",
   },
   nutritionContainer: {
@@ -154,7 +145,7 @@ const styles = StyleSheet.create({
   nutritionBar: {
     flexDirection: "row",
     height: 8,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: Colors.border,
     borderRadius: 4,
     marginBottom: 6,
     overflow: "hidden",
@@ -177,7 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   nutritionLabelText: {
-    fontSize: 10,
-    color: "#666",
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
   },
 });

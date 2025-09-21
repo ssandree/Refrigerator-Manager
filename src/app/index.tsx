@@ -1,52 +1,57 @@
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors, commonStyles, FontSizes } from "../styles/common";
 
 export default function Index() {
-  const handleGoToHome = () => {
-    router.push("../onboarding/GetBasicInfo");
+  const handleGoToOnboarding = () => {
+    router.push("./onboarding/GetSexAge");
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>냉장고 매니징</Text>
-      <Text style={styles.subtitle}>신선한 재료로 건강한 식단을 만들어보세요</Text>
-      
-      <TouchableOpacity style={styles.button} onPress={handleGoToHome}>
-        <Text style={styles.buttonText}>시작하기</Text>
-      </TouchableOpacity>
-    </View>
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }}
+      />
+      <View style={styles.container}>
+        <Text style={styles.title}>냉장고 매니징</Text>
+        <Text style={styles.subtitle}>신선한 재료로 건강한 식단을 만들어보세요</Text>
+        
+        <TouchableOpacity style={styles.button} onPress={handleGoToOnboarding}>
+          <Text style={styles.buttonText}>시작하기</Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#FDFBE8",
-    justifyContent: "center",
-    alignItems: "center",
+    ...commonStyles.centerContainer,
     paddingHorizontal: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: FontSizes['4xl'],
     fontWeight: "bold",
-    color: "#2D2D2D",
+    color: Colors.text,
     marginBottom: 16,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: FontSizes.lg,
+    color: Colors.textSecondary,
     marginBottom: 40,
     textAlign: "center",
     lineHeight: 24,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 25,
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -56,8 +61,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
+    color: Colors.surface,
+    fontSize: FontSizes.xl,
     fontWeight: "600",
   },
 });
