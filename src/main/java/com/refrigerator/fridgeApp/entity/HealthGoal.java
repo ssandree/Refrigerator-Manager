@@ -7,36 +7,28 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "health_goals")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class HealthGoal {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "goal_type_id", nullable = false)
     private GoalType goalType;
 
     private Integer targetWeight;
+    private Double progress;
 
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum GoalType {
-        WEIGHT_MAINTAIN,
-        FAT_LOSS,
-        WEIGHT_GAIN,
-        PROTEIN_INTAKE,
-        BLOOD_SUGAR_CONTROL,
-        IMMUNITY_BOOST,
-        IMPROVE_STAMINA
-    }
-
+    @Column(name = "updated_at", insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
 }
