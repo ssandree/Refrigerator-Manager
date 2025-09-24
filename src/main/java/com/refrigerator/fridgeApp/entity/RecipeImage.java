@@ -2,29 +2,24 @@ package com.refrigerator.fridgeApp.entity;
 
 import jakarta.persistence.*;   // @Entity, @Table, @Column, @Id, @GeneratedValue 등
 import lombok.*;               // @Getter, @Setter, @Builder, @NoArgsConstructor, @AllArgsConstructor
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "recipe_images")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class User {
+public class RecipeImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipe_id", nullable = false)
+    private Recipe recipe;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    private String password;
-    private String gender;
-    private Integer age;
-    private Integer height; // cm
-    private Integer weight; // kg
-
-    private String profileImage;
-    private String activityLevel; // LOW, MEDIUM, HIGH
+    private String imageUrl;
+    private Integer stepNo;
 
     private LocalDateTime createdAt;
 }
+

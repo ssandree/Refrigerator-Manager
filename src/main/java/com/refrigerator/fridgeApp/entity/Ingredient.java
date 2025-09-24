@@ -1,36 +1,39 @@
 package com.refrigerator.fridgeApp.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.*;   // @Entity, @Table, @Column, @Id, @GeneratedValue 등
+import lombok.*;               // @Getter, @Setter, @Builder, @NoArgsConstructor, @AllArgsConstructor
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "ingredients")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Ingredient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable=false)
-    private String imageUrl;
-    @Column(nullable=false)
-    private EnumIngredientCategory category;
-    @Column(nullable=false)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     private String name;
-    @Column(nullable=false)
-    private int quantity;
-    @Column(nullable=false)
-    private String weight;
-    @Column(nullable=false)
-    private String registeredAt;
-    @Column(nullable=false)
-    private String purchaseDate;
-    @Column(nullable=false)
-    private String expiryDate;
-    @Column(nullable=false)
-    private EnumStorageLocation StorageLocation;
-    @Column(nullable=false)
-    private int alertBeforeDays;
+    private Integer quantity;
+    private String unit;
+    private String storageLocation; // FRIDGE, FREEZER, ROOM_TEMP
+
+    private LocalDate purchaseDate;
+    private LocalDate expiryDate;
+
+    private Integer alertBeforeDays;
+    private String status; // ACTIVE, CONSUMED, DISCARDED
+
+    private LocalDateTime createdAt;
 }
 
 
