@@ -1,10 +1,10 @@
 package com.refrigerator.fridgeApp.service;
 
 import com.refrigerator.fridgeApp.dto.healthgoal.HealthGoalRequest;
-import com.refrigerator.fridgeApp.entity.GoalType;
+import com.refrigerator.fridgeApp.dto.healthgoal.HealthGoalResponse;
+import com.refrigerator.fridgeApp.entity.GoalCode;
 import com.refrigerator.fridgeApp.entity.HealthGoal;
 import com.refrigerator.fridgeApp.entity.User;
-import com.refrigerator.fridgeApp.repository.GoalTypeRepository;
 import com.refrigerator.fridgeApp.repository.HealthGoalRepository;
 import com.refrigerator.fridgeApp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,28 +17,44 @@ import java.util.List;
 public class HealthGoalService {
 
     private final UserRepository userRepository;
-    private final GoalTypeRepository goalTypeRepository;
     private final HealthGoalRepository healthGoalRepository;
 
     // 내 건강목표 생성
-    public HealthGoal createHealthGoal(HealthGoalRequest request) {
-        User user = userRepository.findById(request.getUserId())
+    public void createHealthGoal(Long userId, HealthGoalRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
-        GoalType goalType = goalTypeRepository.findById(request.getGoalTypeId())
-                .orElseThrow(()-> new IllegalArgumentException("알맞은 목표 설정"));
+
+        GoalCode goalCode = GoalCode.valueOf(request.getCode());
+        if (healthGoalRepository.existsByUserIdAndCode(userId, goalCode)) {
+            throw new IllegalStateException("이미 등록된 목표입니다.");
+        }
 
         HealthGoal healthGoal = HealthGoal.builder()
                 .user(user)
-                .goalType(goalType)
+                .code(goalCode)
                 .targetWeight(request.getTargetWeight())
-                .progress(request.getProgress())
-                .isActive(request.getIsActive())
+                .progress(0.0)
                 .build();
 
-        return healthGoalRepository.save(healthGoal);
+        healthGoalRepository.save(healthGoal);
     }
+
     // 내 목표 전체 조회
-    public List<HealthGoal> getHealthGoalsByUserId(Long userId) {
-        return healthGoalRepository.findByUserId(userId);
+    public List<HealthGoalResponse> getHealthGoals(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(()-> new IllegalArgumentException("해당 유저가 존재하지 않습니다. "));
+        List<HealthGoal> healthGoals = healthGoalRepository.findByUserId(userId);
+
+        return healthGoals.stream()
+                .map(goal -> new HealthGoalResponse(
+                        goal.getId(),
+                        goal.getCode().name(),
+                        goal.getCode().getDisplayName(),
+                        goal.getTargetWeight(),
+                        goal.getProgress(),
+                        goal.getCreatedAt(),
+                        goal.getUpdatedAt()
+                ))
+                .toList();
     }
 }

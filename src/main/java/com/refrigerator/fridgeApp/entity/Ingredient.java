@@ -31,7 +31,6 @@ public class Ingredient {
     private LocalDate expiryDate;
 
     private Integer alertBeforeDays;
-    private String status; // ACTIVE, CONSUMED, DISCARDED
 
     private LocalDateTime createdAt;
 }
