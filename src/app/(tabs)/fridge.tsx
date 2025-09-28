@@ -148,7 +148,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingBottom: 60, // 하단 탭바 높이만큼 여백
   },
   container: {
     flex: 1,
@@ -261,7 +260,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 100, // 하단 탭바와 플로팅 버튼을 위한 공간
+    paddingBottom: 20, // 하단 여백
   },
   foodCardContainer: {
     width: "48%",

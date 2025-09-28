@@ -1,19 +1,19 @@
 import { router, Stack } from "expo-router";
 import React, { useState } from "react";
 import {
-   Pressable,
-   StyleSheet,
-   Text,
-   TextInput,
-   TouchableOpacity,
-   View,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors, commonStyles, FontSizes } from "../../styles/common";
 
 export default function GetBmiActing() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [activity, setActivity] = useState<"low" | "medium" | "high" | "veryHigh" | null>(null);
+  const [activity, setActivity] = useState<"veryLow" | "low" | "medium" | "high" | "veryHigh" | null>(null);
 
   const handleGoToNext = () => {
     router.push("./GetHealthGoal");
@@ -78,6 +78,12 @@ export default function GetBmiActing() {
       <Text style={styles.label}>평소 활동량</Text>
       <View style={styles.row}>
         <Pressable
+          style={[styles.option, activity === "veryLow" && styles.optionSelected]}
+          onPress={() => setActivity("veryLow")}
+        >
+          <Text style={styles.optionText}>매우 적음</Text>
+        </Pressable>
+        <Pressable
           style={[styles.option, activity === "low" && styles.optionSelected]}
           onPress={() => setActivity("low")}
         >
@@ -120,17 +126,17 @@ export default function GetBmiActing() {
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 30,
     alignItems: "center",
   },
   progress: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 50,
     alignSelf: "flex-start",
   },
   progressDot: {
@@ -165,6 +171,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 20,
     flexWrap: "wrap",
   },

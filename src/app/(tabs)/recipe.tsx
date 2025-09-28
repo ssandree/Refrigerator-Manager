@@ -232,7 +232,7 @@ export default function RecipeScreen() {
       </View>
 
       {/* 레시피 목록 */}
-      <ScrollView style={styles.recipesList}>
+      <ScrollView style={styles.recipesList} contentContainerStyle={styles.recipesListContent}>
         <Text style={styles.resultsCount}>
           {filteredRecipes.length}개의 레시피를 찾았습니다
         </Text>
@@ -382,6 +382,9 @@ const styles = StyleSheet.create({
   recipesList: {
     flex: 1,
     paddingTop: 8,
+  },
+  recipesListContent: {
+    paddingBottom: 20, // 하단 여백
   },
   resultsCount: {
     fontSize: 14,

@@ -1,13 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useHealthGoal } from "../../contexts/HealthGoalContext";
 import { Colors } from "../../styles/common";
+import UpdateHealthGoal from "../screens/UpdateHealthGoal";
 
 export default function MyInfoScreen() {
+  const { selectedGoals } = useHealthGoal();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handlePress = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         {/* 프로필 섹션 */}
         <View style={styles.profileSection}>
         {/* 사용자 정보 */}
@@ -30,12 +43,7 @@ export default function MyInfoScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.profileMenuItem}>
             <Ionicons name="trophy-outline" size={20} color="#666" />
-            <Text style={styles.profileMenuText}>업적 및 배지</Text>
-            <Ionicons name="chevron-forward" size={16} color="#999" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileMenuItem}>
-            <Ionicons name="analytics-outline" size={20} color="#666" />
-            <Text style={styles.profileMenuText}>상세 통계</Text>
+            <Text style={styles.profileMenuText}>업적</Text>
             <Ionicons name="chevron-forward" size={16} color="#999" />
           </TouchableOpacity>
         </View>
@@ -46,23 +54,35 @@ export default function MyInfoScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>🎯 건강 목표</Text>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} onPress={handlePress}>
               <Text style={styles.editButtonText}>목표 수정</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.goalCard}>
-            <View style={styles.goalItem}>
-              <Text style={styles.goalLabel}>일일 칼로리 목표</Text>
-              <Text style={styles.goalValue}>2,000 kcal</Text>
-            </View>
-            <View style={styles.goalItem}>
-              <Text style={styles.goalLabel}>단백질 목표</Text>
-              <Text style={styles.goalValue}>80g</Text>
-            </View>
-            <View style={styles.goalItem}>
-              <Text style={styles.goalLabel}>채소 섭취 목표</Text>
-              <Text style={styles.goalValue}>5 서빙</Text>
-            </View>
+            {selectedGoals.length > 0 ? (
+              selectedGoals.map((goal, index) => (
+                <View key={goal.id} style={styles.goalItem}>
+                  <View style={styles.goalItemContent}>
+                    <View style={[styles.goalIconContainer, { backgroundColor: goal.color + '20' }]}>
+                      <Ionicons 
+                        name={goal.icon as any} 
+                        size={20} 
+                        color={goal.color} 
+                      />
+                    </View>
+                    <View style={styles.goalTextContent}>
+                      <Text style={styles.goalLabel}>{goal.title}</Text>
+                      <Text style={styles.goalDescription}>{goal.description}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyGoalsContainer}>
+                <Text style={styles.emptyGoalsText}>선택된 건강 목표가 없습니다</Text>
+                <Text style={styles.emptyGoalsSubtext}>온보딩에서 건강 목표를 설정해보세요</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -141,6 +161,14 @@ export default function MyInfoScreen() {
         </View>
       </View>
       </ScrollView>
+      
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <UpdateHealthGoal onClose={handleCloseModal} />
+      </Modal>
     </View>
   );
 }
@@ -153,9 +181,12 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 20, // 하단 여백
+  },
   profileSection: {
     backgroundColor: "#FFFFFF",
-    flexDirection: "row",
+    flexDirection: "column",
     paddingVertical: 24,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
@@ -166,6 +197,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+
   },
   profileImageContainer: {
     width: 60,
@@ -192,20 +224,21 @@ const styles = StyleSheet.create({
   profileMenu: {
     flex: 1,
     marginLeft: 16,
+    flexDirection: "row",
+    gap: 20
   },
   profileMenuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 12,
     backgroundColor: "#F8F9FA",
     borderRadius: 6,
-    marginBottom: 6,
+    marginTop: 12,
   },
   profileMenuText: {
     fontSize: 12,
     color: "#2D2D2D",
-    marginLeft: 8,
     flex: 1,
   },
   content: {
@@ -220,6 +253,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+    marginTop: 12,
   },
   sectionTitle: {
     fontSize: 18,
@@ -240,21 +274,48 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   goalItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
-  goalLabel: {
-    fontSize: 14,
-    color: "#666",
+  goalItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  goalValue: {
+  goalIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  goalTextContent: {
+    flex: 1,
+  },
+  goalLabel: {
     fontSize: 16,
     fontWeight: "600",
     color: "#2D2D2D",
+    marginBottom: 2,
+  },
+  goalDescription: {
+    fontSize: 12,
+    color: "#666",
+    lineHeight: 16,
+  },
+  emptyGoalsContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  emptyGoalsText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  emptyGoalsSubtext: {
+    fontSize: 12,
+    color: "#999",
   },
   editButton: {
     paddingVertical: 4,

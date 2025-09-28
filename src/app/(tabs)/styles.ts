@@ -36,13 +36,12 @@ export const tabsStyles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
   },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-  },
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: 20, // 하단 여백
   },
   
   // 섹션
@@ -207,8 +206,8 @@ export const tabsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   profileImage: {
-    width: 60,
-    height: 60,
+    width: "100%",
+    height: "100%",
     borderRadius: 30,
     marginRight: 16,
   },

@@ -21,7 +21,7 @@ export default function FridgeRegisterQuick() {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 75, // 하단에서 20px 위에 위치
+    bottom: 20, // 하단에서 20px 위에 위치
     right: 20,
     zIndex: 1000,
   },

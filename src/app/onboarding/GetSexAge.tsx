@@ -93,17 +93,17 @@ export default function GetSexAge() {
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 30,
     alignItems: "center",
   },
   progress: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 50,
     alignSelf: "flex-start",
   },
   progressDot: {
@@ -125,6 +125,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FontSizes.lg,
+    marginLeft: 20,
+    marginRight:20,
     marginBottom: 24,
     color: Colors.textSecondary,
     textAlign: "center",

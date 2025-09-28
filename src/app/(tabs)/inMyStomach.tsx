@@ -37,7 +37,7 @@ export default function DietScreen() {
       </View>
 
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
 
         {/* 추가 버튼 */}
         <TouchableOpacity style={styles.addMealButton}>
@@ -186,6 +186,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: 20, // 하단 여백
   },
   mealSection: {
     marginBottom: 24,

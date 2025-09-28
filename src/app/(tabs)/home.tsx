@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import ExpiringIngredientSection from "../../components/ExpiringIngredientCard";
 import QuickFoodAdd from "../../components/QuickFoodAdd";
 import { Colors } from "../../styles/common";
 import { tabsStyles } from "./styles";
 
 export default function HomeScreen() {
+
   return (
     <View style={tabsStyles.container}>
       {/* 헤더 */}
@@ -24,7 +26,7 @@ export default function HomeScreen() {
         </View>
       </View>
       
-      <ScrollView style={tabsStyles.content}>
+      <ScrollView style={tabsStyles.content} contentContainerStyle={tabsStyles.scrollContent}>
         {/* 오늘의 레시피 추천 */}
         <View style={tabsStyles.section}>
           <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
@@ -53,32 +55,7 @@ export default function HomeScreen() {
         </View>
 
         {/* 임박 재료 알림 */}
-        <View style={tabsStyles.section}>
-          <Text style={tabsStyles.sectionTitle}>⚠️ 임박 재료</Text>
-          <View style={tabsStyles.expiringContainer}>
-            <View style={tabsStyles.expiringItem}>
-              <View style={tabsStyles.expiringInfo}>
-                <Text style={tabsStyles.expiringName}>시금치</Text>
-                <Text style={tabsStyles.expiringDate}>1일 남음</Text>
-              </View>
-              <Ionicons name="warning" size={20} color={Colors.error} />
-            </View>
-            <View style={tabsStyles.expiringItem}>
-              <View style={tabsStyles.expiringInfo}>
-                <Text style={tabsStyles.expiringName}>연어</Text>
-                <Text style={tabsStyles.expiringDate}>2일 남음</Text>
-              </View>
-              <Ionicons name="warning" size={20} color={Colors.warning} />
-            </View>
-            <View style={tabsStyles.expiringItem}>
-              <View style={tabsStyles.expiringInfo}>
-                <Text style={tabsStyles.expiringName}>고등어</Text>
-                <Text style={tabsStyles.expiringDate}>3일 남음</Text>
-              </View>
-              <Ionicons name="warning" size={20} color={Colors.warning} />
-            </View>
-          </View>
-        </View>
+        <ExpiringIngredientSection />
 
         {/* 건강 목표 */}
         <View style={tabsStyles.section}>
