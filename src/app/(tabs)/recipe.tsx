@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import RecipeCard from "../../components/RecipeCard";
 import RecipeResearch from "../../components/RecipeResearch";
+import { useFavoriteRecipes } from "../../contexts/FavoriteRecipeContext";
 import { mockRecipes } from "../../data/mockRecipes";
 import { Colors } from "../../styles/common";
 
@@ -10,6 +12,7 @@ export default function RecipeScreen() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [slideAnim] = useState(new Animated.Value(Dimensions.get('window').height));
+  const { favoriteRecipes } = useFavoriteRecipes();
   
   // 상세 필터 상태
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -128,6 +131,17 @@ export default function RecipeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>레시피</Text>
         <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={() => router.push('/screens/LikeRecipe')}
+          >
+            <Ionicons name="heart" size={24} color="#FF6B6B" />
+            {favoriteRecipes.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{favoriteRecipes.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity style={styles.notificationButton}>
             <Ionicons name="notifications-outline" size={24} color="#333" />
           </TouchableOpacity>
@@ -142,8 +156,6 @@ export default function RecipeScreen() {
 
       {/* 검색 및 필터 섹션 */}
       <View style={styles.filterSection}>
-        <Text style={styles.sectionTitle}>🔍 레시피 검색</Text>
-        
         {/* 검색창 */}
         <View style={styles.searchContainer}>
           <TextInput
@@ -306,6 +318,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+  },
+  favoriteButton: {
+    position: "relative",
+    padding: 4,
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#FF6B6B",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   notificationButton: {
     padding: 8,

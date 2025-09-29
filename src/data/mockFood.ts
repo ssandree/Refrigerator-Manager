@@ -207,7 +207,7 @@ export const mockIngredients: Ingredient[] = [
     weight: "5kg",
     registeredAt: "2025-09-10",
     purchaseDate: "2025-09-10",
-    expiryDate: "2025-09-10",
+    expiryDate: "2025-10-10",
     storageLocation: StorageLocation.ROOM_TEMP,
     alertBeforeDays: 30,
   },

@@ -7,6 +7,9 @@ import { StorageLocationIcon } from "../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from '../styles/common';
 interface FoodCardProps {
   ingredient: Ingredient;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
   onPress?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -14,13 +17,32 @@ interface FoodCardProps {
 
 export default function FoodCard({
   ingredient,
+  selectable = false,
+  selected = false,
+  onSelect,
   onPress,
   onEdit,
   onDelete,
 }: FoodCardProps) {
 
+  // 유통기한 임박 확인 함수 (7일 이내)
+  const isExpiringSoon = (expiryDate: string) => {
+    const today = new Date();
+    const date = new Date(expiryDate);
+    const diff = (date.getTime() - today.getTime()) / (1000 * 3600 * 24);
+    return diff <= 7; 
+  };
+
+  const expiringSoon = isExpiringSoon(ingredient.expiryDate);
+
   return (
-    <TouchableOpacity style={styles.foodCardContainer} onPress={onPress}>
+    <TouchableOpacity 
+      style={[
+        styles.foodCardContainer,
+        selectable && selected && styles.selectedCard
+      ]} 
+      onPress={selectable ? onSelect : onPress}
+    >
       {/* 카테고리 상단 바 */}
       <View
         style={[
@@ -28,6 +50,22 @@ export default function FoodCard({
           { backgroundColor: IngredientCategoryColor[ingredient.category] },
         ]}
       />
+      
+      {/* 유통기한 임박 표시 테두리 */}
+      {expiringSoon && (
+        <View style={styles.expiryBorder} />
+      )}
+      
+      {/* 선택 상태 표시 */}
+      {selectable && (
+        <View style={styles.selectionIndicator}>
+          <Ionicons 
+            name={selected ? "checkmark-circle" : "ellipse-outline"} 
+            size={20} 
+            color={selected ? Colors.primary[500] : Colors.textSecondary} 
+          />
+        </View>
+      )}
 
       {/* 상단 행: 사진과 저장위치 */}
       <View style={styles.topRow}>
@@ -93,6 +131,17 @@ const styles = StyleSheet.create({
     height: 6, // 바 두께 (원하는 만큼 조정 가능)
     borderTopLeftRadius: 8,  // 카드 라운드와 맞추기
     borderTopRightRadius: 8,
+  },
+  expiryBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderColor: Colors.warning,
+    borderRadius: 8,
+    pointerEvents: "none",
   },
   foodCardExpiryBadge: {
     position: 'absolute',
@@ -161,5 +210,15 @@ const styles = StyleSheet.create({
   },
   foodCardActionBtn: {
     padding: 2,
+  },
+  selectedCard: {
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
+  },
+  selectionIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 3,
   },
 });
