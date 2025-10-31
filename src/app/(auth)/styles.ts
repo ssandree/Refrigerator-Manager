@@ -1,5 +1,5 @@
-import { StyleSheet, TextStyle, ViewStyle } from 'react-native';
-import { Colors, FontSizes, commonStyles } from '../../styles/common';
+import { StyleSheet, TextStyle, ViewStyle } from "react-native";
+import { Colors, FontSizes, commonStyles } from "../../styles/common";
 
 export const authStyles = StyleSheet.create({
   // 인증 화면 컨테이너
@@ -8,18 +8,18 @@ export const authStyles = StyleSheet.create({
   } as ViewStyle,
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
   } as ViewStyle,
-  
+
   // 로고 영역
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
   } as ViewStyle,
   logoText: {
-    fontSize: FontSizes['4xl'],
-    fontWeight: 'bold',
+    fontSize: FontSizes["4xl"],
+    fontWeight: "bold",
     color: Colors.text,
     marginTop: 12,
   } as TextStyle,
@@ -28,17 +28,17 @@ export const authStyles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 4,
   } as TextStyle,
-  
+
   // 폼 영역
   formContainer: {
-    width: '100%',
+    width: "100%",
   } as ViewStyle,
   inputContainer: {
     marginBottom: 20,
   } as ViewStyle,
   inputLabel: {
     fontSize: FontSizes.base,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text,
     marginBottom: 8,
   } as TextStyle,
@@ -46,8 +46,8 @@ export const authStyles = StyleSheet.create({
     ...commonStyles.input,
   } as TextStyle,
   passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 8,
@@ -63,25 +63,25 @@ export const authStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   } as ViewStyle,
-  
+
   // 버튼
   loginButton: {
     backgroundColor: Colors.primary,
     borderRadius: 8,
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   } as ViewStyle,
   loginButtonText: {
     color: Colors.surface,
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
   } as TextStyle,
-  
+
   // 구분선
   divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   } as ViewStyle,
   dividerLine: {
@@ -94,12 +94,12 @@ export const authStyles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: FontSizes.base,
   } as TextStyle,
-  
+
   // 소셜 로그인 버튼
   socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 8,
@@ -112,11 +112,11 @@ export const authStyles = StyleSheet.create({
     fontSize: FontSizes.lg,
     color: Colors.text,
   } as TextStyle,
-  
+
   // 푸터
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 20,
   } as ViewStyle,
   footerText: {
@@ -125,7 +125,7 @@ export const authStyles = StyleSheet.create({
   } as TextStyle,
   linkText: {
     fontSize: FontSizes.base,
-    color: Colors.primary[500],
-    fontWeight: '500',
+    color: Colors.primary,
+    fontWeight: "500",
   } as TextStyle,
 });

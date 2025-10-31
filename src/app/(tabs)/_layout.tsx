@@ -9,13 +9,13 @@ export default function TabsLayout() {
       initialRouteName="Fridge"
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { 
+        tabBarStyle: {
           height: 72,
           paddingBottom: 4,
           paddingTop: 8,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: Colors.text,
+        tabBarActiveTintColor: Colors.textPrimary,
         tabBarInactiveTintColor: Colors.textSecondary,
         tabBarLabelStyle: {
           fontSize: FontSizes.sm,
@@ -23,7 +23,6 @@ export default function TabsLayout() {
         },
       }}
     >
-
       <Tabs.Screen
         name="Fridge"
         options={{
@@ -43,7 +42,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="home"
+        name="Home"
         options={{
           title: "홈",
           tabBarIcon: ({ color, size }) => (

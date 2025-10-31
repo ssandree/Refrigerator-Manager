@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
-import { Colors, FontSizes, commonStyles } from '../../styles/common';
+import { StyleSheet } from "react-native";
+import { Colors, FontSizes, commonStyles } from "../../styles/common";
 
 export const tabsStyles = StyleSheet.create({
   // 탭 화면 컨테이너
@@ -13,14 +13,14 @@ export const tabsStyles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: Colors.textPrimary,
   },
   headerRight: {
     flexDirection: "row",
@@ -43,18 +43,18 @@ export const tabsStyles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20, // 하단 여백
   },
-  
+
   // 섹션
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: FontSizes.xl,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 12,
   },
-  
+
   // 레시피 카드
   recipeCard: {
     backgroundColor: Colors.surface,
@@ -67,7 +67,7 @@ export const tabsStyles = StyleSheet.create({
   },
   recipeName: {
     fontSize: FontSizes.xl,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
   },
@@ -78,20 +78,20 @@ export const tabsStyles = StyleSheet.create({
     lineHeight: 20,
   },
   recipeStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   statText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
-  
+
   // 임박 재료
   expiringContainer: {
     backgroundColor: Colors.surface,
@@ -100,26 +100,26 @@ export const tabsStyles = StyleSheet.create({
     ...commonStyles.shadow,
   },
   expiringItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: Colors.borderLight,
   },
   expiringInfo: {
     flex: 1,
   },
   expiringName: {
     fontSize: FontSizes.lg,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text,
   },
   expiringDate: {
     fontSize: FontSizes.base,
     color: Colors.textSecondary,
   },
-  
+
   // 건강 목표
   goalContainer: {
     backgroundColor: Colors.surface,
@@ -132,7 +132,7 @@ export const tabsStyles = StyleSheet.create({
   },
   goalLabel: {
     fontSize: FontSizes.base,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text,
     marginBottom: 8,
   },
@@ -143,22 +143,22 @@ export const tabsStyles = StyleSheet.create({
     marginBottom: 4,
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary[500],
+    height: "100%",
+    backgroundColor: Colors.primary,
     borderRadius: 4,
   },
   goalText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
   },
-  
+
   // 빠른 액션
   quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   actionButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 16,
@@ -169,21 +169,21 @@ export const tabsStyles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  
+
   // 냉장고 관련
   fridgeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
   },
   fridgeItem: {
-    width: '48%',
+    width: "48%",
     marginBottom: 16,
   },
-  
+
   // 레시피 관련
   recipeList: {
     paddingHorizontal: 16,
@@ -191,7 +191,7 @@ export const tabsStyles = StyleSheet.create({
   recipeItem: {
     marginBottom: 16,
   },
-  
+
   // 내 정보
   profileContainer: {
     backgroundColor: Colors.surface,
@@ -201,8 +201,8 @@ export const tabsStyles = StyleSheet.create({
     ...commonStyles.shadow,
   },
   profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   profileImage: {
@@ -215,8 +215,8 @@ export const tabsStyles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: 'bold',
+    fontSize: FontSizes["2xl"],
+    fontWeight: "bold",
     color: Colors.text,
     marginBottom: 4,
   },
@@ -225,17 +225,17 @@ export const tabsStyles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   profileStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginTop: 20,
   },
   statContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statNumber: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: 'bold',
-    color: Colors.primary[500],
+    fontSize: FontSizes["2xl"],
+    fontWeight: "bold",
+    color: Colors.primary,
   },
   statLabel: {
     fontSize: FontSizes.sm,

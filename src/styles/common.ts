@@ -1,46 +1,27 @@
-import { StyleSheet } from 'react-native';
+// 역할: 앱 전반에서 재사용할 색상/폰트/공통 스타일을 모아두는 스타일 유틸
+// Colors 상수 재노출, 추가 color 팔레트, 폰트 크기, 자주 쓰는 레이아웃/컴포넌트 스타일 제공
+import { StyleSheet } from "react-native";
+import { Colors as ColorsConstants } from "./colors";
 
-// 색상 상수 (tailwind.config.js 기반)
-export const Colors = {
-  // Primary 색상
+// Re-export Colors from constants for convenience
+export const Colors = ColorsConstants;
+
+// Additional color objects that might be needed
+export const ColorObjects = {
   primary: {
-    50: '#E8F5E8',
-    100: '#D5ECB0',
-    500: '#4CAF50',
-    600: '#388E3C',
-    700: '#2E7D32',
+    50: "#E8F5E8",
+    100: "#D5ECB0",
+    500: "#4CAF50",
+    600: "#388E3C",
+    700: "#2E7D32",
   },
-  // Secondary 색상
   secondary: {
-    50: '#E3F2FD',
-    100: '#BBDEFB',
-    500: '#2196F3',
-    600: '#1976D2',
-    700: '#1565C0',
+    50: "#E3F2FD",
+    100: "#BBDEFB",
+    500: "#2196F3",
+    600: "#1976D2",
+    700: "#1565C0",
   },
-  // Accent 색상
-  accent: {
-    50: '#FFF3E0',
-    100: '#FFE0B2',
-    500: '#FF9800',
-    600: '#F57C00',
-    700: '#EF6C00',
-  },
-  // 상태 색상
-  success: '#4CAF50',
-  warning: '#FF9800',
-  error: '#F44336',
-  info: '#2196F3',
-  
-  // UI 색상
-  background: '#FEFDFB',
-  surface: '#FFFFFF',
-  text: '#2D2D2D',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
-  border: '#E0E0E0',
-  shadow: '#000000',
-
 } as const;
 
 // 폰트 크기 상수
@@ -50,9 +31,9 @@ export const FontSizes = {
   base: 14,
   lg: 16,
   xl: 18,
-  '2xl': 20,
-  '3xl': 24,
-  '4xl': 28,
+  "2xl": 20,
+  "3xl": 24,
+  "4xl": 28,
 } as const;
 
 // 공통 스타일
@@ -64,24 +45,24 @@ export const commonStyles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.background,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   spaceBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   center: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  
+
   // 카드
   card: {
     backgroundColor: Colors.surface,
@@ -98,21 +79,21 @@ export const commonStyles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   // 버튼
   button: {
-    backgroundColor: Colors.primary[500],
+    backgroundColor: ColorObjects.primary[500],
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
     color: Colors.surface,
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  
+
   // 입력
   input: {
     borderWidth: 1,
@@ -123,23 +104,23 @@ export const commonStyles = StyleSheet.create({
     fontSize: FontSizes.lg,
     backgroundColor: Colors.surface,
   },
-  
+
   // 텍스트
   title: {
-    fontSize: FontSizes['3xl'],
-    fontWeight: 'bold',
-    color: Colors.text,
+    fontSize: FontSizes["3xl"],
+    fontWeight: "bold",
+    color: Colors.textPrimary,
     marginBottom: 16,
   },
   subtitle: {
     fontSize: FontSizes.xl,
-    fontWeight: '600',
-    color: Colors.text,
+    fontWeight: "600",
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   text: {
     fontSize: FontSizes.lg,
-    color: Colors.text,
+    color: Colors.textPrimary,
   },
   textSecondary: {
     fontSize: FontSizes.base,
@@ -149,10 +130,10 @@ export const commonStyles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textTertiary,
   },
-  
+
   // 그림자
   shadow: {
-    shadowColor: Colors.shadow,
+    shadowColor: "#000000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -161,25 +142,24 @@ export const commonStyles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   // 구분선
   divider: {
     height: 1,
     backgroundColor: Colors.border,
     marginVertical: 16,
   },
-  
+
   // 배지
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   badgeText: {
     fontSize: FontSizes.sm,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.surface,
   },
 });
-

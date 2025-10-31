@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { useFavoriteRecipes } from "../contexts/FavoriteRecipeContext";
 import { Recipe } from "../data/mockRecipes";
+import { useFavoriteRecipeStore } from "../stores/useFavoriteRecipeStore";
+import { Colors } from "../styles/common";
 import { recipeCardStyles } from "./styles";
 
 interface RecipeCardProps {
@@ -16,7 +17,10 @@ export default function RecipeCard({
   onPress,
   onFavoriteToggle,
 }: RecipeCardProps) {
-  const { isFavorite, toggleFavorite } = useFavoriteRecipes();
+  const isFavorite = useFavoriteRecipeStore((state) => state.isFavorite);
+  const toggleFavorite = useFavoriteRecipeStore(
+    (state) => state.toggleFavorite
+  );
   const isRecipeFavorite = isFavorite(recipe.id);
 
   const handleFavoriteToggle = () => {
@@ -26,17 +30,21 @@ export default function RecipeCard({
     }
   };
   const getHealthColor = (healthGoal: number) => {
-    if (healthGoal >= 80) return "#4CAF50";
-    if (healthGoal >= 60) return "#FF9800";
-    return "#F44336";
+    if (healthGoal >= 80) return Colors.success;
+    if (healthGoal >= 60) return Colors.warning;
+    return Colors.error;
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "쉬움": return "#4CAF50";
-      case "보통": return "#FF9800";
-      case "어려움": return "#F44336";
-      default: return "#9E9E9E";
+      case "쉬움":
+        return Colors.success;
+      case "보통":
+        return Colors.warning;
+      case "어려움":
+        return Colors.error;
+      default:
+        return Colors.textTertiary;
     }
   };
 
@@ -44,7 +52,10 @@ export default function RecipeCard({
     <TouchableOpacity style={recipeCardStyles.container} onPress={onPress}>
       {/* 이미지 (왼쪽) */}
       <View style={recipeCardStyles.imageContainer}>
-        <Image source={require("../assets/images/tomato.jpg")} style={recipeCardStyles.image} />
+        <Image
+          source={require("../assets/images/tomato.jpg")}
+          style={recipeCardStyles.image}
+        />
       </View>
 
       {/* 정보 섹션 (오른쪽) */}
@@ -60,7 +71,7 @@ export default function RecipeCard({
             <Ionicons
               name={isRecipeFavorite ? "heart" : "heart-outline"}
               size={18}
-              color={isRecipeFavorite ? "#FF6B6B" : "#999"}
+              color={isRecipeFavorite ? Colors.meat : Colors.textTertiary}
             />
           </TouchableOpacity>
         </View>
@@ -68,20 +79,24 @@ export default function RecipeCard({
           {recipe.description}
         </Text>
 
- 
-
         {/* 통계 정보 */}
         <View style={recipeCardStyles.statsContainer}>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons name="flame-outline" size={12} color="#FF6B6B" />
-            <Text style={recipeCardStyles.statText}>{recipe.calories}칼로리</Text>
+            <Ionicons name="flame-outline" size={12} color={Colors.meat} />
+            <Text style={recipeCardStyles.statText}>
+              {recipe.calories}칼로리
+            </Text>
           </View>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons name="time-outline" size={12} color="#4CAF50" />
+            <Ionicons name="time-outline" size={12} color={Colors.primary} />
             <Text style={recipeCardStyles.statText}>{recipe.time}분</Text>
           </View>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons name="fitness-outline" size={12} color={getHealthColor(recipe.healthGoal)} />
+            <Ionicons
+              name="fitness-outline"
+              size={12}
+              color={getHealthColor(recipe.healthGoal)}
+            />
             <Text style={recipeCardStyles.statText}>{recipe.healthGoal}%</Text>
           </View>
         </View>
@@ -89,17 +104,27 @@ export default function RecipeCard({
         {/* 하단 정보 */}
         <View style={recipeCardStyles.footer}>
           <View style={recipeCardStyles.ingredientInfo}>
-            <Ionicons name="restaurant-outline" size={12} color="#666" />
+            <Ionicons
+              name="restaurant-outline"
+              size={12}
+              color={Colors.textSecondary}
+            />
             <Text style={recipeCardStyles.ingredientText}>
               {recipe.ingredientsOwned}/{recipe.totalIngredients} 재료 보유
             </Text>
           </View>
-          <View style={[recipeCardStyles.difficultyTag, { backgroundColor: getDifficultyColor(recipe.difficulty) }]}>
-            <Text style={recipeCardStyles.difficultyText}>{recipe.difficulty}</Text>
+          <View
+            style={[
+              recipeCardStyles.difficultyTag,
+              { backgroundColor: getDifficultyColor(recipe.difficulty) },
+            ]}
+          >
+            <Text style={recipeCardStyles.difficultyText}>
+              {recipe.difficulty}
+            </Text>
           </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
-

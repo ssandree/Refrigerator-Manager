@@ -1,14 +1,14 @@
-import { StyleSheet } from 'react-native';
-import { Colors, FontSizes, commonStyles } from '../styles/common';
+import { StyleSheet } from "react-native";
+import { Colors, FontSizes, commonStyles } from "../styles/common";
 
 export { Colors };
 
 export const componentsStyles = StyleSheet.create({
   // Header 컴포넌트
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: Colors.header,
@@ -16,19 +16,19 @@ export const componentsStyles = StyleSheet.create({
     borderBottomColor: Colors.headerBorder,
   },
   headerLeftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     flex: 1,
   },
   headerTitle: {
-    fontSize: FontSizes['2xl'],
-    fontWeight: 'bold',
+    fontSize: FontSizes["2xl"],
+    fontWeight: "bold",
     color: Colors.text,
   },
   headerRightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 15,
   },
   headerIconBtn: {
@@ -39,10 +39,10 @@ export const componentsStyles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
-  
+
   // FoodCard 컴포넌트
   foodCardContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 12,
@@ -51,17 +51,17 @@ export const componentsStyles = StyleSheet.create({
     ...commonStyles.shadow,
   },
   foodCardImageContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 12,
   },
   foodCardImage: {
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.backgroundDark,
   },
   foodCardExpiryBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -5,
     right: -5,
     backgroundColor: Colors.error,
@@ -72,27 +72,27 @@ export const componentsStyles = StyleSheet.create({
   foodCardExpiryText: {
     color: Colors.surface,
     fontSize: FontSizes.xs,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   foodCardInfoSection: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   foodCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 4,
   },
   foodCardName: {
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     flex: 1,
     marginRight: 8,
   },
   foodCardActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
   },
   foodCardActionBtn: {
@@ -111,9 +111,9 @@ export const componentsStyles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   foodCardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   foodCardCategoryTag: {
     paddingHorizontal: 8,
@@ -123,18 +123,18 @@ export const componentsStyles = StyleSheet.create({
   foodCardCategoryText: {
     fontSize: FontSizes.xs,
     color: Colors.surface,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   foodCardStorageInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   foodCardStorageText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
   },
-  
+
   // RecipeCard 컴포넌트
   recipeCardContainer: {
     backgroundColor: Colors.surface,
@@ -143,7 +143,7 @@ export const componentsStyles = StyleSheet.create({
     ...commonStyles.shadow,
   },
   recipeCardImage: {
-    width: '100%',
+    width: "100%",
     height: 150,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
@@ -154,7 +154,7 @@ export const componentsStyles = StyleSheet.create({
   },
   recipeCardTitle: {
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
   },
@@ -165,17 +165,17 @@ export const componentsStyles = StyleSheet.create({
     lineHeight: 20,
   },
   recipeCardMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   recipeCardStats: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   recipeCardStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   recipeCardStatText: {
@@ -185,7 +185,7 @@ export const componentsStyles = StyleSheet.create({
   recipeCardLikeButton: {
     padding: 4,
   },
-  
+
   // DailyDietCard 컴포넌트
   dailyDietCardContainer: {
     backgroundColor: Colors.surface,
@@ -195,14 +195,14 @@ export const componentsStyles = StyleSheet.create({
     ...commonStyles.shadow,
   },
   dailyDietCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   dailyDietCardTitle: {
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
   },
   dailyDietCardTime: {
@@ -213,9 +213,9 @@ export const componentsStyles = StyleSheet.create({
     marginTop: 8,
   },
   dailyDietCardItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 4,
   },
   dailyDietCardItemName: {
@@ -227,9 +227,9 @@ export const componentsStyles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   dailyDietCardTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
@@ -237,24 +237,24 @@ export const componentsStyles = StyleSheet.create({
   },
   dailyDietCardTotalLabel: {
     fontSize: FontSizes.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
   },
   dailyDietCardTotalCalories: {
     fontSize: FontSizes.lg,
-    fontWeight: 'bold',
-    color: Colors.primary[500],
+    fontWeight: "bold",
+    color: Colors.primary,
   },
 });
 
 // RecipeCard Styles
 export const recipeCardStyles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -274,7 +274,7 @@ export const recipeCardStyles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.backgroundDark,
   },
   titleRow: {
     flexDirection: "row",
@@ -293,13 +293,13 @@ export const recipeCardStyles = StyleSheet.create({
   recipeName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2D2D2D",
+    color: Colors.textPrimary,
     flex: 1,
     marginRight: 8,
   },
   description: {
     fontSize: 12,
-    color: "#666",
+    color: Colors.textSecondary,
     marginBottom: 6,
     lineHeight: 16,
   },
@@ -309,14 +309,14 @@ export const recipeCardStyles = StyleSheet.create({
     marginBottom: 8,
   },
   tag: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.fridge,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   tagText: {
     fontSize: 10,
-    color: "#1976D2",
+    color: Colors.secondaryDark,
     fontWeight: "500",
   },
   statsContainer: {
@@ -324,7 +324,7 @@ export const recipeCardStyles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 6,
     paddingVertical: 4,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: Colors.backgroundDark,
     borderRadius: 6,
     paddingHorizontal: 8,
   },
@@ -335,7 +335,7 @@ export const recipeCardStyles = StyleSheet.create({
   },
   statText: {
     fontSize: 10,
-    color: "#666",
+    color: Colors.textSecondary,
     fontWeight: "500",
   },
   footer: {
@@ -351,7 +351,7 @@ export const recipeCardStyles = StyleSheet.create({
   },
   ingredientText: {
     fontSize: 10,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   difficultyTag: {
     paddingHorizontal: 6,
@@ -360,7 +360,7 @@ export const recipeCardStyles = StyleSheet.create({
   },
   difficultyText: {
     fontSize: 9,
-    color: "#FFFFFF",
+    color: Colors.textLight,
     fontWeight: "600",
   },
 });

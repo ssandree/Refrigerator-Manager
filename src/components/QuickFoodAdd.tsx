@@ -6,13 +6,13 @@ import { Colors } from "../styles/common";
 
 export default function FridgeRegisterQuick() {
   const handlePress = () => {
-    router.push("../screens/AddFood");
+    router.push("../_pages/AddFood");
   };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.floatingButton} onPress={handlePress}>
-        <Ionicons name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={28} color={Colors.textLight} />
       </TouchableOpacity>
     </View>
   );
@@ -29,10 +29,10 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 4,

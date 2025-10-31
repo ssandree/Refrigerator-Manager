@@ -1,26 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import RecipeCard from "../../components/RecipeCard";
-import RecipeResearch from "../../components/RecipeResearch";
-import { useFavoriteRecipes } from "../../contexts/FavoriteRecipeContext";
+import RecipeFilterModal from "../../components/tabs/recipe/RecipeFilterModal";
 import { mockRecipes } from "../../data/mockRecipes";
+import { useFavoriteRecipeStore } from "../../stores/useFavoriteRecipeStore";
 import { Colors } from "../../styles/common";
 
 export default function RecipeScreen() {
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const params = useLocalSearchParams<{ q?: string }>();
+  const [searchQuery, setSearchQuery] = useState<string>(
+    (params.q as string) || ""
+  );
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
-  const [slideAnim] = useState(new Animated.Value(Dimensions.get('window').height));
-  const { favoriteRecipes } = useFavoriteRecipes();
-  
+  const [slideAnim] = useState(
+    new Animated.Value(Dimensions.get("window").height)
+  );
+  const favoriteRecipes = useFavoriteRecipeStore(
+    (state) => state.favoriteRecipes
+  );
+
   // 상세 필터 상태
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [includeExpiring, setIncludeExpiring] = useState<boolean>(false);
-  const [selectedCookingTimes, setSelectedCookingTimes] = useState<string[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [selectedCookingTimes, setSelectedCookingTimes] = useState<string[]>(
+    []
+  );
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
+    []
+  );
   const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 1000]);
-
 
   // 모달 애니메이션 함수들
   const showModal = () => {
@@ -34,7 +54,7 @@ export default function RecipeScreen() {
 
   const hideModal = () => {
     Animated.timing(slideAnim, {
-      toValue: Dimensions.get('window').height,
+      toValue: Dimensions.get("window").height,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
@@ -44,27 +64,25 @@ export default function RecipeScreen() {
 
   // 재료 토글 함수
   const toggleIngredient = (ingredient: string) => {
-    setSelectedIngredients(prev => 
-      prev.includes(ingredient) 
-        ? prev.filter(i => i !== ingredient)
+    setSelectedIngredients((prev) =>
+      prev.includes(ingredient)
+        ? prev.filter((i) => i !== ingredient)
         : [...prev, ingredient]
     );
   };
 
   // 요리 시간 토글 함수
   const toggleCookingTime = (time: string) => {
-    setSelectedCookingTimes(prev => 
-      prev.includes(time) 
-        ? prev.filter(t => t !== time)
-        : [...prev, time]
+    setSelectedCookingTimes((prev) =>
+      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
     );
   };
 
   // 난이도 토글 함수
   const toggleDifficulty = (difficulty: string) => {
-    setSelectedDifficulties(prev => 
-      prev.includes(difficulty) 
-        ? prev.filter(d => d !== difficulty)
+    setSelectedDifficulties((prev) =>
+      prev.includes(difficulty)
+        ? prev.filter((d) => d !== difficulty)
         : [...prev, difficulty]
     );
   };
@@ -80,16 +98,21 @@ export default function RecipeScreen() {
   };
 
   // 필터링된 레시피 목록
-  const filteredRecipes = mockRecipes.filter(recipe => {
+  const filteredRecipes = mockRecipes.filter((recipe) => {
     // 검색어 필터
-    if (searchQuery && !recipe.recipeName.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !recipe.recipeName.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
 
     // 재료 필터 (tags를 통해 간접적으로 필터링)
     if (selectedIngredients.length > 0) {
-      const hasRequiredIngredient = selectedIngredients.some(ingredient => 
-        recipe.tags.some(tag => tag.toLowerCase().includes(ingredient.toLowerCase()))
+      const hasRequiredIngredient = selectedIngredients.some((ingredient) =>
+        recipe.tags.some((tag) =>
+          tag.toLowerCase().includes(ingredient.toLowerCase())
+        )
       );
       if (!hasRequiredIngredient) return false;
     }
@@ -101,10 +124,11 @@ export default function RecipeScreen() {
 
     // 요리 시간 필터
     if (selectedCookingTimes.length > 0) {
-      const matchesTime = selectedCookingTimes.some(time => {
+      const matchesTime = selectedCookingTimes.some((time) => {
         const timeCategory = time.split(" ")[0];
         if (timeCategory === "짧음" && recipe.time <= 30) return true;
-        if (timeCategory === "중간" && recipe.time > 30 && recipe.time <= 60) return true;
+        if (timeCategory === "중간" && recipe.time > 30 && recipe.time <= 60)
+          return true;
         if (timeCategory === "긴" && recipe.time > 60) return true;
         return false;
       });
@@ -112,18 +136,23 @@ export default function RecipeScreen() {
     }
 
     // 난이도 필터
-    if (selectedDifficulties.length > 0 && !selectedDifficulties.includes(recipe.difficulty)) {
+    if (
+      selectedDifficulties.length > 0 &&
+      !selectedDifficulties.includes(recipe.difficulty)
+    ) {
       return false;
     }
 
     // 열량 필터 (임시로 모든 레시피가 해당한다고 가정)
-    if (recipe.calories < calorieRange[0] || recipe.calories > calorieRange[1]) {
+    if (
+      recipe.calories < calorieRange[0] ||
+      recipe.calories > calorieRange[1]
+    ) {
       return false;
     }
 
     return true;
   });
-
 
   return (
     <View style={styles.container}>
@@ -131,11 +160,11 @@ export default function RecipeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>레시피</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => router.push('/screens/LikeRecipe')}
+            onPress={() => router.push("/_pages/LikeRecipe")}
           >
-            <Ionicons name="heart" size={24} color="#FF6B6B" />
+            <Ionicons name="heart" size={24} color={Colors.meat} />
             {favoriteRecipes.length > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{favoriteRecipes.length}</Text>
@@ -143,11 +172,15 @@ export default function RecipeScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#333" />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={Colors.textPrimary}
+            />
           </TouchableOpacity>
           <TouchableOpacity style={styles.profileButton}>
-            <Image 
-              source={require("../../assets/images/tomato.jpg")} 
+            <Image
+              source={require("../../assets/images/tomato.jpg")}
               style={styles.profileImage}
             />
           </TouchableOpacity>
@@ -163,23 +196,20 @@ export default function RecipeScreen() {
             placeholder="레시피 이름으로 검색..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
+            placeholderTextColor={Colors.textTertiary}
           />
         </View>
 
         {/* 선택된 필터 조건 캐러셀 */}
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.filterChipsContainer}
           contentContainerStyle={styles.filterChipsContent}
         >
           {/* 재료 필터 칩 */}
           {selectedIngredients.length > 0 && (
-            <TouchableOpacity 
-              style={styles.filterChip} 
-              onPress={showModal}
-            >
+            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
                 🥬 재료 {selectedIngredients.length}개
               </Text>
@@ -188,22 +218,19 @@ export default function RecipeScreen() {
 
           {/* 요리 시간 필터 칩 */}
           {selectedCookingTimes.length > 0 && (
-            <TouchableOpacity 
-              style={styles.filterChip} 
-              onPress={showModal}
-            >
+            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
-                ⏰ {selectedCookingTimes.map(time => time.split(" ")[0]).join(", ")}
+                ⏰{" "}
+                {selectedCookingTimes
+                  .map((time) => time.split(" ")[0])
+                  .join(", ")}
               </Text>
             </TouchableOpacity>
           )}
 
           {/* 난이도 필터 칩 */}
           {selectedDifficulties.length > 0 && (
-            <TouchableOpacity 
-              style={styles.filterChip} 
-              onPress={showModal}
-            >
+            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
                 🎯 {selectedDifficulties.join(", ")}
               </Text>
@@ -212,10 +239,7 @@ export default function RecipeScreen() {
 
           {/* 열량 필터 칩 */}
           {(calorieRange[0] > 0 || calorieRange[1] < 1000) && (
-            <TouchableOpacity 
-              style={styles.filterChip} 
-              onPress={showModal}
-            >
+            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
                 🔥 {calorieRange[0]}-{calorieRange[1]}kcal
               </Text>
@@ -224,13 +248,8 @@ export default function RecipeScreen() {
 
           {/* 임박재료 필터 칩 */}
           {includeExpiring && (
-            <TouchableOpacity 
-              style={styles.filterChip} 
-              onPress={showModal}
-            >
-              <Text style={styles.filterChipText}>
-                ⚠️ 임박재료
-              </Text>
+            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
+              <Text style={styles.filterChipText}>⚠️ 임박재료</Text>
             </TouchableOpacity>
           )}
 
@@ -239,22 +258,25 @@ export default function RecipeScreen() {
             <Text style={styles.addFilterButtonText}>+ 필터 추가</Text>
           </TouchableOpacity>
         </ScrollView>
-
-
       </View>
 
       {/* 레시피 목록 */}
-      <ScrollView style={styles.recipesList} contentContainerStyle={styles.recipesListContent}>
+      <ScrollView
+        style={styles.recipesList}
+        contentContainerStyle={styles.recipesListContent}
+      >
         <Text style={styles.resultsCount}>
           {filteredRecipes.length}개의 레시피를 찾았습니다
         </Text>
-        
+
         {filteredRecipes.map((recipe) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
             onPress={() => console.log("레시피 클릭:", recipe.recipeName)}
-            onFavoriteToggle={() => console.log("즐겨찾기 토글:", recipe.recipeName)}
+            onFavoriteToggle={() =>
+              console.log("즐겨찾기 토글:", recipe.recipeName)
+            }
           />
         ))}
 
@@ -263,7 +285,7 @@ export default function RecipeScreen() {
             <Text style={styles.emptyStateText}>
               선택한 조건에 맞는 레시피가 없습니다.
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.clearFiltersButton}
               onPress={clearAllFilters}
             >
@@ -274,7 +296,7 @@ export default function RecipeScreen() {
       </ScrollView>
 
       {/* 상세 필터 모달 */}
-      <RecipeResearch
+      <RecipeFilterModal
         visible={showFilterModal}
         onClose={hideModal}
         slideAnim={slideAnim}
@@ -305,14 +327,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: Colors.textPrimary,
   },
   headerRight: {
     flexDirection: "row",
@@ -327,7 +349,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -2,
     right: -2,
-    backgroundColor: "#FF6B6B",
+    backgroundColor: Colors.meat,
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -336,7 +358,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: "#FFFFFF",
+    color: Colors.textLight,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -354,29 +376,29 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   filterSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: Colors.border,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2D2D2D",
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   searchContainer: {
     marginBottom: 12,
   },
   searchInput: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.backgroundDark,
     borderRadius: 25,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.border,
   },
   filterChipsContainer: {
     marginBottom: 12,
@@ -386,30 +408,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   filterChip: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.fridge,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: "#BBDEFB",
+    borderColor: Colors.secondaryLight,
   },
   filterChipText: {
     fontSize: 12,
-    color: "#1976D2",
+    color: Colors.secondaryDark,
     fontWeight: "500",
   },
   addFilterButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#388E3C",
+    borderColor: Colors.primaryDark,
   },
   addFilterButtonText: {
     fontSize: 12,
-    color: "#FFFFFF",
+    color: Colors.textLight,
     fontWeight: "600",
   },
   recipesList: {
@@ -421,7 +443,7 @@ const styles = StyleSheet.create({
   },
   resultsCount: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -433,18 +455,18 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: "#999",
+    color: Colors.textTertiary,
     textAlign: "center",
     marginBottom: 16,
   },
   clearFiltersButton: {
-    backgroundColor: "#2196F3",
+    backgroundColor: Colors.secondary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
   clearFiltersText: {
-    color: "#FFFFFF",
+    color: Colors.textLight,
     fontSize: 14,
     fontWeight: "600",
   },

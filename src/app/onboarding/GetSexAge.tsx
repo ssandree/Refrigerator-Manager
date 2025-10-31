@@ -1,14 +1,10 @@
-import { router, Stack } from "expo-router";
+import { router } from "expo-router";
 import React, { useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Colors, commonStyles, FontSizes } from "../../styles/common";
+import { OnboardingFooterButton } from "./components/OnboardingFooterButton";
+import { OnboardingProgress } from "./components/OnboardingProgress";
+import { OnboardingTitle } from "./components/OnboardingTitle";
 
 export default function GetSexAge() {
   const [gender, setGender] = useState<"male" | "female" | null>(null);
@@ -21,85 +17,73 @@ export default function GetSexAge() {
   const isFormValid = gender && age;
 
   return (
-    <>
-      <Stack.Screen 
-        options={{
-          title: "기본정보 입력",
-          headerBackVisible: true,
-          headerStyle: {
-            backgroundColor: "#FFFFFF",
-          },
-          headerTintColor: "#333",
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: "bold",
-          },
-        }}
-      />
-      <View style={styles.container}>
-        {/* 컨텐츠 */}
-        <View style={styles.content}>
-        {/* 진행 단계 */}
-        <View style={styles.progress}>
-        <Text style={styles.progressDot}>●</Text>
-        <Text style={styles.progressDotInactive}>●</Text>
-        <Text style={styles.progressDotInactive}>●</Text>
+    <View style={styles.container}>
+      {/* 컨텐츠 */}
+      <View style={styles.content}>
+        {/* 진행 단계 + 타이틀 */}
+        <OnboardingProgress current={1} style={{ alignSelf: "flex-start" }} />
+        <OnboardingTitle
+          title="성별과 나이를 알려주세요"
+          subtitle="맞춤형 건강 목표를 설정하기 위한 기본 정보입니다"
+        />
+
+        {/* 성별 선택 */}
+        <Text style={styles.label}>성별</Text>
+        <View style={styles.row}>
+          <Pressable
+            style={[
+              styles.option,
+              gender === "female" && styles.optionSelected,
+            ]}
+            onPress={() => setGender("female")}
+          >
+            <Text style={styles.optionText}>여성</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.option, gender === "male" && styles.optionSelected]}
+            onPress={() => setGender("male")}
+          >
+            <Text style={styles.optionText}>남성</Text>
+          </Pressable>
+        </View>
+
+        {/* 나이 입력 */}
+        <Text style={styles.label}>나이</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="나이를 입력하세요"
+          value={age}
+          onChangeText={setAge}
+          keyboardType="numeric"
+        />
       </View>
 
-      <Text style={styles.title}>성별과 나이를 알려주세요</Text>
-      <Text style={styles.subtitle}>맞춤형 건강 목표를 설정하기 위한 기본 정보입니다</Text>
-
-      {/* 성별 선택 */}
-      <Text style={styles.label}>성별</Text>
-      <View style={styles.row}>
-        <Pressable
-          style={[styles.option, gender === "female" && styles.optionSelected]}
-          onPress={() => setGender("female")}
-        >
-          <Text style={styles.optionText}>여성</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.option, gender === "male" && styles.optionSelected]}
-          onPress={() => setGender("male")}
-        >
-          <Text style={styles.optionText}>남성</Text>
-        </Pressable>
-      </View>
-
-      {/* 나이 입력 */}
-      <Text style={styles.label}>나이</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="나이를 입력하세요"
-        value={age}
-        onChangeText={setAge}
-        keyboardType="numeric"
-      />
-
-      {/* 다음 버튼 */}
-      <TouchableOpacity
-        style={[styles.button, !isFormValid && { backgroundColor: "#ccc" }]}
-        disabled={!isFormValid}
+      {/* 이전/다음 버튼 - 화면 하단 고정 */}
+      <OnboardingFooterButton
+        prevLabel="이전"
+        onPressPrev={() => {}}
+        prevDisabled={true}
+        label="다음"
         onPress={handleGoToNext}
-      >
-        <Text style={styles.buttonText}>다음</Text>
-      </TouchableOpacity>
-      </View>
-      </View>
-    </>
+        disabled={!isFormValid}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
-    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
   },
   content: {
-    flex: 1,
+    width: "100%",
     paddingHorizontal: 24,
     paddingVertical: 30,
+    paddingTop: 30,
+    paddingBottom: 120, // 하단 고정 버튼 영역 확보
     alignItems: "center",
+    justifyContent: "center",
   },
   progress: {
     flexDirection: "row",
@@ -109,7 +93,7 @@ const styles = StyleSheet.create({
   progressDot: {
     fontSize: 16,
     marginRight: 8,
-    color: Colors.text,
+    color: Colors.textPrimary,
   },
   progressDotInactive: {
     fontSize: 16,
@@ -117,16 +101,16 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   title: {
-    fontSize: FontSizes['2xl'],
+    fontSize: FontSizes["2xl"],
     fontWeight: "bold",
     marginBottom: 4,
     textAlign: "center",
-    color: Colors.text,
+    color: Colors.textPrimary,
   },
   subtitle: {
     fontSize: FontSizes.lg,
     marginLeft: 20,
-    marginRight:20,
+    marginRight: 20,
     marginBottom: 24,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -136,7 +120,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
     textAlign: "center",
-    color: Colors.text,
+    color: Colors.textPrimary,
   },
   row: {
     flexDirection: "row",
@@ -154,12 +138,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   optionSelected: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   optionText: {
     fontSize: FontSizes.lg,
-    color: Colors.text,
+    color: Colors.textPrimary,
   },
   input: {
     ...commonStyles.input,
@@ -167,12 +151,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   button: {
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 60,
     borderRadius: 25,
     alignItems: "center",
-    marginTop: "auto",
   },
   buttonText: {
     color: Colors.surface,

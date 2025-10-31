@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs"; //날짜계산편하게하려고
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ingredient } from "../data/mockFood";
 import { IngredientCategoryColor } from "../enums/ingredientCategory";
 import { StorageLocationIcon } from "../enums/storageLocation";
-import { Colors, FontSizes, commonStyles } from '../styles/common';
+import { Colors, FontSizes, commonStyles } from "../styles/common";
 interface FoodCardProps {
   ingredient: Ingredient;
   selectable?: boolean;
@@ -24,23 +25,20 @@ export default function FoodCard({
   onEdit,
   onDelete,
 }: FoodCardProps) {
-
   // 유통기한 임박 확인 함수 (7일 이내)
+  // dayjs의 diff를 사용해 오늘 기준 남은 일수를 계산
   const isExpiringSoon = (expiryDate: string) => {
-    const today = new Date();
-    const date = new Date(expiryDate);
-    const diff = (date.getTime() - today.getTime()) / (1000 * 3600 * 24);
-    return diff <= 7; 
+    return dayjs(expiryDate).diff(dayjs(), "day") <= 7;
   };
 
   const expiringSoon = isExpiringSoon(ingredient.expiryDate);
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.foodCardContainer,
-        selectable && selected && styles.selectedCard
-      ]} 
+        selectable && selected && styles.selectedCard,
+      ]}
       onPress={selectable ? onSelect : onPress}
     >
       {/* 카테고리 상단 바 */}
@@ -50,19 +48,17 @@ export default function FoodCard({
           { backgroundColor: IngredientCategoryColor[ingredient.category] },
         ]}
       />
-      
+
       {/* 유통기한 임박 표시 테두리 */}
-      {expiringSoon && (
-        <View style={styles.expiryBorder} />
-      )}
-      
+      {expiringSoon && <View style={styles.expiryBorder} />}
+
       {/* 선택 상태 표시 */}
       {selectable && (
         <View style={styles.selectionIndicator}>
-          <Ionicons 
-            name={selected ? "checkmark-circle" : "ellipse-outline"} 
-            size={20} 
-            color={selected ? Colors.primary[500] : Colors.textSecondary} 
+          <Ionicons
+            name={selected ? "checkmark-circle" : "ellipse-outline"}
+            size={20}
+            color={selected ? Colors.primary : Colors.textSecondary}
           />
         </View>
       )}
@@ -70,7 +66,10 @@ export default function FoodCard({
       {/* 상단 행: 사진과 저장위치 */}
       <View style={styles.topRow}>
         <View style={styles.foodCardImageContainer}>
-          <Image source={require("../assets/images/tomato.jpg")} style={styles.foodCardImage} />
+          <Image
+            source={require("../assets/images/tomato.jpg")}
+            style={styles.foodCardImage}
+          />
         </View>
         <View style={styles.storageIconContainer}>
           <Ionicons
@@ -97,11 +96,18 @@ export default function FoodCard({
         <View style={styles.foodCardActions}>
           {onEdit && (
             <TouchableOpacity onPress={onEdit} style={styles.foodCardActionBtn}>
-              <Ionicons name="create-outline" size={12} color={Colors.textSecondary} />
+              <Ionicons
+                name="create-outline"
+                size={12}
+                color={Colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
           {onDelete && (
-            <TouchableOpacity onPress={onDelete} style={styles.foodCardActionBtn}>
+            <TouchableOpacity
+              onPress={onDelete}
+              style={styles.foodCardActionBtn}
+            >
               <Ionicons name="trash-outline" size={12} color={Colors.error} />
             </TouchableOpacity>
           )}
@@ -114,10 +120,10 @@ export default function FoodCard({
 const styles = StyleSheet.create({
   foodCardContainer: {
     ...commonStyles.card,
-    position: 'relative',
+    position: "relative",
     marginVertical: 0,
     marginHorizontal: 0,
-    overflow: 'hidden',
+    overflow: "hidden",
     padding: 12,
     height: 120,
     minHeight: 120,
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 6, // 바 두께 (원하는 만큼 조정 가능)
-    borderTopLeftRadius: 8,  // 카드 라운드와 맞추기
+    borderTopLeftRadius: 8, // 카드 라운드와 맞추기
     borderTopRightRadius: 8,
   },
   expiryBorder: {
@@ -144,7 +150,7 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
   },
   foodCardExpiryBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     backgroundColor: Colors.error,
@@ -156,42 +162,43 @@ const styles = StyleSheet.create({
   foodCardExpiryText: {
     color: Colors.surface,
     fontSize: FontSizes.xs,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-  topRow: { // 사진이랑 아이콘
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  topRow: {
+    // 사진이랑 아이콘
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 0,
     marginTop: 2,
   },
   foodCardImageContainer: {
-    position: 'relative',
+    position: "relative",
   },
   foodCardImage: {
     width: 35,
     height: 35,
     borderRadius: 6,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.backgroundDark,
   },
   storageIconContainer: {
     padding: 2,
   },
   bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
     flex: 1,
   },
   foodCardInfoSection: {
     flex: 1,
     marginRight: 8,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   foodCardName: {
     fontSize: FontSizes.base,
-    fontWeight: '600',
-    color: Colors.text,
+    fontWeight: "600",
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   foodCardQuantity: {
@@ -204,19 +211,19 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   foodCardActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 2,
-    alignItems: 'center',
+    alignItems: "center",
   },
   foodCardActionBtn: {
     padding: 2,
   },
   selectedCard: {
     borderWidth: 2,
-    borderColor: Colors.primary[500],
+    borderColor: Colors.primary,
   },
   selectionIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     zIndex: 3,

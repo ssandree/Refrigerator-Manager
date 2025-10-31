@@ -1,0 +1,75 @@
+import { router } from "expo-router";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors, FontSizes } from "../../../styles/common";
+
+export default function Greeting() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.greetingText}>ㅇㅇ님 오늘 어떤 것을 드셨나요?</Text>
+
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.primaryButton]}
+          onPress={() => router.push("/_pages/RegisterFood" as any)}
+        >
+          <Text style={styles.primaryButtonText}>재료 등록</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.secondaryButton]}
+          onPress={() => router.push("/_pages/RegisterMeal" as any)}
+        >
+          <Text style={styles.secondaryButtonText}>식사 등록</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 16,
+  },
+  greetingText: {
+    fontSize: FontSizes.lg,
+    color: Colors.text,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  secondaryButton: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+  },
+  primaryButtonText: {
+    color: Colors.surface,
+    fontSize: FontSizes.base,
+    fontWeight: "700",
+  },
+  secondaryButtonText: {
+    color: Colors.text,
+    fontSize: FontSizes.base,
+    fontWeight: "600",
+  },
+});
