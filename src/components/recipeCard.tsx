@@ -1,4 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Clock,
+  Flame,
+  Heart,
+  Target,
+  UtensilsCrossed,
+} from "lucide-react-native";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Recipe } from "../data/mockRecipes";
@@ -68,10 +74,11 @@ export default function RecipeCard({
             style={recipeCardStyles.favoriteBtn}
             onPress={handleFavoriteToggle}
           >
-            <Ionicons
-              name={isRecipeFavorite ? "heart" : "heart-outline"}
-              size={18}
+            <Heart
+              size={20}
               color={isRecipeFavorite ? Colors.meat : Colors.textTertiary}
+              fill={isRecipeFavorite ? Colors.meat : "none"}
+              strokeWidth={2}
             />
           </TouchableOpacity>
         </View>
@@ -82,20 +89,20 @@ export default function RecipeCard({
         {/* 통계 정보 */}
         <View style={recipeCardStyles.statsContainer}>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons name="flame-outline" size={12} color={Colors.meat} />
+            <Flame size={14} color={Colors.meat} strokeWidth={2} />
             <Text style={recipeCardStyles.statText}>
               {recipe.calories}칼로리
             </Text>
           </View>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons name="time-outline" size={12} color={Colors.primary} />
+            <Clock size={14} color={Colors.primary} strokeWidth={2} />
             <Text style={recipeCardStyles.statText}>{recipe.time}분</Text>
           </View>
           <View style={recipeCardStyles.statItem}>
-            <Ionicons
-              name="fitness-outline"
-              size={12}
+            <Target
+              size={14}
               color={getHealthColor(recipe.healthGoal)}
+              strokeWidth={2}
             />
             <Text style={recipeCardStyles.statText}>{recipe.healthGoal}%</Text>
           </View>
@@ -104,10 +111,10 @@ export default function RecipeCard({
         {/* 하단 정보 */}
         <View style={recipeCardStyles.footer}>
           <View style={recipeCardStyles.ingredientInfo}>
-            <Ionicons
-              name="restaurant-outline"
-              size={12}
+            <UtensilsCrossed
+              size={14}
               color={Colors.textSecondary}
+              strokeWidth={2}
             />
             <Text style={recipeCardStyles.ingredientText}>
               {recipe.ingredientsOwned}/{recipe.totalIngredients} 재료 보유

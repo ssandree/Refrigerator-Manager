@@ -1,6 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Clock, Flame, Trash2 } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { Colors, FontSizes, commonStyles } from "../../../styles/common";
 
 interface DailyDietCardProps {
@@ -11,6 +12,7 @@ interface DailyDietCardProps {
   fat?: number;
   time?: string;
   onPress?: () => void;
+  onDelete?: () => void;
 }
 
 export default function DailyDietCard({
@@ -21,112 +23,123 @@ export default function DailyDietCard({
   fat = 0,
   time,
   onPress,
+  onDelete,
 }: DailyDietCardProps) {
-  return (
-    <View style={[commonStyles.card, styles.container]}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.recipeName} numberOfLines={1}>
-          {recipeName}
-        </Text>
-        {time && (
-          <View style={styles.timeContainer}>
-            <Ionicons
-              name="time-outline"
-              size={14}
-              color={Colors.textSecondary}
-            />
-            <Text style={styles.timeText}>{time}</Text>
-          </View>
-        )}
+  const renderRightActions = () => {
+    if (!onDelete) return null;
+    return (
+      <View style={styles.rightActionContainer}>
+        <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+          <Trash2 size={20} color={Colors.surface} strokeWidth={2} />
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </TouchableOpacity>
       </View>
+    );
+  };
 
-      {/* 칼로리와 영양소 정보 (가로 배치) */}
-      <View style={styles.infoRow}>
-        {/* 칼로리 정보 */}
-        <View style={styles.caloriesContainer}>
-          <Ionicons name="flame" size={16} color={Colors.meat} />
-          <Text style={styles.caloriesText}>{calories}</Text>
-          <Text style={styles.caloriesUnit}>kcal</Text>
+  return (
+    <Swipeable renderRightActions={renderRightActions}>
+      <View style={[commonStyles.card, styles.container]}>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <Text style={styles.recipeName} numberOfLines={1}>
+            {recipeName}
+          </Text>
+          {time && (
+            <View style={styles.timeContainer}>
+              <Clock size={14} color={Colors.textSecondary} strokeWidth={2} />
+              <Text style={styles.timeText}>{time}</Text>
+            </View>
+          )}
         </View>
 
-        {/* 영양소 누적 그래프 */}
-        {(protein > 0 || carbs > 0 || fat > 0) && (
-          <View style={styles.nutritionContainer}>
-            <View style={styles.nutritionBar}>
-              {protein > 0 && (
-                <View
-                  style={[
-                    styles.nutritionSegment,
-                    {
-                      width: `${(protein / (protein + carbs + fat)) * 100}%`,
-                      backgroundColor: Colors.primary,
-                    },
-                  ]}
-                />
-              )}
-              {carbs > 0 && (
-                <View
-                  style={[
-                    styles.nutritionSegment,
-                    {
-                      width: `${(carbs / (protein + carbs + fat)) * 100}%`,
-                      backgroundColor: Colors.warning,
-                    },
-                  ]}
-                />
-              )}
-              {fat > 0 && (
-                <View
-                  style={[
-                    styles.nutritionSegment,
-                    {
-                      width: `${(fat / (protein + carbs + fat)) * 100}%`,
-                      backgroundColor: Colors.secondary,
-                    },
-                  ]}
-                />
-              )}
-            </View>
-            <View style={styles.nutritionLabels}>
-              {protein > 0 && (
-                <View style={styles.nutritionLabelItem}>
-                  <View
-                    style={[
-                      styles.nutritionColorDot,
-                      { backgroundColor: Colors.primary },
-                    ]}
-                  />
-                  <Text style={styles.nutritionLabelText}>단백질</Text>
-                </View>
-              )}
-              {carbs > 0 && (
-                <View style={styles.nutritionLabelItem}>
-                  <View
-                    style={[
-                      styles.nutritionColorDot,
-                      { backgroundColor: Colors.warning },
-                    ]}
-                  />
-                  <Text style={styles.nutritionLabelText}>탄수화물</Text>
-                </View>
-              )}
-              {fat > 0 && (
-                <View style={styles.nutritionLabelItem}>
-                  <View
-                    style={[
-                      styles.nutritionColorDot,
-                      { backgroundColor: Colors.secondary },
-                    ]}
-                  />
-                  <Text style={styles.nutritionLabelText}>지방</Text>
-                </View>
-              )}
-            </View>
+        {/* 칼로리와 영양소 정보 (가로 배치) */}
+        <View style={styles.infoRow}>
+          {/* 칼로리 정보 */}
+          <View style={styles.caloriesContainer}>
+            <Flame size={16} color={Colors.meat} strokeWidth={2} />
+            <Text style={styles.caloriesText}>{calories}</Text>
+            <Text style={styles.caloriesUnit}>kcal</Text>
           </View>
-        )}
+
+          {/* 영양소 누적 그래프 */}
+          {(protein > 0 || carbs > 0 || fat > 0) && (
+            <View style={styles.nutritionContainer}>
+              <View style={styles.nutritionBar}>
+                {protein > 0 && (
+                  <View
+                    style={[
+                      styles.nutritionSegment,
+                      {
+                        width: `${(protein / (protein + carbs + fat)) * 100}%`,
+                        backgroundColor: Colors.primary,
+                      },
+                    ]}
+                  />
+                )}
+                {carbs > 0 && (
+                  <View
+                    style={[
+                      styles.nutritionSegment,
+                      {
+                        width: `${(carbs / (protein + carbs + fat)) * 100}%`,
+                        backgroundColor: Colors.warning,
+                      },
+                    ]}
+                  />
+                )}
+                {fat > 0 && (
+                  <View
+                    style={[
+                      styles.nutritionSegment,
+                      {
+                        width: `${(fat / (protein + carbs + fat)) * 100}%`,
+                        backgroundColor: Colors.secondary,
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+              <View style={styles.nutritionLabels}>
+                {protein > 0 && (
+                  <View style={styles.nutritionLabelItem}>
+                    <View
+                      style={[
+                        styles.nutritionColorDot,
+                        { backgroundColor: Colors.primary },
+                      ]}
+                    />
+                    <Text style={styles.nutritionLabelText}>단백질</Text>
+                  </View>
+                )}
+                {carbs > 0 && (
+                  <View style={styles.nutritionLabelItem}>
+                    <View
+                      style={[
+                        styles.nutritionColorDot,
+                        { backgroundColor: Colors.warning },
+                      ]}
+                    />
+                    <Text style={styles.nutritionLabelText}>탄수화물</Text>
+                  </View>
+                )}
+                {fat > 0 && (
+                  <View style={styles.nutritionLabelItem}>
+                    <View
+                      style={[
+                        styles.nutritionColorDot,
+                        { backgroundColor: Colors.secondary },
+                      ]}
+                    />
+                    <Text style={styles.nutritionLabelText}>지방</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
-    </View>
+    </Swipeable>
   );
 }
 
@@ -151,20 +164,19 @@ const styles = StyleSheet.create({
   timeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
   },
   timeText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
+    marginLeft: 4,
   },
   infoRow: {
     flexDirection: "row",
-    gap: 12,
   },
   caloriesContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    marginRight: 12,
     paddingVertical: 6,
     paddingHorizontal: 8,
     backgroundColor: Colors.meat + "10",
@@ -202,7 +214,6 @@ const styles = StyleSheet.create({
   nutritionLabelItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
   },
   nutritionColorDot: {
     width: 6,
@@ -212,5 +223,27 @@ const styles = StyleSheet.create({
   nutritionLabelText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+    marginLeft: 4,
+  },
+  rightActionContainer: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginVertical: 4,
+    marginRight: 16,
+  },
+  deleteButton: {
+    backgroundColor: Colors.error,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: "100%",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+  },
+  deleteButtonText: {
+    color: Colors.surface,
+    fontSize: FontSizes.sm,
+    fontWeight: "600",
+    marginTop: 4,
   },
 });

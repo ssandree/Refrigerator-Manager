@@ -1,8 +1,8 @@
-import Slider from "@react-native-community/slider";
 import React, { useMemo } from "react";
 import {
   Animated,
   Modal,
+  PanResponder,
   ScrollView,
   StyleSheet,
   Text,
@@ -182,50 +182,120 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
               })}
             </View>
 
-            {/* 열량 범위 (슬라이더) */}
+            {/* 열량 범위 (듀얼 슬라이더) */}
             <Text style={styles.sectionTitle}>열량(kcal)</Text>
-            <View style={styles.sliderRow}>
-              <Text style={styles.rangeText}>하한: {calorieRange[0]}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={calorieRange[1]}
-                step={10}
-                value={calorieRange[0]}
-                minimumTrackTintColor={Colors.primary}
-                maximumTrackTintColor={Colors.border}
-                thumbTintColor={Colors.primary}
-                onValueChange={(v: number) =>
-                  onSetCalorieRange([
-                    Math.min(Math.round(v), calorieRange[1]),
-                    calorieRange[1],
-                  ])
-                }
-              />
-            </View>
-            <View style={styles.sliderRow}>
-              <Text style={styles.rangeText}>상한: {calorieRange[1]}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={calorieRange[0]}
-                maximumValue={2000}
-                step={10}
-                value={calorieRange[1]}
-                minimumTrackTintColor={Colors.primary}
-                maximumTrackTintColor={Colors.border}
-                thumbTintColor={Colors.primary}
-                onValueChange={(v: number) =>
-                  onSetCalorieRange([
-                    calorieRange[0],
-                    Math.max(Math.round(v), calorieRange[0]),
-                  ])
-                }
-              />
-            </View>
+            <DualRangeSlider
+              min={0}
+              max={2000}
+              step={10}
+              values={calorieRange}
+              onChange={onSetCalorieRange}
+            />
           </ScrollView>
         </Animated.View>
       </View>
     </Modal>
+  );
+}
+
+interface DualRangeSliderProps {
+  min: number;
+  max: number;
+  step?: number;
+  values: [number, number];
+  onChange: (range: [number, number]) => void;
+}
+
+function DualRangeSlider({
+  min,
+  max,
+  step = 1,
+  values,
+  onChange,
+}: DualRangeSliderProps) {
+  const [width, setWidth] = React.useState(0);
+  const [leftVal, setLeftVal] = React.useState(values[0]);
+  const [rightVal, setRightVal] = React.useState(values[1]);
+
+  React.useEffect(() => {
+    setLeftVal(values[0]);
+    setRightVal(values[1]);
+  }, [values[0], values[1]]);
+
+  const clamp = (v: number, lo: number, hi: number) =>
+    Math.max(lo, Math.min(hi, v));
+  const snap = (v: number) => Math.round(v / step) * step;
+  const valueToX = (v: number) => {
+    if (width <= 0) return 0;
+    return ((v - min) / (max - min)) * width;
+  };
+  const xToValue = (x: number) => {
+    if (width <= 0) return min;
+    const raw = min + (clamp(x, 0, width) / width) * (max - min);
+    return clamp(snap(raw), min, max);
+  };
+
+  const leftResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, g) => {
+        const newLeft = clamp(
+          xToValue(valueToX(leftVal) + g.dx),
+          min,
+          rightVal
+        );
+        setLeftVal(newLeft);
+        onChange([newLeft, rightVal]);
+      },
+    })
+  ).current;
+
+  const rightResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, g) => {
+        const newRight = clamp(
+          xToValue(valueToX(rightVal) + g.dx),
+          leftVal,
+          max
+        );
+        setRightVal(newRight);
+        onChange([leftVal, newRight]);
+      },
+    })
+  ).current;
+
+  const leftX = valueToX(leftVal);
+  const rightX = valueToX(rightVal);
+  const fillLeft = Math.min(leftX, rightX);
+  const fillRight = Math.max(leftX, rightX);
+
+  return (
+    <View style={styles.rangeContainer}>
+      <View style={styles.rangeLabels}>
+        <Text style={styles.rangeText}>하한: {leftVal}</Text>
+        <Text style={styles.rangeText}>상한: {rightVal}</Text>
+      </View>
+      <View
+        style={styles.rangeTrack}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      >
+        <View
+          style={[
+            styles.rangeFill,
+            { left: fillLeft, width: fillRight - fillLeft },
+          ]}
+        />
+        <View
+          {...leftResponder.panHandlers}
+          style={[styles.thumb, { left: Math.max(0, leftX - 10) }]}
+        />
+        <View
+          {...rightResponder.panHandlers}
+          style={[styles.thumb, { left: Math.max(0, rightX - 10) }]}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -268,6 +338,37 @@ const styles = StyleSheet.create({
   contentInner: {
     paddingBottom: 24,
   },
+  rangeContainer: {
+    marginTop: 6,
+    paddingHorizontal: 4,
+  },
+  rangeLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  rangeTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.border,
+    position: "relative",
+  },
+  rangeFill: {
+    position: "absolute",
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+  },
+  thumb: {
+    position: "absolute",
+    top: -7,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -278,7 +379,6 @@ const styles = StyleSheet.create({
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
   },
   chip: {
     backgroundColor: Colors.background,
@@ -287,6 +387,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 18,
+    marginRight: 8,
+    marginBottom: 8,
   },
   chipSelected: {
     backgroundColor: Colors.primary,
@@ -303,7 +405,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   rowBetween: {
     flexDirection: "row",
@@ -346,11 +447,11 @@ const styles = StyleSheet.create({
   rangeText: {
     color: Colors.textPrimary,
     fontWeight: "600",
+    marginRight: 12,
   },
   sliderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     marginTop: 6,
   },
   slider: {

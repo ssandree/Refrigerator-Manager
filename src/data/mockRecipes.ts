@@ -10,8 +10,9 @@ export interface Recipe {
   isFavorite: boolean;
   imageUrl: string;
   tags: string[];
-  difficulty: "쉬움" | "보통" | "어려움";
+  difficulty: "쉬움" | "보통" | "어려움" | "매우 쉬움";
   description: string;
+  requiredIngredients?: string[]; // 레시피에 필요한 재료 이름 목록
 }
 
 export const mockRecipes: Recipe[] = [
@@ -28,7 +29,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["양식", "파스타", "메인요리"],
     difficulty: "보통",
-    description: "부드러운 크림 소스와 신선한 시금치가 만나 완벽한 파스타"
+    description: "부드러운 크림 소스와 신선한 시금치가 만나 완벽한 파스타",
   },
   {
     id: "2",
@@ -43,7 +44,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["양식", "리조또", "메인요리"],
     difficulty: "보통",
-    description: "신선한 토마토의 풍미가 가득한 크리미한 리조또"
+    description: "신선한 토마토의 풍미가 가득한 크리미한 리조또",
   },
   {
     id: "3",
@@ -58,7 +59,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["한식", "샐러드", "건강식"],
     difficulty: "쉬움",
-    description: "단백질이 풍부한 닭가슴살과 신선한 채소의 만남"
+    description: "단백질이 풍부한 닭가슴살과 신선한 채소의 만남",
   },
   {
     id: "4",
@@ -73,7 +74,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["양식", "스테이크", "메인요리"],
     difficulty: "보통",
-    description: "부드럽고 고소한 연어의 완벽한 조리법"
+    description: "부드럽고 고소한 연어의 완벽한 조리법",
   },
   {
     id: "5",
@@ -88,7 +89,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["한식", "국물요리", "메인요리"],
     difficulty: "쉬움",
-    description: "구수한 된장의 깊은 맛이 일품인 전통 찌개"
+    description: "구수한 된장의 깊은 맛이 일품인 전통 찌개",
   },
   {
     id: "6",
@@ -103,7 +104,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["인도식", "커리", "메인요리"],
     difficulty: "어려움",
-    description: "향신료의 풍미가 가득한 매콤달콤한 치킨 커리"
+    description: "향신료의 풍미가 가득한 매콤달콤한 치킨 커리",
   },
   {
     id: "7",
@@ -118,7 +119,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["양식", "브런치", "간식"],
     difficulty: "쉬움",
-    description: "건강한 아보카도와 토스트의 완벽한 조합"
+    description: "건강한 아보카도와 토스트의 완벽한 조합",
   },
   {
     id: "8",
@@ -133,7 +134,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["한식", "국물요리", "메인요리"],
     difficulty: "보통",
-    description: "시원하고 얼큰한 김치찌개로 속이 따뜻해지는 맛"
+    description: "시원하고 얼큰한 김치찌개로 속이 따뜻해지는 맛",
   },
   {
     id: "9",
@@ -148,7 +149,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["디저트", "케이크", "간식"],
     difficulty: "어려움",
-    description: "진한 초콜릿의 달콤함이 가득한 홈메이드 케이크"
+    description: "진한 초콜릿의 달콤함이 가득한 홈메이드 케이크",
   },
   {
     id: "10",
@@ -163,7 +164,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tomato.jpg",
     tags: ["일식", "스시", "메인요리"],
     difficulty: "어려움",
-    description: "신선한 생선과 밥의 완벽한 조화, 스시 롤"
+    description: "신선한 생선과 밥의 완벽한 조화, 스시 롤",
   },
   {
     id: "11",
@@ -178,7 +179,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/gambas.jpg",
     tags: ["스페인", "전채요리", "해산물"],
     difficulty: "쉬움",
-    description: "올리브 오일과 마늘 향이 일품인 스페인 새우 요리"
+    description: "올리브 오일과 마늘 향이 일품인 스페인 새우 요리",
   },
   {
     id: "12",
@@ -193,7 +194,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/japchae.jpg",
     tags: ["한식", "잔치음식", "채소요리"],
     difficulty: "어려움",
-    description: "다양한 채소와 당면을 볶아 만든 한국 전통 요리"
+    description: "다양한 채소와 당면을 볶아 만든 한국 전통 요리",
   },
   {
     id: "13",
@@ -208,7 +209,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/mushroom_soup.jpg",
     tags: ["양식", "수프", "채식"],
     difficulty: "보통",
-    description: "진하고 고소한 버섯 향이 가득한 부드러운 크림 수프"
+    description: "진하고 고소한 버섯 향이 가득한 부드러운 크림 수프",
   },
   {
     id: "14",
@@ -223,7 +224,7 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/tofu_stew.jpg",
     tags: ["한식", "반찬", "다이어트"],
     difficulty: "쉬움",
-    description: "매콤달콤한 양념으로 조린 건강 만점 두부 반찬"
+    description: "매콤달콤한 양념으로 조린 건강 만점 두부 반찬",
   },
   {
     id: "15",
@@ -238,7 +239,8 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/bulgogi.jpg",
     tags: ["한식", "고기요리", "메인요리"],
     difficulty: "보통",
-    description: "달콤한 간장 양념에 재운 소고기를 볶아 만든 대표적인 한국 요리"
+    description:
+      "달콤한 간장 양념에 재운 소고기를 볶아 만든 대표적인 한국 요리",
   },
   {
     id: "16",
@@ -253,6 +255,6 @@ export const mockRecipes: Recipe[] = [
     imageUrl: "../assets/images/avocado_toast.jpg",
     tags: ["퓨전", "간편식", "브런치"],
     difficulty: "매우 쉬움",
-    description: "고소한 아보카도와 바삭한 토스트의 간단하고 건강한 브런치"
-  }
+    description: "고소한 아보카도와 바삭한 토스트의 간단하고 건강한 브런치",
+  },
 ];

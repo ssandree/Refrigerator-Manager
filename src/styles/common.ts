@@ -1,6 +1,7 @@
 // 역할: 앱 전반에서 재사용할 색상/폰트/공통 스타일을 모아두는 스타일 유틸
 // Colors 상수 재노출, 추가 color 팔레트, 폰트 크기, 자주 쓰는 레이아웃/컴포넌트 스타일 제공
-import { StyleSheet } from "react-native";
+import type { ViewStyle } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { Colors as ColorsConstants } from "./colors";
 
 // Re-export Colors from constants for convenience
@@ -37,6 +38,73 @@ export const FontSizes = {
 } as const;
 
 // 공통 스타일
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+type ShadowOptions = {
+  color?: string;
+  offsetWidth?: number;
+  offsetHeight?: number;
+  opacity?: number;
+  radius?: number;
+  elevation?: number;
+  webBlur?: number;
+  webSpread?: number;
+};
+
+const createBoxShadowValue = (
+  offsetWidth: number,
+  offsetHeight: number,
+  blur: number,
+  spread: number,
+  opacity: number
+) =>
+  `${offsetWidth}px ${offsetHeight}px ${blur}px ${spread}px rgba(0, 0, 0, ${opacity})`;
+
+export const createShadowStyle = ({
+  color = ColorsConstants.shadow,
+  offsetWidth = 0,
+  offsetHeight = 2,
+  opacity = 0.1,
+  radius = 3.84,
+  elevation = 5,
+  webBlur = radius * 2,
+  webSpread = 0,
+}: ShadowOptions = {}): ShadowStyle =>
+  Platform.OS === "web"
+    ? {
+        boxShadow: createBoxShadowValue(
+          offsetWidth,
+          offsetHeight,
+          webBlur,
+          webSpread,
+          opacity
+        ),
+      }
+    : {
+        shadowColor: color,
+        shadowOffset: {
+          width: offsetWidth,
+          height: offsetHeight,
+        },
+        shadowOpacity: opacity,
+        shadowRadius: radius,
+        elevation,
+      };
+
+export const noShadowStyle: ShadowStyle =
+  Platform.OS === "web"
+    ? { boxShadow: "none" }
+    : { shadowOpacity: 0, shadowRadius: 0, elevation: 0 };
+
+const cardShadowStyle = createShadowStyle({
+  color: ColorsConstants.shadow,
+  opacity: 0.1,
+  radius: 3.84,
+  elevation: 5,
+});
+
+const baseShadowStyle = createShadowStyle();
+
 export const commonStyles = StyleSheet.create({
   // 레이아웃
   container: {
@@ -70,14 +138,7 @@ export const commonStyles = StyleSheet.create({
     padding: 16,
     marginVertical: 6,
     marginHorizontal: 16,
-    shadowColor: Colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...cardShadowStyle,
   },
 
   // 버튼
@@ -133,14 +194,7 @@ export const commonStyles = StyleSheet.create({
 
   // 그림자
   shadow: {
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...baseShadowStyle,
   },
 
   // 구분선

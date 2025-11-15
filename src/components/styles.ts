@@ -1,7 +1,18 @@
 import { StyleSheet } from "react-native";
-import { Colors, FontSizes, commonStyles } from "../styles/common";
+import {
+  Colors,
+  FontSizes,
+  commonStyles,
+  createShadowStyle,
+} from "../styles/common";
 
 export { Colors };
+
+const recipeCardShadow = createShadowStyle({
+  opacity: 0.1,
+  radius: 3.84,
+  elevation: 5,
+});
 
 export const componentsStyles = StyleSheet.create({
   // Header 컴포넌트
@@ -254,14 +265,7 @@ export const recipeCardStyles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
-    shadowColor: Colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...recipeCardShadow,
     overflow: "hidden",
     flexDirection: "row",
     height: 150,

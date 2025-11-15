@@ -140,5 +140,63 @@ const secondaryStyles = StyleSheet.create({
   },
 });
 
-export default { PrimaryButton, SecondaryButton };
+// Outlined Button
+interface OutlinedButtonProps {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
 
+export const OutlinedButton: React.FC<OutlinedButtonProps> = ({
+  label,
+  onPress,
+  disabled,
+  style,
+}) => {
+  return (
+    <TouchableOpacity
+      style={[
+        outlinedStyles.button,
+        disabled && outlinedStyles.buttonDisabled,
+        style,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          outlinedStyles.buttonText,
+          disabled && outlinedStyles.buttonTextDisabled,
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const outlinedStyles = StyleSheet.create({
+  button: {
+    backgroundColor: "transparent",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: Colors.primary,
+    fontSize: FontSizes.lg,
+    fontWeight: "600",
+  },
+  buttonTextDisabled: {
+    color: Colors.textTertiary,
+  },
+});
+
+export default { PrimaryButton, SecondaryButton, OutlinedButton };

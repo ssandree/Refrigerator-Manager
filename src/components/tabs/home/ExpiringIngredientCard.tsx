@@ -1,10 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
+import { tabsStyles } from "@/styles/tabs";
 import { router } from "expo-router";
+import { AlertTriangle, Bell, ChefHat } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { tabsStyles } from "../../../app/(tabs)/styles";
 import { SecondaryButton } from "../../../components/Buttons";
-import { Ingredient, mockIngredients } from "../../../data/mockFood";
+import { Ingredient } from "../../../data/mockFood";
+import { useFridgeStore } from "../../../stores/useFridgeStore";
 import { Colors, commonStyles } from "../../../styles/common";
 
 interface ExpiringIngredientCardProps {
@@ -48,11 +49,10 @@ function ExpiringIngredientCard({
             { backgroundColor: getChipBackgroundColor(daysLeft) },
           ]}
         >
-          <Ionicons
-            name="warning"
+          <AlertTriangle
             size={14}
             color={getChipTextColor(daysLeft)}
-            style={styles.chipIcon}
+            strokeWidth={2.5}
           />
           <Text
             style={[styles.chipText, { color: getChipTextColor(daysLeft) }]}
@@ -67,22 +67,12 @@ function ExpiringIngredientCard({
         <SecondaryButton
           onPress={handleRecipeRecommend}
           leftIcon={
-            <Ionicons
-              name="restaurant-outline"
-              size={16}
-              color={Colors.primary}
-            />
+            <ChefHat size={16} color={Colors.primary} strokeWidth={2} />
           }
         />
         <SecondaryButton
           onPress={handleResetAlert}
-          leftIcon={
-            <Ionicons
-              name="notifications-outline"
-              size={16}
-              color={Colors.secondary}
-            />
-          }
+          leftIcon={<Bell size={16} color={Colors.secondary} strokeWidth={2} />}
         />
       </View>
     </View>
@@ -90,10 +80,12 @@ function ExpiringIngredientCard({
 }
 
 export default function ExpiringIngredientSection() {
+  const ingredients = useFridgeStore((s) => s.ingredients);
+
   // 3일 이하 임박 재료 필터링
   const getExpiringIngredients = (): (Ingredient & { daysLeft: number })[] => {
     const today = new Date();
-    return mockIngredients
+    return ingredients
       .map((ingredient) => {
         const expiryDate = new Date(ingredient.expiryDate);
         const daysLeft = Math.ceil(

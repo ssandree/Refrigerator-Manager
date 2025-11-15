@@ -8,21 +8,12 @@ export default function Greeting() {
     <View style={styles.container}>
       <Text style={styles.greetingText}>ㅇㅇ님 오늘 어떤 것을 드셨나요?</Text>
 
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.primaryButton]}
-          onPress={() => router.push("/_pages/RegisterFood" as any)}
-        >
-          <Text style={styles.primaryButtonText}>재료 등록</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={() => router.push("/_pages/RegisterMeal" as any)}
-        >
-          <Text style={styles.secondaryButtonText}>식사 등록</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.secondaryButton]}
+        onPress={() => router.push("/_pages/RegisterMeal" as any)}
+      >
+        <Text style={styles.secondaryButtonText}>식사 등록</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -41,10 +32,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontWeight: "700",
     marginBottom: 12,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: 12,
   },
   actionButton: {
     flex: 1,

@@ -1,8 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Plus } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Colors } from "../styles/common";
+import { Colors, createShadowStyle } from "../styles/common";
+
+const floatingButtonShadow = createShadowStyle({
+  offsetHeight: 4,
+  opacity: 0.3,
+  radius: 8,
+  elevation: 6,
+});
 
 export default function FridgeRegisterQuick() {
   const handlePress = () => {
@@ -12,7 +19,7 @@ export default function FridgeRegisterQuick() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.floatingButton} onPress={handlePress}>
-        <Ionicons name="add" size={28} color={Colors.textLight} />
+        <Plus size={28} color={Colors.textLight} strokeWidth={3} />
       </TouchableOpacity>
     </View>
   );
@@ -32,13 +39,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    ...floatingButtonShadow,
   },
 });

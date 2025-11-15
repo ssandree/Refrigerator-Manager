@@ -1,10 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs"; //날짜계산편하게하려고
+import dayjs from "dayjs";
+import {
+  CheckCircle2,
+  Circle,
+  Edit3,
+  Refrigerator,
+  Snowflake,
+  Thermometer,
+  Trash2,
+} from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ingredient } from "../data/mockFood";
 import { IngredientCategoryColor } from "../enums/ingredientCategory";
-import { StorageLocationIcon } from "../enums/storageLocation";
+import { StorageLocation } from "../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from "../styles/common";
 interface FoodCardProps {
   ingredient: Ingredient;
@@ -55,11 +63,11 @@ export default function FoodCard({
       {/* 선택 상태 표시 */}
       {selectable && (
         <View style={styles.selectionIndicator}>
-          <Ionicons
-            name={selected ? "checkmark-circle" : "ellipse-outline"}
-            size={20}
-            color={selected ? Colors.primary : Colors.textSecondary}
-          />
+          {selected ? (
+            <CheckCircle2 size={22} color={Colors.primary} strokeWidth={2.5} />
+          ) : (
+            <Circle size={22} color={Colors.textSecondary} strokeWidth={2} />
+          )}
         </View>
       )}
 
@@ -72,11 +80,23 @@ export default function FoodCard({
           />
         </View>
         <View style={styles.storageIconContainer}>
-          <Ionicons
-            name={StorageLocationIcon[ingredient.storageLocation] as any}
-            size={16}
-            color={Colors.textSecondary}
-          />
+          {ingredient.storageLocation === StorageLocation.FRIDGE && (
+            <Refrigerator
+              size={18}
+              color={Colors.textSecondary}
+              strokeWidth={2}
+            />
+          )}
+          {ingredient.storageLocation === StorageLocation.FREEZER && (
+            <Snowflake size={18} color={Colors.textSecondary} strokeWidth={2} />
+          )}
+          {ingredient.storageLocation === StorageLocation.ROOM_TEMP && (
+            <Thermometer
+              size={18}
+              color={Colors.textSecondary}
+              strokeWidth={2}
+            />
+          )}
         </View>
       </View>
 
@@ -96,11 +116,7 @@ export default function FoodCard({
         <View style={styles.foodCardActions}>
           {onEdit && (
             <TouchableOpacity onPress={onEdit} style={styles.foodCardActionBtn}>
-              <Ionicons
-                name="create-outline"
-                size={12}
-                color={Colors.textSecondary}
-              />
+              <Edit3 size={14} color={Colors.primary} strokeWidth={2} />
             </TouchableOpacity>
           )}
           {onDelete && (
@@ -108,7 +124,7 @@ export default function FoodCard({
               onPress={onDelete}
               style={styles.foodCardActionBtn}
             >
-              <Ionicons name="trash-outline" size={12} color={Colors.error} />
+              <Trash2 size={14} color={Colors.error} strokeWidth={2} />
             </TouchableOpacity>
           )}
         </View>
