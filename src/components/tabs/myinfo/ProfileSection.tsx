@@ -1,6 +1,7 @@
-import { ChevronRight, Heart, Trophy, User } from "lucide-react-native";
+import { ChevronRight, Heart, Trophy } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ProfileCircle from "../../../components/ProfileCircle";
 import { Colors } from "../../../styles/common";
 
 interface ProfileSectionProps {
@@ -23,14 +24,7 @@ export default function ProfileSection({
       ]}
     >
       <View style={styles.userInfo}>
-        <View
-          style={[
-            styles.profileImageContainer,
-            { backgroundColor: Colors.borderLight },
-          ]}
-        >
-          <User size={40} color={Colors.textSecondary} strokeWidth={2} />
-        </View>
+        <ProfileCircle size={60} style={styles.profileImageContainer} />
         <View style={styles.userDetails}>
           <Text style={styles.userName}>사용자</Text>
           <Text style={styles.userEmail}>user@example.com</Text>
@@ -72,12 +66,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileImageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.borderLight,
-    justifyContent: "center",
-    alignItems: "center",
     marginRight: 12,
   },
   userDetails: {

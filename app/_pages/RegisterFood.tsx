@@ -20,7 +20,7 @@ import {
   StorageLocation,
   StorageLocationLabel,
 } from "../../src/enums/storageLocation";
-import { useStoreError } from "../../src/hooks/useStoreError";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useFridgeStore } from "../../src/stores/useFridgeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
@@ -31,14 +31,11 @@ export default function EditFood() {
   const [ingredient, setIngredient] = useState<Ingredient | null>(null);
   const ingredients = useFridgeStore((s) => s.ingredients);
   const getIngredientById = useFridgeStore((s) => s.getIngredientById);
+  const addIngredient = useFridgeStore((s) => s.addIngredient);
   const updateIngredient = useFridgeStore((s) => s.updateIngredient);
   const removeIngredient = useFridgeStore((s) => s.removeIngredient);
-  const fridgeStore = useFridgeStore((s) => ({
-    error: s.error,
-    clearError: s.clearError,
-  }));
 
-  useStoreError(fridgeStore);
+  useStoreWithError(useFridgeStore);
 
   useEffect(() => {
     if (ingredientId) {
@@ -155,26 +152,56 @@ export default function EditFood() {
     // 에러 상태 초기화
     clearError();
 
-    // 전역 상태 업데이트
-    const success = updateIngredient(ingredient!.id, {
-      name: formData.name!,
-      category: formData.category!,
-      quantity: formData.quantity!,
-      weight: formData.weight!,
-      purchaseDate: formData.purchaseDate!,
-      expiryDate: formData.expiryDate!,
-      storageLocation: formData.storageLocation!,
-      alertBeforeDays: formData.alertBeforeDays!,
-    });
+    const isEditMode = !!ingredientId && !!ingredient;
 
-    // 성공 시 메시지 표시 (에러는 store에서 처리되고 useStoreError 훅이 토스트로 표시함)
-    if (success) {
-      Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
-        {
-          text: "확인",
-          onPress: () => router.back(),
-        },
-      ]);
+    if (isEditMode) {
+      // 수정 모드: 기존 재료 업데이트
+      const success = updateIngredient(ingredient!.id, {
+        name: formData.name!,
+        category: formData.category!,
+        quantity: formData.quantity!,
+        weight: formData.weight!,
+        purchaseDate: formData.purchaseDate!,
+        expiryDate: formData.expiryDate!,
+        storageLocation: formData.storageLocation!,
+        alertBeforeDays: formData.alertBeforeDays!,
+      });
+
+      if (success) {
+        Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
+          {
+            text: "확인",
+            onPress: () => router.back(),
+          },
+        ]);
+      }
+    } else {
+      // 추가 모드: 새 재료 추가
+      const newIngredient: Ingredient = {
+        id: Date.now().toString(), // 임시 ID 생성
+        imageUrl: "", // 기본 이미지 URL
+        name: formData.name!,
+        category: formData.category!,
+        quantity: formData.quantity || 1,
+        weight: formData.weight!,
+        registeredAt: new Date().toISOString().split("T")[0],
+        purchaseDate:
+          formData.purchaseDate || new Date().toISOString().split("T")[0],
+        expiryDate: formData.expiryDate!,
+        storageLocation: formData.storageLocation!,
+        alertBeforeDays: formData.alertBeforeDays || 3,
+      };
+
+      const success = addIngredient(newIngredient);
+
+      if (success) {
+        Alert.alert("성공", "재료가 성공적으로 추가되었습니다!", [
+          {
+            text: "확인",
+            onPress: () => router.back(),
+          },
+        ]);
+      }
     }
   };
 
@@ -206,8 +233,9 @@ export default function EditFood() {
     ]);
   };
 
-  // ingredient가 로드되지 않았으면 로딩 표시
-  if (!ingredient) {
+  // 수정 모드인데 ingredient가 로드되지 않았으면 로딩 표시
+  const isEditMode = !!ingredientId;
+  if (isEditMode && !ingredient) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
@@ -233,13 +261,17 @@ export default function EditFood() {
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>재료 수정</Text>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDelete}
-            >
-              <Text style={styles.deleteButtonText}>삭제</Text>
-            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {isEditMode ? "재료 수정" : "재료 추가"}
+            </Text>
+            {isEditMode && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <Text style={styles.deleteButtonText}>삭제</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <ScrollView
@@ -414,7 +446,9 @@ export default function EditFood() {
 
             {/* 저장 버튼 */}
             <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>수정 완료</Text>
+              <Text style={styles.saveButtonText}>
+                {ingredientId ? "수정 완료" : "추가 완료"}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

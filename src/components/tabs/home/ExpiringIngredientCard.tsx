@@ -1,12 +1,12 @@
 import { tabsStyles } from "@/styles/tabs";
 import { router } from "expo-router";
-import { AlertTriangle, Bell, ChefHat } from "lucide-react-native";
+import { AlertTriangle, Bell, CheckCircle, ChefHat } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SecondaryButton } from "../../../components/Buttons";
 import { Ingredient } from "../../../data/mockFood";
 import { useFridgeStore } from "../../../stores/useFridgeStore";
-import { Colors, commonStyles } from "../../../styles/common";
+import { Colors, commonStyles, FontSizes } from "../../../styles/common";
 
 interface ExpiringIngredientCardProps {
   name: string;
@@ -100,22 +100,73 @@ export default function ExpiringIngredientSection() {
 
   const expiringIngredients = getExpiringIngredients();
 
-  if (expiringIngredients.length === 0) {
-    return null;
-  }
-
   return (
     <View style={tabsStyles.section}>
       <Text style={tabsStyles.sectionTitle}>⚠️ 임박 재료</Text>
-      <View style={tabsStyles.expiringContainer}>
-        {expiringIngredients.map((ingredient) => (
-          <ExpiringIngredientCard
-            key={ingredient.id}
-            name={ingredient.name}
-            daysLeft={ingredient.daysLeft}
-          />
-        ))}
-      </View>
+      {expiringIngredients.length === 0 ? (
+        <View
+          style={{
+            padding: 24,
+            alignItems: "center",
+            backgroundColor: Colors.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: Colors.borderLight,
+          }}
+        >
+          <CheckCircle size={48} color={Colors.primary} strokeWidth={1.5} />
+          <Text
+            style={{
+              fontSize: FontSizes.base,
+              color: Colors.textPrimary,
+              marginTop: 12,
+              marginBottom: 8,
+              fontWeight: "600",
+            }}
+          >
+            모든 재료가 신선합니다! 🎉
+          </Text>
+          <Text
+            style={{
+              fontSize: FontSizes.sm,
+              color: Colors.textSecondary,
+              textAlign: "center",
+              marginBottom: 16,
+            }}
+          >
+            유통기한이 3일 이내인 재료가 없습니다
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/Fridge")}
+            style={{
+              backgroundColor: Colors.primary,
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.surface,
+                fontSize: FontSizes.base,
+                fontWeight: "600",
+              }}
+            >
+              냉장고 보기
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={tabsStyles.expiringContainer}>
+          {expiringIngredients.map((ingredient) => (
+            <ExpiringIngredientCard
+              key={ingredient.id}
+              name={ingredient.name}
+              daysLeft={ingredient.daysLeft}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }

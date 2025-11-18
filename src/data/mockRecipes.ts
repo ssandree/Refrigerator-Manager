@@ -1,4 +1,4 @@
-export interface Recipe {
+;export interface Recipe {
   id: string;
   recipeName: string;
   calories: number;

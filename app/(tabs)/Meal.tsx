@@ -40,13 +40,23 @@ export default function Meal() {
     return selectedDateISO === todayIso;
   }, [selectedDateISO]);
 
+  const isOneWeekAgo = useMemo(() => {
+    const today = new Date();
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(today.getDate() - 7);
+    const oneWeekAgoIso = oneWeekAgo.toISOString().split("T")[0];
+    return selectedDateISO === oneWeekAgoIso;
+  }, [selectedDateISO]);
+
   const goPrevDay = () => {
+    if (isOneWeekAgo) return; // 일주일 전이면 더 이상 이전으로 이동 불가
     const d = new Date(selectedDateISO + "T00:00:00");
     d.setDate(d.getDate() - 1);
     setSelectedDateISO(d.toISOString().split("T")[0]);
   };
 
   const goNextDay = () => {
+    if (isToday) return; // 오늘이면 더 이상 다음으로 이동 불가
     const d = new Date(selectedDateISO + "T00:00:00");
     d.setDate(d.getDate() + 1);
     setSelectedDateISO(d.toISOString().split("T")[0]);
@@ -58,8 +68,16 @@ export default function Meal() {
 
       {/* 날짜 헤더 (좌/우 화살표) */}
       <View style={[styles.dateHeader, { paddingTop: insets.top }]}>
-        <TouchableOpacity style={styles.dateArrow} onPress={goPrevDay}>
-          <Ionicons name="chevron-back" size={22} color="#666" />
+        <TouchableOpacity
+          style={styles.dateArrow}
+          onPress={goPrevDay}
+          disabled={isOneWeekAgo}
+        >
+          <Ionicons
+            name="chevron-back"
+            size={22}
+            color={isOneWeekAgo ? "#CCC" : "#666"}
+          />
         </TouchableOpacity>
         <Text style={styles.date}>{selectedDateLabel}</Text>
         <TouchableOpacity
@@ -105,7 +123,7 @@ const styles = StyleSheet.create({
   dateHeader: {
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     flexDirection: "row",

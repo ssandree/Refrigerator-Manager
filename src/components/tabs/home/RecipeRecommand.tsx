@@ -1,6 +1,7 @@
 import { tabsStyles } from "@/styles/tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
+import { router } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -10,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Recipe } from "../../../data/mockRecipes";
+import { mockRecipes, Recipe } from "../../../data/mockRecipes";
 import { useFridgeStore } from "../../../stores/useFridgeStore";
 import { useRecipeStore } from "../../../stores/useRecipeStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
@@ -29,9 +30,25 @@ interface RecipeCardData {
 export default function RecipeRecommand() {
   const { getScoredRecipes } = useRecipeStore();
   const { ingredients } = useFridgeStore();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // 점수가 높은 상위 8개 레시피 가져오기
+  // 재료가 없으면 mockRecipes에서 처음 8개를 순서대로 가져오기
   const data = useMemo<RecipeCardData[]>(() => {
+    // 재료가 없거나 빈 배열이면 mockRecipes에서 처음 8개를 순서대로 반환
+    if (!ingredients || ingredients.length === 0) {
+      return mockRecipes.slice(0, 8).map((recipe: Recipe) => ({
+        id: recipe.id,
+        name: recipe.recipeName,
+        desc: recipe.description,
+        calories: recipe.calories,
+        time: recipe.time,
+        owned: `0/${recipe.totalIngredients || 0} 재료 보유`,
+        imageUrl: recipe.imageUrl,
+      }));
+    }
+
+    // 재료가 있으면 점수 기반으로 정렬된 상위 8개 반환
     const scoredRecipes = getScoredRecipes(ingredients);
     return scoredRecipes.slice(0, 8).map(
       (
@@ -54,12 +71,32 @@ export default function RecipeRecommand() {
   const screenWidth = Dimensions.get("window").width;
   const cardHorizontalMargin = 12;
   const sidePadding = 16; // section 좌우 padding과 맞춤
-  const cardWidth = screenWidth - sidePadding * 2; // 화면에 1장 꽉 차게
+  const cardWidth = (screenWidth - sidePadding * 2) * 0.85; // 카드 가로 길이를 줄임 (85%)
   const cardHeight = 280; // 카드 높이 증가
 
   return (
     <View style={tabsStyles.section}>
-      <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
+        <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
+        {data.length > 0 && (
+          <Text
+            style={{
+              fontSize: 12,
+              color: Colors.textSecondary,
+              fontWeight: "500",
+            }}
+          >
+            {currentIndex + 1}/{data.length}
+          </Text>
+        )}
+      </View>
 
       <FlatList
         data={data}
@@ -70,6 +107,14 @@ export default function RecipeRecommand() {
         snapToAlignment="start"
         decelerationRate="fast"
         contentContainerStyle={{ paddingHorizontal: sidePadding }}
+        onScroll={(event) => {
+          const offsetX = event.nativeEvent.contentOffset.x;
+          const index = Math.round(
+            offsetX / (cardWidth + cardHorizontalMargin)
+          );
+          setCurrentIndex(index);
+        }}
+        scrollEventThrottle={16}
         renderItem={({ item }: { item: RecipeCardData }) => (
           <TouchableOpacity
             activeOpacity={0.9}
@@ -81,18 +126,19 @@ export default function RecipeRecommand() {
                 marginRight: cardHorizontalMargin,
               },
             ]}
+            onPress={() => {
+              router.push({
+                pathname: "/_pages/RecipeDetail",
+                params: { id: item.id, name: item.name },
+              });
+            }}
           >
             {/* 이미지 영역 */}
             <View style={styles.imageContainer}>
               <Image
-                source={
-                  item.imageUrl
-                    ? { uri: item.imageUrl }
-                    : require("../../../assets/images/tomato.jpg")
-                }
+                source={require("../../../assets/images/tomato.jpg")}
                 style={styles.recipeImage}
                 resizeMode="cover"
-                defaultSource={require("../../../assets/images/tomato.jpg")}
               />
               <View style={styles.imageOverlay} />
               <View style={styles.badgeContainer}>
@@ -127,6 +173,21 @@ export default function RecipeRecommand() {
           </TouchableOpacity>
         )}
       />
+
+      {/* 인디케이터 */}
+      {data.length > 1 && (
+        <View style={styles.indicatorContainer}>
+          {data.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.indicator,
+                index === currentIndex && styles.indicatorActive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -146,7 +207,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    height: 160,
+    height: 200, // 재료 보유 태그 영역까지 포함하도록 높이 증가
     position: "relative",
   },
   recipeImage: {
@@ -214,5 +275,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textPrimary,
     fontWeight: "600",
+  },
+  indicatorContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.borderLight,
+  },
+  indicatorActive: {
+    width: 20,
+    backgroundColor: Colors.primary,
   },
 });

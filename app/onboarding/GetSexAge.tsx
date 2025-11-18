@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
-import { OnboardingFooterButton } from "./components/OnboardingFooterButton";
-import { OnboardingProgress } from "./components/OnboardingProgress";
-import { OnboardingTitle } from "./components/OnboardingTitle";
+import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
+import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
+import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 
 export default function GetSexAge() {
   const insets = useSafeAreaInsets();

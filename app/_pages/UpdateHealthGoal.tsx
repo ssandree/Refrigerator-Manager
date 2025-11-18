@@ -1,13 +1,13 @@
 import { healthGoalService } from "@/services/healthGoalService";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
 import {
   useHealthGoalStore,
   type HealthGoal,
 } from "../../src/stores/useHealthGoalStore";
 import { Colors, FontSizes } from "../../src/styles/common";
-import { HealthGoalSelector } from "../onboarding/components/HealthGoalSelector";
 
 interface UpdateHealthGoalProps {
   onClose: () => void;
@@ -19,13 +19,8 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
   const setSelectedGoals = useHealthGoalStore(
     (state) => state.setSelectedGoals
   );
-  const addSelectedGoal = useHealthGoalStore((state) => state.addSelectedGoal);
-  const removeSelectedGoal = useHealthGoalStore(
-    (state) => state.removeSelectedGoal
-  );
   const [localSelectedIds, setLocalSelectedIds] = useState<number[]>([]);
   const [healthGoals, setHealthGoals] = useState<HealthGoal[]>([]);
-  const previousSelectedGoalsRef = useRef<HealthGoal[] | null>(null);
 
   // Service를 통해 건강 목표 목록 로드
   useEffect(() => {
@@ -45,30 +40,23 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
     loadHealthGoals();
   }, []);
 
+  // 초기화 시에만 전역 상태에서 로컬 상태로 동기화
   useEffect(() => {
-    // 처음 열릴 때 현재 전역 상태 스냅샷 저장 및 로컬 동기화
-    if (previousSelectedGoalsRef.current === null) {
-      previousSelectedGoalsRef.current = selectedGoals;
-    }
     setLocalSelectedIds(selectedGoals.map((goal) => goal.id));
-  }, [selectedGoals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 빈 배열로 한 번만 실행
 
+  // 토글 함수 (3개 제한 로직 포함)
   const toggleGoal = (goalId: number) => {
     setLocalSelectedIds((prev) => {
       if (prev.includes(goalId)) {
-        // 로컬 업데이트
-        const next = prev.filter((id) => id !== goalId);
-        // 전역 상태 동기 제거
-        removeSelectedGoal(goalId);
-        return next;
+        // 제거
+        return prev.filter((id) => id !== goalId);
       } else if (prev.length < 3) {
-        const next = [...prev, goalId];
-        // 전역 상태 동기 추가
-        const goalData = healthGoals.find((g) => g.id === goalId);
-        if (goalData) addSelectedGoal(goalData as unknown as HealthGoal);
-        return next;
+        // 추가 (최대 3개)
+        return [...prev, goalId];
       }
-      return prev;
+      return prev; // 이미 3개면 변경 없음
     });
   };
 
@@ -77,21 +65,16 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
       alert("최소 1개의 건강 목표를 선택해주세요.");
       return;
     }
-    // 전역 상태는 토글 시점에 이미 최신으로 반영됨. 안전하게 재동기화
+    // 저장 시점에만 전역 상태 업데이트
     const selectedGoalsData = healthGoals.filter((goal) =>
       localSelectedIds.includes(goal.id)
     );
     setSelectedGoals(selectedGoalsData as unknown as HealthGoal[]);
-    previousSelectedGoalsRef.current = null;
     onClose();
   };
 
   const handleCancel = () => {
-    // 취소 시 스냅샷으로 롤백
-    if (previousSelectedGoalsRef.current) {
-      setSelectedGoals(previousSelectedGoalsRef.current);
-    }
-    previousSelectedGoalsRef.current = null;
+    // 단순히 닫기만 하면 됨 (로컬 상태는 버려짐)
     onClose();
   };
 

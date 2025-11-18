@@ -1,8 +1,7 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  Animated,
-  Dimensions,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,46 +9,63 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import RecipeCard from "../../src/components/RecipeCard";
 import RecipeFilterModal from "../../src/components/tabs/recipe/RecipeFilterModal";
-import { useStoreError } from "../../src/hooks/useStoreError";
+import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
+import { useModalAnimation } from "../../src/hooks/useModalAnimation";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { useToggleArray } from "../../src/hooks/useToggleArray";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
+import { useFridgeStore } from "../../src/stores/useFridgeStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors } from "../../src/styles/common";
+import { filterRecipes, hasActiveFilters } from "../../src/utils/recipeFilter";
 
 export default function RecipeScreen() {
-  const insets = useSafeAreaInsets();
   const recipes = useRecipeStore((s) => s.recipes);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
-  const recipeStore = useRecipeStore((s) => ({
-    error: s.error,
-    clearError: s.clearError,
-  }));
+  const getScoredRecipes = useRecipeStore((s) => s.getScoredRecipes);
+  const ingredients = useFridgeStore((s) => s.ingredients);
+  const [refreshing, setRefreshing] = useState(false);
   const toggleFavorite = useFavoriteRecipeStore((s) => s.toggleFavorite);
-  const isFavorite = useFavoriteRecipeStore((s) => s.isFavorite);
 
-  useStoreError(recipeStore);
+  useStoreWithError(useRecipeStore);
+  useAutoLoadData(recipes, isLoading, loadRecipes);
 
-  useEffect(() => {
-    if (recipes.length === 0 && !isLoading) {
-      loadRecipes(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadRecipes(true);
+    } finally {
+      setRefreshing(false);
     }
-  }, [recipes.length, isLoading, loadRecipes]);
+  }, [loadRecipes]);
 
-  const params = useLocalSearchParams<{ q?: string }>();
+  const params = useLocalSearchParams<{ q?: string; ingredients?: string }>();
   const [searchQuery, setSearchQuery] = useState<string>(
     (params.q as string) || ""
   );
-  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
-  const [slideAnim] = useState(
-    new Animated.Value(Dimensions.get("window").height)
-  );
+
+  // 모달 애니메이션
+  const { visible, slideAnim, showModal, hideModal } = useModalAnimation();
 
   // 상세 필터 상태
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  // URL 파라미터에서 재료 목록을 받아서 초기화
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(
+    () => {
+      if (params.ingredients) {
+        try {
+          const parsed = JSON.parse(params.ingredients as string);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    }
+  );
   const [includeExpiring, setIncludeExpiring] = useState<boolean>(false);
   const [selectedCookingTimes, setSelectedCookingTimes] = useState<string[]>(
     []
@@ -59,50 +75,10 @@ export default function RecipeScreen() {
   );
   const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 1000]);
 
-  // 모달 애니메이션 함수들
-  const showModal = () => {
-    setShowFilterModal(true);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const hideModal = () => {
-    Animated.timing(slideAnim, {
-      toValue: Dimensions.get("window").height,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowFilterModal(false);
-    });
-  };
-
-  // 재료 토글 함수
-  const toggleIngredient = (ingredient: string) => {
-    setSelectedIngredients((prev) =>
-      prev.includes(ingredient)
-        ? prev.filter((i) => i !== ingredient)
-        : [...prev, ingredient]
-    );
-  };
-
-  // 요리 시간 토글 함수
-  const toggleCookingTime = (time: string) => {
-    setSelectedCookingTimes((prev) =>
-      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
-    );
-  };
-
-  // 난이도 토글 함수
-  const toggleDifficulty = (difficulty: string) => {
-    setSelectedDifficulties((prev) =>
-      prev.includes(difficulty)
-        ? prev.filter((d) => d !== difficulty)
-        : [...prev, difficulty]
-    );
-  };
+  // 토글 함수들
+  const toggleIngredient = useToggleArray(setSelectedIngredients);
+  const toggleCookingTime = useToggleArray(setSelectedCookingTimes);
+  const toggleDifficulty = useToggleArray(setSelectedDifficulties);
 
   // 필터 초기화
   const clearAllFilters = () => {
@@ -114,69 +90,62 @@ export default function RecipeScreen() {
     setCalorieRange([0, 1000]);
   };
 
-  // 필터링된 레시피 목록
-  const filteredRecipes = recipes.filter((recipe) => {
-    // 검색어 필터
-    if (
-      searchQuery &&
-      !recipe.recipeName.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
+  // 필터 옵션 객체 (useMemo로 최적화)
+  const filterOptions = useMemo(
+    () => ({
+      searchQuery,
+      selectedIngredients,
+      includeExpiring,
+      selectedCookingTimes,
+      selectedDifficulties,
+      calorieRange,
+    }),
+    [
+      searchQuery,
+      selectedIngredients,
+      includeExpiring,
+      selectedCookingTimes,
+      selectedDifficulties,
+      calorieRange,
+    ]
+  );
 
-    // 재료 필터 (tags를 통해 간접적으로 필터링)
-    if (selectedIngredients.length > 0) {
-      const hasRequiredIngredient = selectedIngredients.some((ingredient) =>
-        recipe.tags.some((tag) =>
-          tag.toLowerCase().includes(ingredient.toLowerCase())
-        )
-      );
-      if (!hasRequiredIngredient) return false;
-    }
+  // 필터가 적용되었는지 확인
+  const activeFilters = hasActiveFilters(filterOptions);
 
-    // 마감기한 임박 재료 포함 여부 (임시로 모든 레시피가 해당한다고 가정)
-    if (includeExpiring) {
-      // 실제로는 냉장고 데이터와 연동해야 함
-    }
+  // 점수 계산 (ingredients가 변경될 때만 재계산)
+  const scoredRecipes = useMemo(() => {
+    if (ingredients.length === 0) return [];
+    return getScoredRecipes(ingredients);
+  }, [ingredients, getScoredRecipes]);
 
-    // 요리 시간 필터
-    if (selectedCookingTimes.length > 0) {
-      const matchesTime = selectedCookingTimes.some((time) => {
-        const timeCategory = time.split(" ")[0];
-        if (timeCategory === "짧음" && recipe.time <= 30) return true;
-        if (timeCategory === "중간" && recipe.time > 30 && recipe.time <= 60)
-          return true;
-        if (timeCategory === "긴" && recipe.time > 60) return true;
-        return false;
+  // 점수 맵 생성 (scoredRecipes가 변경될 때만 재계산)
+  const scoreMap = useMemo(() => {
+    return new Map(scoredRecipes.map((r) => [r.id, r.score]));
+  }, [scoredRecipes]);
+
+  // 필터링된 레시피 목록 (필터 옵션이 변경될 때만 재계산)
+  const filteredRecipes = useMemo(() => {
+    let result = filterRecipes(recipes, filterOptions);
+
+    // 필터가 없을 때는 점수 기반으로 정렬
+    if (!activeFilters && scoreMap.size > 0) {
+      result = [...result].sort((a, b) => {
+        const scoreA = scoreMap.get(a.id) || 0;
+        const scoreB = scoreMap.get(b.id) || 0;
+        return scoreB - scoreA; // 내림차순 정렬
       });
-      if (!matchesTime) return false;
     }
 
-    // 난이도 필터
-    if (
-      selectedDifficulties.length > 0 &&
-      !selectedDifficulties.includes(recipe.difficulty)
-    ) {
-      return false;
-    }
-
-    // 열량 필터 (임시로 모든 레시피가 해당한다고 가정)
-    if (
-      recipe.calories < calorieRange[0] ||
-      recipe.calories > calorieRange[1]
-    ) {
-      return false;
-    }
-
-    return true;
-  });
+    return result;
+  }, [recipes, filterOptions, activeFilters, scoreMap]);
 
   return (
     <View style={styles.container}>
       {/* 기본 헤더 사용 (tabs/_layout.tsx) */}
 
       {/* 검색 및 필터 섹션 */}
-      <View style={[styles.filterSection, { paddingTop: insets.top }]}>
+      <View style={styles.filterSection}>
         {/* 검색창 */}
         <View style={styles.searchContainer}>
           <TextInput
@@ -249,12 +218,27 @@ export default function RecipeScreen() {
       </View>
 
       {/* 레시피 목록 */}
-      {isLoading ? (
+      {isLoading && recipes.length === 0 ? (
         <LoadingSpinner message="레시피를 불러오는 중..." fullScreen />
+      ) : filteredRecipes.length === 0 && !isLoading ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            선택한 조건에 맞는 레시피가 없습니다.
+          </Text>
+          <TouchableOpacity
+            style={styles.clearFiltersButton}
+            onPress={clearAllFilters}
+          >
+            <Text style={styles.clearFiltersText}>필터 초기화</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <ScrollView
           style={styles.recipesList}
           contentContainerStyle={styles.recipesListContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <Text style={styles.resultsCount}>
             {filteredRecipes.length}개의 레시피를 찾았습니다
@@ -264,30 +248,21 @@ export default function RecipeScreen() {
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
-              onPress={() => console.log("레시피 클릭:", recipe.recipeName)}
+              onPress={() => {
+                router.push({
+                  pathname: "/_pages/RecipeDetail",
+                  params: { id: recipe.id, name: recipe.recipeName },
+                });
+              }}
               onFavoriteToggle={() => toggleFavorite(recipe)}
             />
           ))}
-
-          {filteredRecipes.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                선택한 조건에 맞는 레시피가 없습니다.
-              </Text>
-              <TouchableOpacity
-                style={styles.clearFiltersButton}
-                onPress={clearAllFilters}
-              >
-                <Text style={styles.clearFiltersText}>필터 초기화</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </ScrollView>
       )}
 
       {/* 상세 필터 모달 */}
       <RecipeFilterModal
-        visible={showFilterModal}
+        visible={visible}
         onClose={hideModal}
         slideAnim={slideAnim}
         selectedIngredients={selectedIngredients}

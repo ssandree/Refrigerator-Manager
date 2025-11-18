@@ -13,7 +13,7 @@ const floatingButtonShadow = createShadowStyle({
 
 export default function FridgeRegisterQuick() {
   const handlePress = () => {
-    router.push("../_pages/AddFood");
+    router.push("/_pages/RegisterFood");
   };
 
   return (

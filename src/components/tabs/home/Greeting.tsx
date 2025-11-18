@@ -1,12 +1,18 @@
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useAuthStore } from "../../../stores/useAuthStore";
 import { Colors, FontSizes } from "../../../styles/common";
 
 export default function Greeting() {
+  const user = useAuthStore((s) => s.user);
+  const userName = user?.name || "사용자";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.greetingText}>ㅇㅇ님 오늘 어떤 것을 드셨나요?</Text>
+      <Text style={styles.greetingText}>
+        {userName}님 오늘 어떤 것을 드셨나요?
+      </Text>
 
       <TouchableOpacity
         style={[styles.actionButton, styles.secondaryButton]}

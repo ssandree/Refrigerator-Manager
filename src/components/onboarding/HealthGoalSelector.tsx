@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { HealthGoal } from "../../../src/stores/useHealthGoalStore";
+import { HealthGoal } from "../../stores/useHealthGoalStore";
 import {
   Colors,
   createShadowStyle,
   FontSizes,
-} from "../../../src/styles/common";
+} from "../../styles/common";
 
 const goalCardShadow = createShadowStyle({
   opacity: 0.1,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   goalCardSelected: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: "#E8F5E9", // 연한 초록색 배경
   },
   goalCardDisabled: {
     opacity: 0.5,
@@ -186,3 +186,4 @@ const styles = StyleSheet.create({
 });
 
 export default HealthGoalSelector;
+

@@ -10,19 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useStoreError } from "../../src/hooks/useStoreError";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useMealStore } from "../../src/stores/useMealStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
 export default function RegisterMeal() {
   const addMeal = useMealStore((s) => s.addMeal);
-  const mealStore = useMealStore((s) => ({
-    error: s.error,
-    clearError: s.clearError,
-  }));
-  const { clearError } = mealStore;
-
-  useStoreError(mealStore);
+  const { clearError } = useStoreWithError(useMealStore);
 
   const todayStr = useMemo(() => {
     const d = new Date();

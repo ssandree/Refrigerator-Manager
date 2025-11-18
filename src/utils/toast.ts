@@ -18,7 +18,7 @@ export const showSuccessToast = (options: ToastOptions) => {
     text1: options.message,
     text2: options.description,
     visibilityTime: options.duration || 3000,
-    position: "top",
+    position: "bottom",
   });
 };
 
@@ -31,7 +31,7 @@ export const showErrorToast = (options: ToastOptions) => {
     text1: options.message,
     text2: options.description,
     visibilityTime: options.duration || 4000,
-    position: "top",
+    position: "bottom",
   });
 };
 
@@ -44,7 +44,7 @@ export const showInfoToast = (options: ToastOptions) => {
     text1: options.message,
     text2: options.description,
     visibilityTime: options.duration || 3000,
-    position: "top",
+    position: "bottom",
   });
 };
 

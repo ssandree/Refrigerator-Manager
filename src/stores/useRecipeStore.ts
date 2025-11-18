@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Ingredient } from "../data/mockFood";
-import { Recipe } from "../data/mockRecipes";
+import { mockRecipes, Recipe } from "../data/mockRecipes";
 import recipeService from "../services/recipeService";
 import {
   calculateRecipeScore,
@@ -17,6 +17,9 @@ import {
   createUpdateEntity,
 } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
+
+// 초기값: getAllRecipes()로 가져온 모든 레시피
+const initialRecipes = mockRecipes;
 
 // 스토어 상태와 액션 정의
 interface RecipeState {
@@ -56,7 +59,7 @@ interface RecipeState {
 export const useRecipeStore = create<RecipeState>(
   persist(
     (set, get) => ({
-      recipes: [],
+      recipes: initialRecipes,
       error: null,
       isLoading: false,
       lastSyncedAt: null,
@@ -171,11 +174,23 @@ export const useRecipeStore = create<RecipeState>(
       // 하이드레이션 완료 후 검증 및 정리
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.recipes = validateArray<Recipe>(state.recipes, "RecipeStore");
+          const validatedRecipes = validateArray<Recipe>(
+            state.recipes,
+            "RecipeStore"
+          );
+          // 저장된 데이터가 없거나 빈 배열이면 초기값 사용
+          state.recipes =
+            validatedRecipes.length > 0 ? validatedRecipes : initialRecipes;
           state.lastSyncedAt = validateSyncTimestamp(
             state.lastSyncedAt,
             "RecipeStore"
           );
+        } else {
+          // state가 없으면 초기값으로 설정
+          return {
+            recipes: initialRecipes,
+            lastSyncedAt: null,
+          };
         }
       },
     }

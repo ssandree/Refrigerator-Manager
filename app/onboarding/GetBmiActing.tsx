@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
-import { OnboardingFooterButton } from "./components/OnboardingFooterButton";
-import { OnboardingProgress } from "./components/OnboardingProgress";
-import { OnboardingTitle } from "./components/OnboardingTitle";
+import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
+import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
+import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 
 export default function GetBmiActing() {
   const insets = useSafeAreaInsets();
@@ -45,9 +45,9 @@ export default function GetBmiActing() {
 
           {/* 키 */}
           <Text style={styles.label}>키</Text>
-          <View style={styles.row}>
+          <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={styles.input}
               placeholder="키(cm)"
               value={height}
               onChangeText={setHeight}
@@ -57,9 +57,9 @@ export default function GetBmiActing() {
 
           {/* 몸무게 */}
           <Text style={styles.label}>몸무게</Text>
-          <View style={styles.row}>
+          <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={styles.input}
               placeholder="몸무게(kg)"
               value={weight}
               onChangeText={setWeight}
@@ -203,10 +203,15 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     color: Colors.textPrimary,
   },
+  inputContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
   input: {
     ...commonStyles.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    width: "50%",
   },
   button: {
     backgroundColor: Colors.primary,

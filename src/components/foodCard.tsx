@@ -1,12 +1,9 @@
-import dayjs from "dayjs";
 import {
   CheckCircle2,
   Circle,
-  Edit3,
   Refrigerator,
   Snowflake,
   Thermometer,
-  Trash2,
 } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -14,14 +11,17 @@ import { Ingredient } from "../data/mockFood";
 import { IngredientCategoryColor } from "../enums/ingredientCategory";
 import { StorageLocation } from "../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from "../styles/common";
+
 interface FoodCardProps {
   ingredient: Ingredient;
   selectable?: boolean;
   selected?: boolean;
   onSelect?: () => void;
   onPress?: () => void;
+  onLongPress?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  isExpiringSoon?: boolean;
 }
 
 export default function FoodCard({
@@ -30,17 +30,11 @@ export default function FoodCard({
   selected = false,
   onSelect,
   onPress,
+  onLongPress,
   onEdit,
   onDelete,
+  isExpiringSoon = false,
 }: FoodCardProps) {
-  // 유통기한 임박 확인 함수 (7일 이내)
-  // dayjs의 diff를 사용해 오늘 기준 남은 일수를 계산
-  const isExpiringSoon = (expiryDate: string) => {
-    return dayjs(expiryDate).diff(dayjs(), "day") <= 7;
-  };
-
-  const expiringSoon = isExpiringSoon(ingredient.expiryDate);
-
   return (
     <TouchableOpacity
       style={[
@@ -48,6 +42,7 @@ export default function FoodCard({
         selectable && selected && styles.selectedCard,
       ]}
       onPress={selectable ? onSelect : onPress}
+      onLongPress={onLongPress}
     >
       {/* 카테고리 상단 바 */}
       <View
@@ -56,9 +51,6 @@ export default function FoodCard({
           { backgroundColor: IngredientCategoryColor[ingredient.category] },
         ]}
       />
-
-      {/* 유통기한 임박 표시 테두리 */}
-      {expiringSoon && <View style={styles.expiryBorder} />}
 
       {/* 선택 상태 표시 */}
       {selectable && (
@@ -100,33 +92,21 @@ export default function FoodCard({
         </View>
       </View>
 
-      {/* 하단 행: 재료 정보와 액션 버튼들 */}
+      {/* 하단 행: 재료 정보 */}
       <View style={styles.bottomRow}>
         <View style={styles.foodCardInfoSection}>
-          <Text style={styles.foodCardName} numberOfLines={1}>
-            {ingredient.name}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.foodCardName} numberOfLines={1}>
+              {ingredient.name}
+            </Text>
+            {isExpiringSoon && <Text style={styles.expiryWarning}>⚠️</Text>}
+          </View>
           <Text style={styles.foodCardQuantity}>
             {ingredient.quantity}개 · {ingredient.weight}
           </Text>
           <Text style={styles.foodCardExpiryDate}>
             {ingredient.expiryDate}까지
           </Text>
-        </View>
-        <View style={styles.foodCardActions}>
-          {onEdit && (
-            <TouchableOpacity onPress={onEdit} style={styles.foodCardActionBtn}>
-              <Edit3 size={14} color={Colors.primary} strokeWidth={2} />
-            </TouchableOpacity>
-          )}
-          {onDelete && (
-            <TouchableOpacity
-              onPress={onDelete}
-              style={styles.foodCardActionBtn}
-            >
-              <Trash2 size={14} color={Colors.error} strokeWidth={2} />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -136,6 +116,7 @@ export default function FoodCard({
 const styles = StyleSheet.create({
   foodCardContainer: {
     ...commonStyles.card,
+    borderRadius: 6,
     position: "relative",
     marginVertical: 0,
     marginHorizontal: 0,
@@ -151,19 +132,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 6, // 바 두께 (원하는 만큼 조정 가능)
-    borderTopLeftRadius: 8, // 카드 라운드와 맞추기
-    borderTopRightRadius: 8,
-  },
-  expiryBorder: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderWidth: 2,
-    borderColor: Colors.warning,
-    borderRadius: 8,
-    pointerEvents: "none",
+    borderTopLeftRadius: 6, // 카드 라운드와 맞추기
+    borderTopRightRadius: 6,
   },
   foodCardExpiryBadge: {
     position: "absolute",
@@ -195,7 +165,7 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 6,
-    backgroundColor: Colors.backgroundDark,
+    // backgroundColor: Colors.backgroundDark,
   },
   storageIconContainer: {
     padding: 2,
@@ -211,11 +181,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
     justifyContent: "space-between",
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 2,
+  },
   foodCardName: {
     fontSize: FontSizes.base,
     fontWeight: "600",
     color: Colors.textPrimary,
-    marginBottom: 2,
+    flex: 1,
+  },
+  expiryWarning: {
+    fontSize: FontSizes.base,
   },
   foodCardQuantity: {
     fontSize: FontSizes.sm,
@@ -226,17 +205,8 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
   },
-  foodCardActions: {
-    flexDirection: "row",
-    gap: 2,
-    alignItems: "center",
-  },
-  foodCardActionBtn: {
-    padding: 2,
-  },
   selectedCard: {
-    borderWidth: 2,
-    borderColor: Colors.primary,
+    backgroundColor: "#E8F5E9", // 연한 초록색 배경
   },
   selectionIndicator: {
     position: "absolute",

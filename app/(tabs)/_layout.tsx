@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from "expo-router";
+import { router, Tabs } from "expo-router";
 import {
   Bell,
   ChefHat,
@@ -9,7 +9,9 @@ import {
   UtensilsCrossed,
 } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ProfileCircle from "../../src/components/ProfileCircle";
 import { Colors, createShadowStyle, FontSizes } from "../../src/styles/common";
 
 const tabBarShadow = createShadowStyle({
@@ -20,14 +22,19 @@ const tabBarShadow = createShadowStyle({
 });
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       initialRouteName="Fridge"
       screenOptions={{
         headerShown: false,
+        headerStyle: {
+          height: 120,
+        },
         tabBarStyle: {
-          height: 72,
-          paddingBottom: 8,
+          height: 72 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 12,
           borderTopWidth: 1,
           borderTopColor: Colors.borderLight,
@@ -61,33 +68,31 @@ export default function TabsLayout() {
         options={{
           title: "레시피",
           headerShown: true,
-          headerRight: () => {
-            const router = useRouter();
-            return (
-              <View style={styles.headerRight}>
-                <TouchableOpacity
-                  style={styles.headerIconButton}
-                  onPress={() => router.push("/_pages/LikeRecipe")}
-                >
-                  <Heart
-                    size={22}
-                    color={Colors.meat}
-                    strokeWidth={2}
-                    fill={Colors.meat}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.headerIconButton}>
-                  <Bell size={22} color={Colors.textPrimary} strokeWidth={2} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.profileButton}>
-                  <Image
-                    source={require("../../src/assets/images/tomato.jpg")}
-                    style={styles.profileImage}
-                  />
-                </TouchableOpacity>
-              </View>
-            );
-          },
+          headerRight: () => (
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/LikeRecipe")}
+              >
+                <Heart
+                  size={22}
+                  color={Colors.meat}
+                  strokeWidth={2}
+                  fill={Colors.meat}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/Notifications")}
+              >
+                <Bell size={22} color={Colors.textPrimary} strokeWidth={2} />
+              </TouchableOpacity>
+              <ProfileCircle
+                size={36}
+                onPress={() => router.push("/(tabs)/MyInfo")}
+              />
+            </View>
+          ),
           tabBarIcon: ({ color, size, focused }) => (
             <ChefHat
               size={size}
@@ -104,15 +109,16 @@ export default function TabsLayout() {
           headerShown: true,
           headerRight: () => (
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerIconButton}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/Notifications")}
+              >
                 <Bell size={22} color={Colors.textPrimary} strokeWidth={2} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.profileButton}>
-                <Image
-                  source={require("../../src/assets/images/tomato.jpg")}
-                  style={styles.profileImage}
-                />
-              </TouchableOpacity>
+              <ProfileCircle
+                size={36}
+                onPress={() => router.push("/(tabs)/MyInfo")}
+              />
             </View>
           ),
           tabBarIcon: ({ color, size, focused }) => (
@@ -127,15 +133,16 @@ export default function TabsLayout() {
           headerShown: true,
           headerRight: () => (
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerIconButton}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/Notifications")}
+              >
                 <Bell size={22} color={Colors.textPrimary} strokeWidth={2} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.profileButton}>
-                <Image
-                  source={require("../../src/assets/images/tomato.jpg")}
-                  style={styles.profileImage}
-                />
-              </TouchableOpacity>
+              <ProfileCircle
+                size={36}
+                onPress={() => router.push("/(tabs)/MyInfo")}
+              />
             </View>
           ),
           tabBarIcon: ({ color, size, focused }) => (
@@ -171,17 +178,5 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 20,
     backgroundColor: Colors.backgroundLight,
-  },
-  profileButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: Colors.borderLight,
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
   },
 });

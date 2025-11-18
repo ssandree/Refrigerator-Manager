@@ -37,7 +37,7 @@ export default function ErrorBoundary({
   return (
     <ReactErrorBoundary
       FallbackComponent={fallback}
-      onError={(error, info) => {
+      onError={(error: Error, info: { componentStack: string }) => {
         // 에러 로깅 (나중에 에러 추적 서비스에 연결 가능)
         console.error("ErrorBoundary caught an error:", error, info);
         // Toast는 ErrorBoundary 내부에 있어서 순환 참조를 피하기 위해 제거

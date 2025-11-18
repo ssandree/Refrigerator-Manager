@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useFridgeStore } from "../../../stores/useFridgeStore";
 import { Colors } from "../../../styles/common";
+import { FilterChip } from "../../FilterChip";
 
 interface RecipeFilterModalProps {
   visible: boolean;
@@ -86,29 +87,19 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
           <ScrollView
             style={styles.content}
             contentContainerStyle={styles.contentInner}
+            showsVerticalScrollIndicator={false}
           >
             {/* 재료 선택 */}
             <Text style={styles.sectionTitle}>재료</Text>
             <View style={styles.chipsRow}>
-              {ingredientNames.map((name) => {
-                const selected = selectedIngredients.includes(name);
-                return (
-                  <TouchableOpacity
-                    key={name}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                    onPress={() => onToggleIngredient(name)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected && styles.chipTextSelected,
-                      ]}
-                    >
-                      {name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {ingredientNames.map((name) => (
+                <FilterChip
+                  key={name}
+                  label={name}
+                  selected={selectedIngredients.includes(name)}
+                  onPress={() => onToggleIngredient(name)}
+                />
+              ))}
               {ingredientNames.length === 0 && (
                 <Text style={styles.emptyText}>
                   냉장고에 등록된 재료가 없습니다.
@@ -137,49 +128,27 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
             {/* 요리 시간 */}
             <Text style={styles.sectionTitle}>요리 시간</Text>
             <View style={styles.chipsRow}>
-              {COOKING_TIME_OPTIONS.map((opt) => {
-                const selected = selectedCookingTimes.includes(opt);
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                    onPress={() => onToggleCookingTime(opt)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected && styles.chipTextSelected,
-                      ]}
-                    >
-                      {opt}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {COOKING_TIME_OPTIONS.map((opt) => (
+                <FilterChip
+                  key={opt}
+                  label={opt}
+                  selected={selectedCookingTimes.includes(opt)}
+                  onPress={() => onToggleCookingTime(opt)}
+                />
+              ))}
             </View>
 
             {/* 난이도 */}
             <Text style={styles.sectionTitle}>난이도</Text>
             <View style={styles.chipsRow}>
-              {DIFFICULTY_OPTIONS.map((opt) => {
-                const selected = selectedDifficulties.includes(opt);
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                    onPress={() => onToggleDifficulty(opt)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected && styles.chipTextSelected,
-                      ]}
-                    >
-                      {opt}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {DIFFICULTY_OPTIONS.map((opt) => (
+                <FilterChip
+                  key={opt}
+                  label={opt}
+                  selected={selectedDifficulties.includes(opt)}
+                  onPress={() => onToggleDifficulty(opt)}
+                />
+              ))}
             </View>
 
             {/* 열량 범위 (듀얼 슬라이더) */}
@@ -217,10 +186,14 @@ function DualRangeSlider({
   const [leftVal, setLeftVal] = React.useState(values[0]);
   const [rightVal, setRightVal] = React.useState(values[1]);
 
+  // 터치 시작 시점의 초기 위치를 저장
+  const leftStartX = React.useRef(0);
+  const rightStartX = React.useRef(0);
+
   React.useEffect(() => {
     setLeftVal(values[0]);
     setRightVal(values[1]);
-  }, [values[0], values[1]]);
+  }, [values]);
 
   const clamp = (v: number, lo: number, hi: number) =>
     Math.max(lo, Math.min(hi, v));
@@ -238,12 +211,15 @@ function DualRangeSlider({
   const leftResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        // 터치 시작 시점의 초기 X 위치 저장
+        leftStartX.current = valueToX(leftVal);
+      },
       onPanResponderMove: (_, g) => {
-        const newLeft = clamp(
-          xToValue(valueToX(leftVal) + g.dx),
-          min,
-          rightVal
-        );
+        if (width <= 0) return;
+        // 초기 위치 + 이동 거리로 새로운 위치 계산
+        const newX = leftStartX.current + g.dx;
+        const newLeft = clamp(xToValue(newX), min, rightVal);
         setLeftVal(newLeft);
         onChange([newLeft, rightVal]);
       },
@@ -253,12 +229,15 @@ function DualRangeSlider({
   const rightResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        // 터치 시작 시점의 초기 X 위치 저장
+        rightStartX.current = valueToX(rightVal);
+      },
       onPanResponderMove: (_, g) => {
-        const newRight = clamp(
-          xToValue(valueToX(rightVal) + g.dx),
-          leftVal,
-          max
-        );
+        if (width <= 0) return;
+        // 초기 위치 + 이동 거리로 새로운 위치 계산
+        const newX = rightStartX.current + g.dx;
+        const newRight = clamp(xToValue(newX), leftVal, max);
         setRightVal(newRight);
         onChange([leftVal, newRight]);
       },
@@ -278,7 +257,7 @@ function DualRangeSlider({
       </View>
       <View
         style={styles.rangeTrack}
-        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        onLayout={(e: any) => setWidth(e.nativeEvent.layout.width)}
       >
         <View
           style={[
@@ -316,7 +295,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -336,7 +316,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   contentInner: {
-    paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   rangeContainer: {
     marginTop: 6,
@@ -380,37 +361,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
   },
-  chip: {
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 18,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primaryDark,
-  },
-  chipText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  chipTextSelected: {
-    color: Colors.textLight,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 6,
   },
   toggle: {
     paddingHorizontal: 12,
@@ -434,27 +387,9 @@ const styles = StyleSheet.create({
   emptyText: {
     color: Colors.textTertiary,
   },
-  rangeBtn: {
-    backgroundColor: Colors.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  rangeBtnText: {
-    color: Colors.textLight,
-    fontWeight: "600",
-  },
   rangeText: {
     color: Colors.textPrimary,
     fontWeight: "600",
     marginRight: 12,
-  },
-  sliderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  slider: {
-    flex: 1,
   },
 });

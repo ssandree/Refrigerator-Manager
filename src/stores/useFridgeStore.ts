@@ -1,7 +1,7 @@
 // 냉장고(재료) 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Ingredient } from "../data/mockFood";
+import { Ingredient, mockIngredients } from "../data/mockFood";
 import fridgeService from "../services/fridgeService";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
@@ -12,6 +12,9 @@ import {
   createUpdateEntity,
 } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
+
+// 초기값: mockFood.ts에서 앞쪽 10개만 가져오기
+const initialIngredients = mockIngredients.slice(0, 10);
 
 // 스토어 상태와 액션 정의
 interface FridgeState {
@@ -43,7 +46,7 @@ interface FridgeState {
 export const useFridgeStore = create<FridgeState>(
   persist(
     (set, get) => ({
-      ingredients: [],
+      ingredients: initialIngredients,
       error: null,
       isLoading: false,
       lastSyncedAt: null,
@@ -152,14 +155,25 @@ export const useFridgeStore = create<FridgeState>(
       // 하이드레이션 완료 후 검증 및 정리
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.ingredients = validateArray<Ingredient>(
+          const validatedIngredients = validateArray<Ingredient>(
             state.ingredients,
             "FridgeStore"
           );
+          // 저장된 데이터가 없거나 빈 배열이면 초기값 사용
+          state.ingredients =
+            validatedIngredients.length > 0
+              ? validatedIngredients
+              : initialIngredients;
           state.lastSyncedAt = validateSyncTimestamp(
             state.lastSyncedAt,
             "FridgeStore"
           );
+        } else {
+          // state가 없으면 초기값으로 설정
+          return {
+            ingredients: initialIngredients,
+            lastSyncedAt: null,
+          };
         }
       },
     }

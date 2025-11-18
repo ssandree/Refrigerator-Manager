@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   SafeAreaView,
@@ -9,26 +9,50 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useStoreError } from "../../src/hooks/useStoreError";
+import LoadingSpinner from "../../src/components/LoadingSpinner";
+import { Recipe } from "../../src/data/mockRecipes";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { recipeService } from "../../src/services/recipeService";
 import { useMealStore } from "../../src/stores/useMealStore";
-import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
 export default function RecipeDetail() {
   const params = useLocalSearchParams<{ id?: string; name?: string }>();
   const recipeId = params?.id;
-  const name = params?.name ?? "알 수 없는 레시피";
 
-  const getRecipeById = useRecipeStore((s) => s.getRecipeById);
-  const recipe = recipeId ? getRecipeById(recipeId) : undefined;
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const addMeal = useMealStore((s) => s.addMeal);
-  const mealStore = useMealStore((s) => ({
-    error: s.error,
-    clearError: s.clearError,
-  }));
+  useStoreWithError(useMealStore);
 
-  useStoreError(mealStore);
+  useEffect(() => {
+    const loadRecipe = async () => {
+      if (!recipeId) {
+        setError("레시피 ID가 없습니다.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await recipeService.getRecipeById(recipeId);
+        if (response.success && response.data) {
+          setRecipe(response.data);
+        } else {
+          setError(response.message || "레시피를 찾을 수 없습니다.");
+        }
+      } catch {
+        setError("레시피를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRecipe();
+  }, [recipeId]);
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -40,8 +64,6 @@ export default function RecipeDetail() {
       Alert.alert("오류", "레시피 정보를 찾을 수 없습니다.");
       return;
     }
-
-    mealStore.clearError();
 
     const success = addMeal({
       id: Date.now().toString(),
@@ -85,9 +107,15 @@ export default function RecipeDetail() {
             style={styles.content}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>{name}</Text>
-            {recipe && (
+            {isLoading ? (
+              <LoadingSpinner message="레시피를 불러오는 중..." />
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : recipe ? (
               <>
+                <Text style={styles.title}>{recipe.recipeName}</Text>
                 <View style={styles.infoSection}>
                   <Text style={styles.label}>칼로리</Text>
                   <Text style={styles.infoText}>{recipe.calories}kcal</Text>
@@ -106,18 +134,16 @@ export default function RecipeDetail() {
                     <Text style={styles.infoText}>{recipe.description}</Text>
                   </View>
                 )}
-              </>
-            )}
 
-            {/* 식사 등록 버튼 */}
-            {recipe && (
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={handleRegisterMeal}
-              >
-                <Text style={styles.registerButtonText}>식사로 등록하기</Text>
-              </TouchableOpacity>
-            )}
+                {/* 식사 등록 버튼 */}
+                <TouchableOpacity
+                  style={styles.registerButton}
+                  onPress={handleRegisterMeal}
+                >
+                  <Text style={styles.registerButtonText}>식사로 등록하기</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -200,5 +226,14 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: "bold",
     color: Colors.surface,
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: FontSizes.base,
+    color: Colors.error,
+    textAlign: "center",
   },
 });

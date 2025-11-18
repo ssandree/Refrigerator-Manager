@@ -16,10 +16,10 @@ import {
   FontSizes,
   noShadowStyle,
 } from "../../src/styles/common";
-import { HealthGoalSelector } from "./components/HealthGoalSelector";
-import { OnboardingFooterButton } from "./components/OnboardingFooterButton";
-import { OnboardingProgress } from "./components/OnboardingProgress";
-import { OnboardingTitle } from "./components/OnboardingTitle";
+import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
+import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
+import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
+import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 
 export default function GetHealthGoal() {
   const insets = useSafeAreaInsets();

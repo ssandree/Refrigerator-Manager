@@ -1,11 +1,12 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Colors,
   createShadowStyle,
   FontSizes,
   noShadowStyle,
-} from "../../../src/styles/common";
+} from "../../styles/common";
 
 const primaryButtonShadow = createShadowStyle({
   opacity: 0.25,
@@ -30,8 +31,9 @@ export const OnboardingFooterButton: React.FC<OnboardingFooterButtonProps> = ({
   onPressPrev,
   prevDisabled,
 }) => {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.footer}>
+    <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
       <View style={styles.row}>
         <TouchableOpacity
           style={[
@@ -125,3 +127,4 @@ const styles = StyleSheet.create({
 });
 
 export default OnboardingFooterButton;
+

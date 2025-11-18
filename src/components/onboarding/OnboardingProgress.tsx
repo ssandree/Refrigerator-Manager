@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
-import { Colors, FontSizes } from "../../../src/styles/common";
+import { Colors, FontSizes } from "../../styles/common";
 
 interface OnboardingProgressProps {
   current: 1 | 2 | 3;
@@ -45,3 +45,4 @@ const styles = StyleSheet.create({
 });
 
 export default OnboardingProgress;
+

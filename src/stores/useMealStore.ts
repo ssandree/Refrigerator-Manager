@@ -128,6 +128,7 @@ export const useMealStore = create<MealState>(
           } else {
             set({
               error: response.message ?? "식단 목록을 불러오는데 실패했습니다.",
+              lastSyncedAt: Date.now(), // 실패해도 lastSyncedAt 설정하여 재시도 방지
             });
           }
         } catch (error: unknown) {
@@ -135,7 +136,10 @@ export const useMealStore = create<MealState>(
             error,
             "식단 목록을 불러오는 중 오류가 발생했습니다."
           );
-          set({ error: errorMessage });
+          set({
+            error: errorMessage,
+            lastSyncedAt: Date.now(), // 실패해도 lastSyncedAt 설정하여 재시도 방지
+          });
         } finally {
           set({ isLoading: false });
         }

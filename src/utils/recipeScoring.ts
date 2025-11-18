@@ -82,12 +82,12 @@ export function isIngredientMatch(
 export function findMatchingIngredients(
   recipe: Recipe,
   fridgeIngredients: Ingredient[]
-): Array<{ ingredient: Ingredient; expiryScore: number }> {
+): { ingredient: Ingredient; expiryScore: number }[] {
   if (!recipe.requiredIngredients || recipe.requiredIngredients.length === 0) {
     return [];
   }
 
-  const matches: Array<{ ingredient: Ingredient; expiryScore: number }> = [];
+  const matches: { ingredient: Ingredient; expiryScore: number }[] = [];
 
   for (const requiredIngredient of recipe.requiredIngredients) {
     for (const fridgeIngredient of fridgeIngredients) {
@@ -126,7 +126,7 @@ export function calculateRecipeScore(
   matchScore: number;
   matchedCount: number;
   totalRequired: number;
-  matchedIngredients: Array<{ ingredient: Ingredient; expiryScore: number }>;
+  matchedIngredients: { ingredient: Ingredient; expiryScore: number }[];
 } {
   const matchedIngredients = findMatchingIngredients(recipe, fridgeIngredients);
 
@@ -162,12 +162,10 @@ export function calculateRecipeScore(
 export function scoreAndSortRecipes(
   recipes: Recipe[],
   fridgeIngredients: Ingredient[]
-): Array<
-  Recipe & {
-    score: number;
-    scoreDetails: ReturnType<typeof calculateRecipeScore>;
-  }
-> {
+): (Recipe & {
+  score: number;
+  scoreDetails: ReturnType<typeof calculateRecipeScore>;
+})[] {
   return recipes
     .map((recipe) => {
       const scoreDetails = calculateRecipeScore(recipe, fridgeIngredients);
