@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Ingredient, mockIngredients } from "../data/mockFood";
-import fridgeService from "../services/fridgeService";
+import { fridgeService } from "../services/fridgeService";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import {
