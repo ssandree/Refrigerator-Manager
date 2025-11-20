@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.favorites.favorites_models import FavoriteRecipe
 from app.recipes.recipe_models import Recipe
+from fastapi import HTTPException
 
 def get_all_favorites(db: Session, userId: str):
     return db.query(Recipe).join(
@@ -10,7 +11,18 @@ def get_all_favorites(db: Session, userId: str):
     ).all()
 
 
+def validate_recipe_exists(db: Session, recipeId: str):
+    """레시피 존재 여부 확인"""
+    recipe = db.query(Recipe).filter(Recipe.id == recipeId).first()
+    if not recipe:
+        raise HTTPException(status_code=404, detail="RECIPE_NOT_FOUND")
+    return recipe
+
+
 def add_favorite(db: Session, userId: str, recipeId: str):
+    # 레시피 존재 여부 확인
+    validate_recipe_exists(db, recipeId)
+    
     exists = db.query(FavoriteRecipe).filter(
         FavoriteRecipe.userId == userId,
         FavoriteRecipe.recipeId == recipeId

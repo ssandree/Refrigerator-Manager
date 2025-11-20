@@ -36,7 +36,22 @@ def get_user_goals(db: Session, userId: str):
     return [goal for goal in HEALTH_GOALS if goal["id"] in user_goal_ids]
 
 
+def validate_goal_ids(goalIds: list[int]):
+    """goalId 목록이 유효한지 확인"""
+    from fastapi import HTTPException
+    valid_ids = {goal["id"] for goal in HEALTH_GOALS}
+    invalid_ids = [gid for gid in goalIds if gid not in valid_ids]
+    if invalid_ids:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid goalIds: {invalid_ids}. Valid goalIds are: {list(valid_ids)}"
+        )
+
+
 def set_user_goals(db: Session, userId: str, goalIds: list[int]):
+    # 유효성 검사
+    validate_goal_ids(goalIds)
+    
     # 기존 목표 삭제
     db.query(UserHealthGoal).filter(UserHealthGoal.userId == userId).delete()
 

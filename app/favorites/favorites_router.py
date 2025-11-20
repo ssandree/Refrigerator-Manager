@@ -37,6 +37,10 @@ def find_all(userId=Depends(get_current_user), db: Session = Depends(get_db)):
 # -----------------------------
 @router.get("/{recipeId}/check")
 def check(recipeId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
+    # 레시피 존재 여부 확인
+    from app.favorites.favorites_services import validate_recipe_exists
+    validate_recipe_exists(db, recipeId)
+    
     result = is_favorite(db, userId, recipeId)
     return {"success": True, "data": {"isFavorite": result}}
 

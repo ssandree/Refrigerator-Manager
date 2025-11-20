@@ -42,6 +42,14 @@ def find_all(db: Session = Depends(get_db)):
 # -----------------------------
 @router.get("/{goalId}", response_model=SingleHealthGoalResponse)
 def find_one(goalId: int, db: Session = Depends(get_db)):
+    from app.health_goals.health_constants import HEALTH_GOALS
+    valid_ids = {goal["id"] for goal in HEALTH_GOALS}
+    if goalId not in valid_ids:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid goalId: {goalId}. Valid goalIds are: {list(valid_ids)}"
+        )
+    
     goal = get_goal_by_id(db, goalId)
     if not goal:
         raise HTTPException(status_code=404, detail="HEALTH_GOAL_NOT_FOUND")
@@ -79,6 +87,14 @@ def set_user_selected(
 # -----------------------------
 @router.post("/user-selected/{goalId}", response_model=SingleHealthGoalResponse)
 def add_user_goal_api(goalId: int, userId=Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.health_goals.health_constants import HEALTH_GOALS
+    valid_ids = {goal["id"] for goal in HEALTH_GOALS}
+    if goalId not in valid_ids:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid goalId: {goalId}. Valid goalIds are: {list(valid_ids)}"
+        )
+    
     goal = add_user_goal(db, userId, goalId)
     if not goal:
         raise HTTPException(status_code=404, detail="HEALTH_GOAL_NOT_FOUND")

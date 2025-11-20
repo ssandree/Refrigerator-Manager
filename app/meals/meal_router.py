@@ -73,6 +73,13 @@ def find_by_date(date: str, userId=Depends(get_current_user), db: Session = Depe
 # -----------------------------
 @router.get("/type/{mealType}", response_model=MealListResponse)
 def find_by_type(mealType: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.meals.meal_constants import VALID_MEAL_TYPES
+    if mealType not in VALID_MEAL_TYPES:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid mealType. Must be one of {VALID_MEAL_TYPES}"
+        )
     meals = get_meals_by_type(db, userId, mealType)
     return MealListResponse(
         data=[MealResponse.model_validate(meal) for meal in meals]
@@ -84,6 +91,10 @@ def find_by_type(mealType: str, userId=Depends(get_current_user), db: Session = 
 # -----------------------------
 @router.get("/recipe/{recipeId}", response_model=MealListResponse)
 def find_by_recipe(recipeId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
+    # 레시피 존재 여부 확인
+    from app.meals.meal_services import validate_recipe_exists
+    validate_recipe_exists(db, recipeId)
+    
     meals = get_meals_by_recipe(db, userId, recipeId)
     return MealListResponse(
         data=[MealResponse.model_validate(meal) for meal in meals]
