@@ -1,0 +1,42 @@
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional, List
+
+class NotificationResponse(BaseModel):
+    id: str
+    type: str
+    title: str
+    message: str
+    relatedfoodId: Optional[str]
+    relatedRecipeId: Optional[str]
+    read: bool
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# -----------------------------
+# Standard API Response Formats
+# -----------------------------
+
+class BaseResponse(BaseModel):
+    success: bool = True
+    message: Optional[str] = None
+
+
+class SingleNotificationResponse(BaseResponse):
+    data: NotificationResponse
+
+
+class NotificationListResponse(BaseResponse):
+    data: List[NotificationResponse]
+
+
+class DeleteResponse(BaseResponse):
+    message: str
+
+
+class UnreadCountResponse(BaseResponse):
+    data: dict
+

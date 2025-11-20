@@ -1,16 +1,14 @@
 from fastapi import FastAPI
 from app.core.database import Base, engine
-from app.auth.router import router as auth_router
-from app.food.router import router as ingredients_router
-from app.recipes.router import router as recipes_router
-from app.meals.router import router as meals_router
-from app.favorites.router import router as favorites_router
-from app.health_goals.router import router as health_goals_router
-from app.health_goals.stats_router import router as health_stats_router
-from app.notifications.router import router as notifications_router
-from app.dashboard.router import router as dashboard_router
-
-Base.metadata.create_all(bind=engine)
+from app.auth.auth_router import router as auth_router
+from app.food.food_router import router as ingredients_router
+from app.recipes.recipe_router import router as recipes_router
+from app.meals.meal_router import router as meals_router
+from app.favorites.favorites_router import router as favorites_router
+from app.health_goals.health_router import router as health_goals_router
+from app.health_goals.health_stats_router import router as health_stats_router
+from app.notifications.notification_router import router as notifications_router
+from app.dashboard.dashboard_router import router as dashboard_router
 
 app = FastAPI()
 

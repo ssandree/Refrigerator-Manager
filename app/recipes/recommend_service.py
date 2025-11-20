@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.food.models import Food
-from app.recipes.models import Recipe
+from app.food.food_models import Food
+from app.recipes.recipe_models import Recipe
 
 EXPIRY_SCORE_MAP = {
     1: 2.4,
