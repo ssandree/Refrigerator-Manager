@@ -8,11 +8,7 @@ import {
   View,
 } from "react-native";
 import { HealthGoal } from "../../stores/useHealthGoalStore";
-import {
-  Colors,
-  createShadowStyle,
-  FontSizes,
-} from "../../styles/common";
+import { Colors, createShadowStyle, FontSizes } from "../../styles/common";
 
 const goalCardShadow = createShadowStyle({
   opacity: 0.1,
@@ -62,7 +58,7 @@ export const HealthGoalSelector: React.FC<HealthGoalSelectorProps> = ({
                 ]}
               >
                 <Ionicons
-                  name={goal.icon as any}
+                  name={goal.icon as keyof typeof Ionicons.glyphMap}
                   size={24}
                   color={isSelected ? goal.color : "#666"}
                 />
@@ -186,4 +182,3 @@ const styles = StyleSheet.create({
 });
 
 export default HealthGoalSelector;
-

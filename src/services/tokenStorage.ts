@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { logger } from "../utils/logger";
 
 const TOKEN_KEY = "authToken";
 
@@ -42,7 +43,7 @@ export async function saveToken(token: string): Promise<void> {
     }
     await SecureStore.setItemAsync(TOKEN_KEY, token);
   } catch (error) {
-    console.error("[TokenStorage] 토큰 저장 실패:", error);
+    logger.error("[TokenStorage] 토큰 저장 실패:", error);
     throw error;
   }
 }
@@ -62,7 +63,7 @@ export async function getToken(): Promise<string | null> {
     }
     return await SecureStore.getItemAsync(TOKEN_KEY);
   } catch (error) {
-    console.error("[TokenStorage] 토큰 로드 실패:", error);
+    logger.error("[TokenStorage] 토큰 로드 실패:", error);
     return null;
   }
 }
@@ -82,7 +83,7 @@ export async function deleteToken(): Promise<void> {
     }
     await SecureStore.deleteItemAsync(TOKEN_KEY);
   } catch (error) {
-    console.error("[TokenStorage] 토큰 삭제 실패:", error);
+    logger.error("[TokenStorage] 토큰 삭제 실패:", error);
     // 삭제 실패는 치명적이지 않으므로 에러를 던지지 않음
   }
 }

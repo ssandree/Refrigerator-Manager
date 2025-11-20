@@ -1,8 +1,24 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors, commonStyles, FontSizes } from "../../styles/common";
-import type { HealthGoalPlan } from "../../utils/healthGoalCalculator";
 import MetricRow from "./MetricRow";
+
+// BE에서 받아올 건강 목표 계획 타입
+export interface HealthGoalPlan {
+  goalType: string;
+  title: string;
+  summary: string;
+  overallProgress: number;
+  metrics: Array<{
+    label: string;
+    target: string;
+    current?: string;
+    progress?: number;
+    note?: string;
+  }>;
+  recommendedFoods: string[];
+  notes: string[];
+}
 
 type ExtendedPlan = HealthGoalPlan & {
   goalTitle: string;

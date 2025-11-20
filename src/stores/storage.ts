@@ -133,8 +133,8 @@ export const createSecureStorage = <T>(): PersistStorage<T> => ({
       }
     }
 
-    // Zustand 4.5.3에서는 string | null을 반환
-    return result as any;
+    // Zustand persist storage는 string | null을 반환
+    return result;
   },
   setItem: async (name: string, value) => {
     // StorageValue<T>를 string으로 변환

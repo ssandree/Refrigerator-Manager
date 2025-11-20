@@ -13,8 +13,8 @@ import {
 } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
 
-// 초기값: mockFood.ts에서 앞쪽 10개만 가져오기
-const initialIngredients = mockIngredients.slice(0, 10);
+// 초기값: 빈 배열 (서버에서 로드)
+const initialIngredients: Ingredient[] = [];
 
 // 스토어 상태와 액션 정의
 interface FridgeState {
@@ -126,16 +126,39 @@ export const useFridgeStore = create<FridgeState>(
               lastSyncedAt: Date.now(),
             });
           } else {
-            set({
-              error: response.message ?? "재료 목록을 불러오는데 실패했습니다.",
-            });
+            // 개발 환경: API 실패 시 mock 데이터 사용 (BE 연결 전까지)
+            if (__DEV__ && state.ingredients.length === 0) {
+              set({
+                ingredients: mockIngredients,
+                error: null,
+                lastSyncedAt: Date.now(),
+              });
+            } else {
+              set({
+                error:
+                  response.message ?? "재료 목록을 불러오는데 실패했습니다.",
+                lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
+              });
+            }
           }
         } catch (error: unknown) {
-          const errorMessage = getErrorMessage(
-            error,
-            "재료 목록을 불러오는 중 오류가 발생했습니다."
-          );
-          set({ error: errorMessage });
+          // 개발 환경: 네트워크 에러 시 mock 데이터 사용 (BE 연결 전까지)
+          if (__DEV__ && state.ingredients.length === 0) {
+            set({
+              ingredients: mockIngredients,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+          } else {
+            const errorMessage = getErrorMessage(
+              error,
+              "재료 목록을 불러오는 중 오류가 발생했습니다."
+            );
+            set({
+              error: errorMessage,
+              lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
+            });
+          }
         } finally {
           set({ isLoading: false });
         }
@@ -159,11 +182,7 @@ export const useFridgeStore = create<FridgeState>(
             state.ingredients,
             "FridgeStore"
           );
-          // 저장된 데이터가 없거나 빈 배열이면 초기값 사용
-          state.ingredients =
-            validatedIngredients.length > 0
-              ? validatedIngredients
-              : initialIngredients;
+          state.ingredients = validatedIngredients;
           state.lastSyncedAt = validateSyncTimestamp(
             state.lastSyncedAt,
             "FridgeStore"

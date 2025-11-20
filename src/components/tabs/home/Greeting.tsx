@@ -16,7 +16,11 @@ export default function Greeting() {
 
       <TouchableOpacity
         style={[styles.actionButton, styles.secondaryButton]}
-        onPress={() => router.push("/_pages/RegisterMeal" as any)}
+        onPress={() =>
+          router.push({
+            pathname: "/_pages/RegisterMeal",
+          } as { pathname: string })
+        }
       >
         <Text style={styles.secondaryButtonText}>식사 등록</Text>
       </TouchableOpacity>

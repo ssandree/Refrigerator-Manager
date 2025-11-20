@@ -1,13 +1,8 @@
 // 레시피 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Ingredient } from "../data/mockFood";
 import { mockRecipes, Recipe } from "../data/mockRecipes";
 import recipeService from "../services/recipeService";
-import {
-  calculateRecipeScore,
-  scoreAndSortRecipes,
-} from "../utils/recipeScoring";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import {
@@ -18,8 +13,8 @@ import {
 } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
 
-// 초기값: getAllRecipes()로 가져온 모든 레시피
-const initialRecipes = mockRecipes;
+// 초기값: 빈 배열 (서버에서 로드)
+const initialRecipes: Recipe[] = [];
 
 // 스토어 상태와 액션 정의
 interface RecipeState {
@@ -37,18 +32,6 @@ interface RecipeState {
   getRecipeById: (id: string) => Recipe | undefined;
   // 검색어로 조회
   searchRecipes: (query: string) => Recipe[];
-  // 냉장고 재료 기반 레시피 점수 계산 및 정렬
-  getScoredRecipes: (fridgeIngredients: Ingredient[]) => Array<
-    Recipe & {
-      score: number;
-      scoreDetails: ReturnType<typeof calculateRecipeScore>;
-    }
-  >;
-  // 단일 레시피 점수 계산
-  getRecipeScore: (
-    recipeId: string,
-    fridgeIngredients: Ingredient[]
-  ) => ReturnType<typeof calculateRecipeScore> | null;
   // 전체 초기화
   clearAllRecipes: () => void;
   clearError: () => void;
@@ -99,21 +82,6 @@ export const useRecipeStore = create<RecipeState>(
         );
       },
 
-      // 냉장고 재료 기반 레시피 점수 계산 및 정렬
-      getScoredRecipes: (fridgeIngredients) => {
-        const recipes = get().recipes;
-        return scoreAndSortRecipes(recipes, fridgeIngredients);
-      },
-
-      // 단일 레시피 점수 계산
-      getRecipeScore: (recipeId, fridgeIngredients) => {
-        const recipe = get().recipes.find((r) => r.id === recipeId);
-        if (!recipe) {
-          return null;
-        }
-        return calculateRecipeScore(recipe, fridgeIngredients);
-      },
-
       // 전체 초기화
       clearAllRecipes: () => {
         set({ recipes: [], error: null });
@@ -146,17 +114,39 @@ export const useRecipeStore = create<RecipeState>(
               lastSyncedAt: Date.now(),
             });
           } else {
-            set({
-              error:
-                response.message ?? "레시피 목록을 불러오는데 실패했습니다.",
-            });
+            // 개발 환경: API 실패 시 mock 데이터 사용 (BE 연결 전까지)
+            if (__DEV__ && state.recipes.length === 0) {
+              set({
+                recipes: mockRecipes,
+                error: null,
+                lastSyncedAt: Date.now(),
+              });
+            } else {
+              set({
+                error:
+                  response.message ?? "레시피 목록을 불러오는데 실패했습니다.",
+                lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
+              });
+            }
           }
         } catch (error: unknown) {
-          const errorMessage = getErrorMessage(
-            error,
-            "레시피 목록을 불러오는 중 오류가 발생했습니다."
-          );
-          set({ error: errorMessage });
+          // 개발 환경: 네트워크 에러 시 mock 데이터 사용 (BE 연결 전까지)
+          if (__DEV__ && state.recipes.length === 0) {
+            set({
+              recipes: mockRecipes,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+          } else {
+            const errorMessage = getErrorMessage(
+              error,
+              "레시피 목록을 불러오는 중 오류가 발생했습니다."
+            );
+            set({
+              error: errorMessage,
+              lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
+            });
+          }
         } finally {
           set({ isLoading: false });
         }
@@ -178,9 +168,7 @@ export const useRecipeStore = create<RecipeState>(
             state.recipes,
             "RecipeStore"
           );
-          // 저장된 데이터가 없거나 빈 배열이면 초기값 사용
-          state.recipes =
-            validatedRecipes.length > 0 ? validatedRecipes : initialRecipes;
+          state.recipes = validatedRecipes;
           state.lastSyncedAt = validateSyncTimestamp(
             state.lastSyncedAt,
             "RecipeStore"

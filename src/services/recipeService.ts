@@ -1,5 +1,5 @@
 // Recipe service for managing recipes
-import { mockRecipes, Recipe } from "../data/mockRecipes";
+import { Recipe } from "../data/mockRecipes";
 import apiClient, { ApiResponse } from "./api";
 
 class RecipeService {
@@ -7,38 +7,16 @@ class RecipeService {
 
   /**
    * Get all recipes
-   * TODO: BE API 연결 시 apiClient.get으로 변경
    */
   async getAllRecipes(): Promise<ApiResponse<Recipe[]>> {
-    // 현재는 mockData 반환, 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<Recipe[]>(this.basePath);
-
-    return {
-      success: true,
-      data: mockRecipes,
-    };
+    return await apiClient.get<Recipe[]>(this.basePath);
   }
 
   /**
    * Get recipe by ID
-   * TODO: BE API 연결 시 apiClient.get으로 변경
    */
   async getRecipeById(recipeId: string): Promise<ApiResponse<Recipe>> {
-    // 현재는 mockData에서 찾아서 반환, 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<Recipe>(`${this.basePath}/${recipeId}`);
-
-    const recipe = mockRecipes.find((r) => r.id === recipeId);
-    if (recipe) {
-      return {
-        success: true,
-        data: recipe,
-      };
-    }
-    return {
-      success: false,
-      error: "레시피를 찾을 수 없습니다.",
-      message: "레시피를 찾을 수 없습니다.",
-    };
+    return await apiClient.get<Recipe>(`${this.basePath}/${recipeId}`);
   }
 
   /**

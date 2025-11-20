@@ -11,11 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { mockRecipes, Recipe } from "../../../data/mockRecipes";
-import { useFridgeStore } from "../../../stores/useFridgeStore";
+import { Recipe } from "../../../data/mockRecipes";
 import { useRecipeStore } from "../../../stores/useRecipeStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
-import { calculateRecipeScore } from "../../../utils/recipeScoring";
 
 interface RecipeCardData {
   id: string;
@@ -28,45 +26,24 @@ interface RecipeCardData {
 }
 
 export default function RecipeRecommand() {
-  const { getScoredRecipes } = useRecipeStore();
-  const { ingredients } = useFridgeStore();
+  const recipes = useRecipeStore((s) => s.recipes);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 점수가 높은 상위 8개 레시피 가져오기
-  // 재료가 없으면 mockRecipes에서 처음 8개를 순서대로 가져오기
+  // 상위 8개 레시피 가져오기 (BE에서 정렬된 순서로 받아옴)
   const data = useMemo<RecipeCardData[]>(() => {
-    // 재료가 없거나 빈 배열이면 mockRecipes에서 처음 8개를 순서대로 반환
-    if (!ingredients || ingredients.length === 0) {
-      return mockRecipes.slice(0, 8).map((recipe: Recipe) => ({
-        id: recipe.id,
-        name: recipe.recipeName,
-        desc: recipe.description,
-        calories: recipe.calories,
-        time: recipe.time,
-        owned: `0/${recipe.totalIngredients || 0} 재료 보유`,
-        imageUrl: recipe.imageUrl,
-      }));
+    if (recipes.length === 0) {
+      return [];
     }
-
-    // 재료가 있으면 점수 기반으로 정렬된 상위 8개 반환
-    const scoredRecipes = getScoredRecipes(ingredients);
-    return scoredRecipes.slice(0, 8).map(
-      (
-        recipe: Recipe & {
-          score: number;
-          scoreDetails: ReturnType<typeof calculateRecipeScore>;
-        }
-      ) => ({
-        id: recipe.id,
-        name: recipe.recipeName,
-        desc: recipe.description,
-        calories: recipe.calories,
-        time: recipe.time,
-        owned: `${recipe.scoreDetails.matchedCount}/${recipe.scoreDetails.totalRequired} 재료 보유`,
-        imageUrl: recipe.imageUrl,
-      })
-    );
-  }, [getScoredRecipes, ingredients]);
+    return recipes.slice(0, 8).map((recipe: Recipe) => ({
+      id: recipe.id,
+      name: recipe.recipeName,
+      desc: recipe.description,
+      calories: recipe.calories,
+      time: recipe.time,
+      owned: `${recipe.totalIngredients || 0} 재료`,
+      imageUrl: recipe.imageUrl,
+    }));
+  }, [recipes]);
 
   const screenWidth = Dimensions.get("window").width;
   const cardHorizontalMargin = 12;

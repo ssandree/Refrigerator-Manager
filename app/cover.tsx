@@ -7,6 +7,7 @@ import LoadingSpinner from "../src/components/LoadingSpinner";
 import { useAuthStore } from "../src/stores/useAuthStore";
 import { Colors } from "../src/styles/colors";
 import { FontSizes } from "../src/styles/common";
+import { logger } from "../src/utils/logger";
 
 export default function Cover() {
   const [isChecking, setIsChecking] = useState(false);
@@ -33,7 +34,7 @@ export default function Cover() {
       // 토큰 없음 또는 인증되지 않음 → 온보딩 시작
       router.replace("./onboarding/GetSexAge");
     } catch (error) {
-      console.error("Auth check error:", error);
+      logger.error("Auth check error:", error);
       // 에러 발생 시 온보딩으로 이동
       router.replace("./onboarding/GetSexAge");
     } finally {

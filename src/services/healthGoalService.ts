@@ -1,5 +1,4 @@
 // Health goal service for managing user's health goals
-import { mockHealthGoals } from "../data/mockHealthGoals";
 import { HealthGoal } from "../stores/useHealthGoalStore";
 import apiClient, { ApiResponse } from "./api";
 
@@ -8,16 +7,9 @@ class HealthGoalService {
 
   /**
    * Get all available health goals
-   * TODO: BE API 연결 시 apiClient.get으로 변경
    */
   async getAllGoals(): Promise<ApiResponse<HealthGoal[]>> {
-    // 현재는 mockData 반환, 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<HealthGoal[]>(this.basePath);
-
-    return {
-      success: true,
-      data: mockHealthGoals,
-    };
+    return await apiClient.get<HealthGoal[]>(this.basePath);
   }
 
   /**

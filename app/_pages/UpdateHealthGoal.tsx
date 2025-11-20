@@ -8,6 +8,7 @@ import {
   type HealthGoal,
 } from "../../src/stores/useHealthGoalStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { logger } from "../../src/utils/logger";
 
 interface UpdateHealthGoalProps {
   onClose: () => void;
@@ -19,7 +20,11 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
   const setSelectedGoals = useHealthGoalStore(
     (state) => state.setSelectedGoals
   );
-  const [localSelectedIds, setLocalSelectedIds] = useState<number[]>([]);
+
+  // 초기값: 전역 상태에서 가져온 선택된 목표 ID들
+  const [localSelectedIds, setLocalSelectedIds] = useState<number[]>(() =>
+    selectedGoals.map((goal) => goal.id)
+  );
   const [healthGoals, setHealthGoals] = useState<HealthGoal[]>([]);
 
   // Service를 통해 건강 목표 목록 로드
@@ -30,23 +35,17 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
         if (response.success && response.data) {
           setHealthGoals(response.data);
         } else {
-          // 에러는 API 응답에 포함되어 있지만, 사용자에게 알림이 필요할 수 있음
-          console.error("건강 목표 로드 실패:", response.message);
+          logger.error("건강 목표 로드 실패:", response.message);
         }
       } catch (error) {
-        console.error("건강 목표 로드 중 오류:", error);
+        logger.error("건강 목표 로드 중 오류:", error);
       }
     };
     loadHealthGoals();
   }, []);
 
-  // 초기화 시에만 전역 상태에서 로컬 상태로 동기화
-  useEffect(() => {
-    setLocalSelectedIds(selectedGoals.map((goal) => goal.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 빈 배열로 한 번만 실행
-
   // 토글 함수 (3개 제한 로직 포함)
+  // 로컬 상태만 업데이트하며, 저장 시점에만 전역 상태에 반영됨
   const toggleGoal = (goalId: number) => {
     setLocalSelectedIds((prev) => {
       if (prev.includes(goalId)) {
@@ -60,21 +59,25 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
     });
   };
 
+  // 저장 시점에만 전역 상태 업데이트
   const handleSave = () => {
     if (localSelectedIds.length === 0) {
       alert("최소 1개의 건강 목표를 선택해주세요.");
       return;
     }
-    // 저장 시점에만 전역 상태 업데이트
+
+    // 로컬 상태를 기반으로 선택된 목표 데이터 생성
     const selectedGoalsData = healthGoals.filter((goal) =>
       localSelectedIds.includes(goal.id)
     );
-    setSelectedGoals(selectedGoalsData as unknown as HealthGoal[]);
+
+    // 전역 상태 업데이트
+    setSelectedGoals(selectedGoalsData);
     onClose();
   };
 
+  // 취소 시 로컬 상태는 버리고 모달만 닫음
   const handleCancel = () => {
-    // 단순히 닫기만 하면 됨 (로컬 상태는 버려짐)
     onClose();
   };
 

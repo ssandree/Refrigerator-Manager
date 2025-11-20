@@ -1,19 +1,19 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
+    Keyboard,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
 import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
+import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
 
 export default function GetSexAge() {
   const insets = useSafeAreaInsets();

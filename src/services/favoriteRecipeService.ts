@@ -7,16 +7,9 @@ class FavoriteRecipeService {
 
   /**
    * Get all favorite recipes for the current user
-   * TODO: BE API 연결 시 실제 API 호출로 변경
    */
   async getAllFavorites(): Promise<ApiResponse<Recipe[]>> {
-    // 현재는 빈 배열 반환, 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<Recipe[]>(this.basePath);
-
-    return {
-      success: true,
-      data: [],
-    };
+    return await apiClient.get<Recipe[]>(this.basePath);
   }
 
   /**

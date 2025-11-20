@@ -1,10 +1,18 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors, FontSizes } from "../../styles/common";
-import type { HealthGoalPlan } from "../../utils/healthGoalCalculator";
+
+// BE에서 받아올 메트릭 타입
+export interface HealthGoalMetric {
+  label: string;
+  target: string;
+  current?: string;
+  progress?: number;
+  note?: string;
+}
 
 interface MetricRowProps {
-  metric: HealthGoalPlan["metrics"][0];
+  metric: HealthGoalMetric;
   color?: string;
 }
 

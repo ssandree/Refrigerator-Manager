@@ -3,6 +3,7 @@ import React from "react";
 import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors, FontSizes, commonStyles } from "../styles/common";
+import { logger } from "../utils/logger";
 
 interface ErrorFallbackProps {
   error: Error;
@@ -39,7 +40,7 @@ export default function ErrorBoundary({
       FallbackComponent={fallback}
       onError={(error: Error, info: { componentStack: string }) => {
         // 에러 로깅 (나중에 에러 추적 서비스에 연결 가능)
-        console.error("ErrorBoundary caught an error:", error, info);
+        logger.error("ErrorBoundary caught an error:", error, info);
         // Toast는 ErrorBoundary 내부에 있어서 순환 참조를 피하기 위해 제거
         // 에러는 ErrorFallback 컴포넌트에서 표시됨
       }}

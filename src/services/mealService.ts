@@ -7,16 +7,9 @@ class MealService {
 
   /**
    * Get all meals for the current user
-   * TODO: BE API 연결 시 apiClient.get으로 변경
    */
   async getAllMeals(): Promise<ApiResponse<Meal[]>> {
-    // 현재는 빈 배열 반환 (mockData가 없음), 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<Meal[]>(this.basePath);
-
-    return {
-      success: true,
-      data: [],
-    };
+    return await apiClient.get<Meal[]>(this.basePath);
   }
 
   /**

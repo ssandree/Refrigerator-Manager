@@ -5,6 +5,10 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
+import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
+import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
+import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 import {
   HealthGoal,
   useHealthGoalStore,
@@ -16,10 +20,7 @@ import {
   FontSizes,
   noShadowStyle,
 } from "../../src/styles/common";
-import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
-import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
-import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
-import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
+import { logger } from "../../src/utils/logger";
 
 export default function GetHealthGoal() {
   const insets = useSafeAreaInsets();
@@ -39,10 +40,10 @@ export default function GetHealthGoal() {
         if (response.success && response.data) {
           setHealthGoals(response.data);
         } else {
-          console.error("건강 목표 로드 실패:", response.message);
+          logger.error("건강 목표 로드 실패:", response.message);
         }
       } catch (error) {
-        console.error("건강 목표 로드 중 오류:", error);
+        logger.error("건강 목표 로드 중 오류:", error);
       }
     };
     loadHealthGoals();

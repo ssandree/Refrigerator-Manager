@@ -2,10 +2,10 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  Colors,
-  createShadowStyle,
-  FontSizes,
-  noShadowStyle,
+    Colors,
+    createShadowStyle,
+    FontSizes,
+    noShadowStyle,
 } from "../../styles/common";
 
 const primaryButtonShadow = createShadowStyle({

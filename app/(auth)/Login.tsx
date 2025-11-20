@@ -20,8 +20,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const isLoading = useAuthStore((s) => s.isLoading);
-  // TODO: API 연결 후 사용
-  // const loginWithCredentials = useAuthStore((s) => s.loginWithCredentials);
+  const loginWithCredentials = useAuthStore((s) => s.loginWithCredentials);
 
   useStoreWithError(useAuthStore);
 
@@ -35,16 +34,11 @@ export default function LoginScreen() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    // API 연결 전: 입력값과 관계없이 Home으로 이동
-    // 스택을 모두 닫고 Home으로 이동
-    router.dismissAll();
-    router.replace("/(tabs)/Home");
-
-    // TODO: API 연결 후 아래 코드 활성화
-    // const response = await loginWithCredentials(data.email, data.password);
-    // if (response.success) {
-    //   router.replace("/(tabs)/Home");
-    // }
+    const response = await loginWithCredentials(data.email, data.password);
+    if (response.success) {
+      router.dismissAll();
+      router.replace("/(tabs)/Home");
+    }
   };
 
   return (

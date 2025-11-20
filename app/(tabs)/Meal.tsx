@@ -100,7 +100,11 @@ export default function Meal() {
         {/* 추가 버튼 */}
         <TouchableOpacity
           style={styles.addMealButton}
-          onPress={() => router.push("/_pages/RegisterMeal" as any)}
+          onPress={() =>
+            router.push({
+              pathname: "/_pages/RegisterMeal",
+            } as { pathname: string })
+          }
         >
           <Text style={styles.addMealButtonText}>+ 식사 추가</Text>
         </TouchableOpacity>

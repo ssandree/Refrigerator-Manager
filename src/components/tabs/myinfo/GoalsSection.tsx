@@ -44,7 +44,7 @@ export default function GoalsSection({ onEditGoals }: GoalsSectionProps) {
                   ]}
                 >
                   <Ionicons
-                    name={goal.icon as any}
+                    name={goal.icon as keyof typeof Ionicons.glyphMap}
                     size={20}
                     color={goal.color}
                   />

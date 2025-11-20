@@ -26,6 +26,9 @@ export interface Meal {
   mealType?: "breakfast" | "lunch" | "dinner" | "snack";
 }
 
+// 초기값: 빈 배열 (서버에서 로드)
+const initialMeals: Meal[] = [];
+
 // 스토어 상태와 액션 정의
 interface MealState {
   meals: Meal[];
@@ -56,7 +59,7 @@ interface MealState {
 export const useMealStore = create<MealState>(
   persist(
     (set, get) => ({
-      meals: [],
+      meals: initialMeals,
       error: null,
       isLoading: false,
       lastSyncedAt: null,
@@ -126,12 +129,15 @@ export const useMealStore = create<MealState>(
               lastSyncedAt: Date.now(),
             });
           } else {
+            // 개발 환경: API 실패 시 mock 데이터 사용 (BE 연결 전까지)
+            // 식단은 사용자별 데이터이므로 mock 데이터 없이 빈 배열 유지
             set({
               error: response.message ?? "식단 목록을 불러오는데 실패했습니다.",
               lastSyncedAt: Date.now(), // 실패해도 lastSyncedAt 설정하여 재시도 방지
             });
           }
         } catch (error: unknown) {
+          // 개발 환경: 네트워크 에러 시에도 빈 배열 유지 (식단은 사용자별 데이터)
           const errorMessage = getErrorMessage(
             error,
             "식단 목록을 불러오는 중 오류가 발생했습니다."
@@ -165,11 +171,18 @@ export const useMealStore = create<MealState>(
       // 하이드레이션 완료 후 검증 및 정리
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.meals = validateArray<Meal>(state.meals, "MealStore");
+          const validatedMeals = validateArray<Meal>(state.meals, "MealStore");
+          state.meals = validatedMeals;
           state.lastSyncedAt = validateSyncTimestamp(
             state.lastSyncedAt,
             "MealStore"
           );
+        } else {
+          // state가 없으면 초기값으로 설정
+          return {
+            meals: initialMeals,
+            lastSyncedAt: null,
+          };
         }
       },
     }

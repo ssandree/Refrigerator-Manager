@@ -28,12 +28,14 @@ function ExpiringIngredientCard({
   };
 
   const handleRecipeRecommend = () => {
-    router.push({ pathname: "/(tabs)/Recipe", params: { q: name } } as any);
+    router.push({
+      pathname: "/(tabs)/Recipe",
+      params: { q: name },
+    } as { pathname: string; params?: Record<string, string> });
   };
 
   const handleResetAlert = () => {
-    console.log(`${name} 알림 재설정`);
-    // TODO: 알림 재설정 로직 구현
+    // 알림 재설정 로직 구현 필요
   };
 
   return (
@@ -194,9 +196,6 @@ const styles = StyleSheet.create({
     minWidth: 40,
     justifyContent: "center",
   },
-  chipIcon: {
-    marginRight: 4,
-  },
   chipText: {
     fontSize: 10,
     fontWeight: "500",
@@ -205,17 +204,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
     marginTop: 8,
-  },
-  button: {
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    fontSize: 10,
-    fontWeight: "500",
-    marginLeft: 6,
   },
 });

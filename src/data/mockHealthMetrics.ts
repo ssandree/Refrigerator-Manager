@@ -1,8 +1,32 @@
-import {
-  ActivityLevel,
-  UserHealthProfile,
-  WeeklyIntakeSummary,
-} from "../utils/healthGoalCalculator";
+// BE에서 받아올 데이터 타입 정의
+export type ActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "veryActive";
+
+export type Sex = "male" | "female";
+
+export interface UserHealthProfile {
+  sex: Sex;
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  activityLevel: ActivityLevel;
+}
+
+export interface WeeklyIntakeSummary {
+  averageDailyCalories: number;
+  averageDailyProtein: number;
+  averageDailyCarbs: number;
+  averageDailyFat: number;
+  averageDailyFiber: number;
+  averageDailyVitaminC: number;
+  averageDailyVitaminD: number;
+  averageDailyZinc: number;
+  averageDailySodium: number;
+}
 
 export const mockUserProfile: UserHealthProfile = {
   sex: "female",

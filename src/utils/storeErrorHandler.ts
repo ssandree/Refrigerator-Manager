@@ -1,7 +1,7 @@
 // Store의 에러 처리를 위한 공통 유틸리티 함수
 
 // HTTP 에러 타입 정의
-type HttpError = {
+export type HttpError = {
   status?: number;
   message?: string;
   error?: string;
@@ -11,6 +11,18 @@ type HttpError = {
     };
   };
 };
+
+/**
+ * HTTP 에러인지 확인하는 타입 가드
+ */
+export function isHttpError(error: unknown): error is HttpError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as HttpError).status === "number"
+  );
+}
 
 /**
  * Store 액션에서 발생하는 에러를 일관되게 처리하는 헬퍼 함수

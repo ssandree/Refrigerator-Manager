@@ -1,60 +1,37 @@
-import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import GoalCard from "../../src/components/weeklyAchieve/GoalCard";
 import HealthSummaryCard from "../../src/components/weeklyAchieve/HealthSummaryCard";
 import SectionHeader from "../../src/components/weeklyAchieve/SectionHeader";
-import {
-  mockUserProfile,
-  mockWeeklyIntake,
-} from "../../src/data/mockHealthMetrics";
-import {
-  useHealthGoalStore,
-  type HealthGoal,
-} from "../../src/stores/useHealthGoalStore";
 import { Colors } from "../../src/styles/common";
-import {
-  calculateBmr,
-  calculateHealthGoalPlan,
-  calculateTdee,
-  mapGoalTitleToType,
-} from "../../src/utils/healthGoalCalculator";
 
-const fallbackGoals: HealthGoal[] = [
-  {
-    id: 0,
-    title: "체중 유지",
-    description: "현재 체중을 건강하게 유지",
-    icon: "scale-outline",
-    color: Colors.primary,
-  },
-];
+// BE에서 받아올 건강 목표 계획 타입 (임시 - BE API 연동 시 실제 타입으로 교체)
+export interface HealthGoalPlan {
+  goalType: string;
+  title: string;
+  summary: string;
+  overallProgress: number;
+  metrics: {
+    label: string;
+    target: string;
+    current?: string;
+    progress?: number;
+    note?: string;
+  }[];
+  recommendedFoods: string[];
+  notes: string[];
+}
 
 export default function WeeklyAchieveScreen() {
-  const selectedGoals = useHealthGoalStore((state) => state.selectedGoals);
-  const goalsToDisplay =
-    selectedGoals.length > 0 ? selectedGoals : fallbackGoals;
+  // TODO: BE에서 건강 목표 계획 데이터를 받아옴
+  // const { data: plans, isLoading } = useHealthGoalPlans(selectedGoals);
 
-  const bmr = useMemo(() => calculateBmr(mockUserProfile), []);
-  const tdee = useMemo(() => calculateTdee(mockUserProfile, bmr), [bmr]);
-
-  const plans = useMemo(
-    () =>
-      goalsToDisplay.map((goal) => {
-        const goalType = mapGoalTitleToType(goal.title);
-        const plan = calculateHealthGoalPlan(
-          mockUserProfile,
-          goalType,
-          mockWeeklyIntake
-        );
-        return {
-          ...plan,
-          goalTitle: goal.title ?? plan.title,
-          color: goal.color ?? Colors.primary,
-          id: goal.id,
-        };
-      }),
-    [goalsToDisplay]
-  );
+  // 임시: 빈 배열 (BE 연동 시 제거)
+  const plans: (HealthGoalPlan & {
+    goalTitle: string;
+    color: string;
+    id: number;
+  })[] = [];
 
   return (
     <View style={styles.container}>
@@ -62,16 +39,25 @@ export default function WeeklyAchieveScreen() {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
       >
-        <HealthSummaryCard bmr={bmr} tdee={tdee} />
+        {/* TODO: BE에서 bmr, tdee를 받아옴 */}
+        <HealthSummaryCard bmr={0} tdee={0} />
 
         <SectionHeader
           title="선택한 건강 목표"
           subtitle="주간 섭취 데이터를 기반으로 달성도를 계산합니다."
         />
 
-        {plans.map((plan) => (
-          <GoalCard key={`${plan.goalType}-${plan.id}`} plan={plan} />
-        ))}
+        {plans.length > 0 ? (
+          plans.map((plan) => (
+            <GoalCard key={`${plan.goalType}-${plan.id}`} plan={plan} />
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              건강 목표 데이터를 불러오는 중...
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -88,5 +74,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
+  },
+  emptyState: {
+    padding: 32,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
 });

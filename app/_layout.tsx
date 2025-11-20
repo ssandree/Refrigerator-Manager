@@ -10,28 +10,9 @@ import Toast from "react-native-toast-message";
 import ErrorBoundary from "../src/components/ErrorBoundary";
 import { toastConfig } from "../src/components/ToastConfig";
 import { getToken } from "../src/services/tokenStorage";
-import { getErrorMessage } from "../src/utils/storeErrorHandler";
+import { logger } from "../src/utils/logger";
+import { getErrorMessage, isHttpError } from "../src/utils/storeErrorHandler";
 import { showApiErrorToast } from "../src/utils/toast";
-
-type HttpError = {
-  status?: number;
-  message?: string;
-  error?: string;
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-};
-
-const isHttpError = (error: unknown): error is HttpError => {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    typeof (error as HttpError).status === "number"
-  );
-};
 
 // 앱 전역에서 재사용할 QueryClient 인스턴스
 const defaultQueryClientOptions: DefaultOptions = {
@@ -87,7 +68,7 @@ export default function RootLayout() {
           apiClient.setToken(token);
         }
       } catch (error) {
-        console.error("앱 초기화 중 오류:", error);
+        logger.error("앱 초기화 중 오류:", error);
       }
     })();
   }, []);

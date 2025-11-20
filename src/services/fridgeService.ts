@@ -1,5 +1,5 @@
 // Fridge/Ingredient service for managing refrigerator contents
-import { Ingredient, mockIngredients } from "../data/mockFood";
+import { Ingredient } from "../data/mockFood";
 import apiClient, { ApiResponse } from "./api";
 
 class FridgeService {
@@ -7,20 +7,9 @@ class FridgeService {
 
   /**
    * Get all ingredients in the fridge
-   * TODO: BE API 연결 시 apiClient.get으로 변경
    */
   async getAllIngredients(): Promise<ApiResponse<Ingredient[]>> {
-    // 현재는 mockData 반환, 나중에 BE API 연결 시 아래 주석 해제
-    // return await apiClient.get<Ingredient[]>(`${this.basePath}/ingredients`);
-
-    // TODO: 나중에 여기를 바꿔라 - 냉장고 화면 초기화 시 mockFood.ts에서 앞쪽 10개만 가져오도록 설정
-    // 현재는 초기화를 위해 앞쪽 10개만 반환
-    const initialIngredients = mockIngredients.slice(0, 10);
-
-    return {
-      success: true,
-      data: initialIngredients,
-    };
+    return await apiClient.get<Ingredient[]>(`${this.basePath}/ingredients`);
   }
 
   /**

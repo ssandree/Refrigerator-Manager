@@ -17,17 +17,14 @@ import { useModalAnimation } from "../../src/hooks/useModalAnimation";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useToggleArray } from "../../src/hooks/useToggleArray";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
-import { useFridgeStore } from "../../src/stores/useFridgeStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors } from "../../src/styles/common";
-import { filterRecipes, hasActiveFilters } from "../../src/utils/recipeFilter";
+import { filterRecipes } from "../../src/utils/recipeFilter";
 
 export default function RecipeScreen() {
   const recipes = useRecipeStore((s) => s.recipes);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
-  const getScoredRecipes = useRecipeStore((s) => s.getScoredRecipes);
-  const ingredients = useFridgeStore((s) => s.ingredients);
   const [refreshing, setRefreshing] = useState(false);
   const toggleFavorite = useFavoriteRecipeStore((s) => s.toggleFavorite);
 
@@ -110,35 +107,10 @@ export default function RecipeScreen() {
     ]
   );
 
-  // 필터가 적용되었는지 확인
-  const activeFilters = hasActiveFilters(filterOptions);
-
-  // 점수 계산 (ingredients가 변경될 때만 재계산)
-  const scoredRecipes = useMemo(() => {
-    if (ingredients.length === 0) return [];
-    return getScoredRecipes(ingredients);
-  }, [ingredients, getScoredRecipes]);
-
-  // 점수 맵 생성 (scoredRecipes가 변경될 때만 재계산)
-  const scoreMap = useMemo(() => {
-    return new Map(scoredRecipes.map((r) => [r.id, r.score]));
-  }, [scoredRecipes]);
-
   // 필터링된 레시피 목록 (필터 옵션이 변경될 때만 재계산)
   const filteredRecipes = useMemo(() => {
-    let result = filterRecipes(recipes, filterOptions);
-
-    // 필터가 없을 때는 점수 기반으로 정렬
-    if (!activeFilters && scoreMap.size > 0) {
-      result = [...result].sort((a, b) => {
-        const scoreA = scoreMap.get(a.id) || 0;
-        const scoreB = scoreMap.get(b.id) || 0;
-        return scoreB - scoreA; // 내림차순 정렬
-      });
-    }
-
-    return result;
-  }, [recipes, filterOptions, activeFilters, scoreMap]);
+    return filterRecipes(recipes, filterOptions);
+  }, [recipes, filterOptions]);
 
   return (
     <View style={styles.container}>
