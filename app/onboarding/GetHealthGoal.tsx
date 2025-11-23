@@ -1,18 +1,14 @@
 // 역할: 온보딩에서 사용자 건강 목표(최대 3개)를 선택하고, 선택 결과를 Zustand 스토어에 저장
 // - 로컬 상태(localSelectedIds)로 UI 선택을 관리하며 완료 시 일괄 반영(setSelectedGoals)
-import { healthGoalService } from "@/services/healthGoalService";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
 import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
-import {
-  HealthGoal,
-  useHealthGoalStore,
-} from "../../src/stores/useHealthGoalStore";
+import { mockHealthGoals } from "../../src/data/mockHealthGoals";
 import {
   Colors,
   commonStyles,
@@ -20,34 +16,16 @@ import {
   FontSizes,
   noShadowStyle,
 } from "../../src/styles/common";
-import { logger } from "../../src/utils/logger";
+import { saveOnboardingData } from "../../src/utils/onboardingStorage";
 
 export default function GetHealthGoal() {
   const insets = useSafeAreaInsets();
-  // Zustand: 선택된 목표를 전역으로 일괄 설정하는 액션
-  const setSelectedGoals = useHealthGoalStore(
-    (state) => state.setSelectedGoals
-  );
+  // 건강 목표는 상수에서 직접 가져옴
+  const allGoals = mockHealthGoals;
+
   // 화면 내 임시 선택 상태(3개 초과 선택 방지)
   const [localSelectedIds, setLocalSelectedIds] = useState<number[]>([]);
-  const [healthGoals, setHealthGoals] = useState<HealthGoal[]>([]);
-
-  // Service를 통해 건강 목표 목록 로드
-  useEffect(() => {
-    const loadHealthGoals = async () => {
-      try {
-        const response = await healthGoalService.getAllGoals();
-        if (response.success && response.data) {
-          setHealthGoals(response.data);
-        } else {
-          logger.error("건강 목표 로드 실패:", response.message);
-        }
-      } catch (error) {
-        logger.error("건강 목표 로드 중 오류:", error);
-      }
-    };
-    loadHealthGoals();
-  }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 목표 선택/해제 토글
   const toggleGoal = (goalId: number) => {
@@ -61,20 +39,32 @@ export default function GetHealthGoal() {
     });
   };
 
-  // 완료 버튼: 유효성 체크 후 선택 항목을 전역 상태로 저장하고 로그인으로 이동
-  const handleStart = () => {
+  // 완료 버튼: 유효성 체크 후 온보딩 데이터 저장하고 로그인/회원가입 화면으로 이동
+  const handleStart = async () => {
     if (localSelectedIds.length === 0) {
-      alert("최소 1개의 건강 목표를 선택해주세요.");
+      Alert.alert("알림", "최소 1개의 건강 목표를 선택해주세요.");
       return;
     }
 
-    // 선택된 목표들을 Zustand 스토어에 일괄 저장
-    const selectedGoalsData = healthGoals.filter((goal) =>
-      localSelectedIds.includes(goal.id)
-    );
-    setSelectedGoals(selectedGoalsData);
+    setIsSubmitting(true);
 
-    router.push("/(auth)/Login");
+    try {
+      // 건강 목표 ID 저장 (회원가입/로그인 후 사용)
+      await saveOnboardingData({
+        healthGoalIds: localSelectedIds,
+      });
+
+      // 로그인/회원가입 화면으로 이동
+      router.push("/(auth)/Login");
+    } catch (error) {
+      console.error("온보딩 데이터 저장 중 오류:", error);
+      Alert.alert(
+        "오류",
+        "데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,7 +90,7 @@ export default function GetHealthGoal() {
 
         {/* 목표 선택 리스트 */}
         <HealthGoalSelector
-          healthGoals={healthGoals}
+          healthGoals={allGoals}
           selectedGoalIds={localSelectedIds}
           onGoalToggle={toggleGoal}
           maxSelection={3}
@@ -117,7 +107,7 @@ export default function GetHealthGoal() {
         onPressPrev={() => router.push("./GetBmiActing")}
         label="시작하기"
         onPress={handleStart}
-        disabled={localSelectedIds.length === 0}
+        disabled={localSelectedIds.length === 0 || isSubmitting}
       />
     </View>
   );
@@ -191,6 +181,23 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   selectedCount: {
+    fontSize: FontSizes.base,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: FontSizes.base,
+    color: "#FF3B30",
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "#FFEBEE",
+    borderRadius: 8,
+  },
+  loadingText: {
     fontSize: FontSizes.base,
     color: Colors.textSecondary,
     textAlign: "center",

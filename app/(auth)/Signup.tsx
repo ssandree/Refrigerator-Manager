@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { View } from "react-native";
 import { z } from "zod";
-import { AuthLayout } from "../../src/components/AuthLayout";
 import { PrimaryButton } from "../../src/components/Buttons";
 import { InputForm } from "../../src/components/InputForm";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useAuthStore } from "../../src/stores/useAuthStore";
+import { applyOnboardingData } from "../../src/utils/applyOnboardingData";
 
 const signupSchema = z
   .object({
@@ -49,38 +49,35 @@ export default function SigninScreen() {
     });
 
     if (response.success) {
+      // 회원가입 성공 후 온보딩 데이터 적용
+      const user = useAuthStore.getState().user;
+      if (user?.id) {
+        await applyOnboardingData(user.id);
+      }
       router.replace("/(auth)/Login");
     }
   };
 
   return (
-    <AuthLayout
-      title="냉장고 매니징"
-      subtitle="새로운 계정을 만들어보세요"
-      footerText="이미 계정이 있으신가요?"
-      footerLinkText="로그인"
-      footerLinkPath="/(auth)/Login"
-    >
-      <View style={{ width: "100%" }}>
-        <InputForm
-          control={control}
-          errors={errors}
-          showPassword={showPassword}
-          onToggleShowPassword={() => setShowPassword(!showPassword)}
-          showConfirmPassword={showConfirmPassword}
-          onToggleShowConfirmPassword={() =>
-            setShowConfirmPassword(!showConfirmPassword)
-          }
-          showNameField={true}
+    <View style={{ width: "100%" }}>
+      <InputForm
+        control={control}
+        errors={errors}
+        showPassword={showPassword}
+        onToggleShowPassword={() => setShowPassword(!showPassword)}
+        showConfirmPassword={showConfirmPassword}
+        onToggleShowConfirmPassword={() =>
+          setShowConfirmPassword(!showConfirmPassword)
+        }
+        showNameField={true}
+      />
+      <View style={{ marginTop: 12 }}>
+        <PrimaryButton
+          label="회원가입"
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
         />
-        <View style={{ marginTop: 12 }}>
-          <PrimaryButton
-            label="회원가입"
-            onPress={handleSubmit(onSubmit)}
-            disabled={isLoading}
-          />
-        </View>
       </View>
-    </AuthLayout>
+    </View>
   );
 }

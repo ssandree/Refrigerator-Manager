@@ -1,21 +1,79 @@
-import { Stack } from "expo-router";
-import React from "react";
+import { authStyles } from "@/styles/auth";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Slot, usePathname } from "expo-router";
+import React, { useMemo } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Colors } from "../../src/styles/colors";
 
 export default function AuthLayout() {
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+
+  // 현재 라우트에 따라 제목과 서브타이틀 설정
+  const authConfig = useMemo(() => {
+    if (pathname?.includes("Signup")) {
+      return {
+        title: "냉장고 매니징",
+        subtitle: "새로운 계정을 만들어보세요",
+        footerText: "이미 계정이 있으신가요?",
+        footerLinkText: "로그인",
+        footerLinkPath: "/(auth)/Login",
+      };
+    }
+    // Login (기본값)
+    return {
+      title: "냉장고 매니징",
+      subtitle: "스마트한 냉장고 관리의 시작",
+      footerText: "계정이 없으신가요?",
+      footerLinkText: "회원가입",
+      footerLinkPath: "/(auth)/Signup",
+    };
+  }, [pathname]);
+
   return (
-    <Stack>
-      <Stack.Screen
-        name="Login"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="Signup"
-        options={{
-          headerShown: false,
-        }}
-      />
-    </Stack>
+    <KeyboardAvoidingView
+      style={authStyles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          authStyles.scrollContent,
+          { paddingTop: insets.top + 20 },
+        ]}
+      >
+        <View style={authStyles.logoContainer}>
+          <Ionicons name="snow" size={60} color={Colors.primary} />
+          <Text style={authStyles.logoText}>{authConfig.title}</Text>
+          <Text style={authStyles.subtitle}>{authConfig.subtitle}</Text>
+        </View>
+
+        <Slot />
+
+        {authConfig.footerText &&
+          authConfig.footerLinkText &&
+          authConfig.footerLinkPath && (
+            <View style={authStyles.footer}>
+              <Text style={authStyles.footerText}>
+                {authConfig.footerText}{" "}
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push(authConfig.footerLinkPath!)}
+              >
+                <Text style={authStyles.linkText}>
+                  {authConfig.footerLinkText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

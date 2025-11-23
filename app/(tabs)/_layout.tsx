@@ -9,7 +9,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ProfileCircle from "../../src/components/ProfileCircle";
 import { Colors, createShadowStyle, FontSizes } from "../../src/styles/common";
@@ -32,10 +32,15 @@ export default function TabsLayout() {
         headerStyle: {
           height: 120,
         },
+        headerTitleStyle: {
+          fontSize: FontSizes.xl,
+          fontWeight: "bold",
+        },
+        headerTintColor: Colors.textSecondary,
         tabBarStyle: {
-          height: 72 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
-          paddingTop: 12,
+          height: 60 + insets.bottom,
+          paddingBottom: 4 + insets.bottom,
+          paddingTop: 8,
           borderTopWidth: 1,
           borderTopColor: Colors.borderLight,
           backgroundColor: Colors.surface,
@@ -158,6 +163,18 @@ export default function TabsLayout() {
         name="MyInfo"
         options={{
           title: "내정보",
+          headerShown: true,
+          headerRight: () => (
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/Settings")}
+              >
+                <Text style={styles.settingsIcon}>⚙️</Text>
+              </TouchableOpacity>
+            </View>
+          ),
+          headerTintColor: Colors.textSecondary,
           tabBarIcon: ({ color, size, focused }) => (
             <User size={size} color={color} strokeWidth={focused ? 2.5 : 2} />
           ),
@@ -178,5 +195,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 20,
     backgroundColor: Colors.backgroundLight,
+  },
+  settingsIcon: {
+    fontSize: 20,
   },
 });

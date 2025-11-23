@@ -1,10 +1,11 @@
 // React Query 전역 Provider로 서버 상태를 관리
-import { default as apiClient } from "@/services/api";
+import { default as apiClient } from "@/services/apiClient";
 import type { DefaultOptions } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import ErrorBoundary from "../src/components/ErrorBoundary";
@@ -74,25 +75,27 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="(auth)"
-              options={{
-                presentation: "modal",
-              }}
-            />
-            <Stack.Screen name="_pages" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="index" />
-          </Stack>
-          <Toast config={toastConfig} />
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="(auth)"
+                options={{
+                  presentation: "modal",
+                }}
+              />
+              <Stack.Screen name="_pages" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="index" />
+            </Stack>
+            <Toast config={toastConfig} />
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }

@@ -1,14 +1,18 @@
 import { router, Stack } from "expo-router";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   FlatList,
+  RefreshControl,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import LoadingSpinner from "../../src/components/LoadingSpinner";
 import RecipeCard from "../../src/components/RecipeCard";
+import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
@@ -16,6 +20,25 @@ export default function LikeRecipe() {
   const favoriteRecipes = useFavoriteRecipeStore(
     (state) => state.favoriteRecipes
   );
+  const loadFavorites = useFavoriteRecipeStore((state) => state.loadFavorites);
+  const isLoading = useFavoriteRecipeStore((state) => state.isLoading);
+  const lastSyncedAt = useFavoriteRecipeStore((state) => state.lastSyncedAt);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useStoreWithError(useFavoriteRecipeStore);
+  useAutoLoadData(favoriteRecipes, isLoading, loadFavorites, {
+    checkLastSynced: true,
+    lastSyncedAt,
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadFavorites(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadFavorites]);
 
   const renderRecipeCard = ({ item }: { item: any }) => (
     <RecipeCard
@@ -47,7 +70,12 @@ export default function LikeRecipe() {
           </View>
 
           {/* 좋아요한 레시피 리스트 */}
-          {favoriteRecipes.length === 0 ? (
+          {isLoading && favoriteRecipes.length === 0 ? (
+            <LoadingSpinner
+              message="좋아요한 레시피를 불러오는 중..."
+              fullScreen
+            />
+          ) : favoriteRecipes.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>
                 아직 좋아요한 레시피가 없어요
@@ -63,6 +91,9 @@ export default function LikeRecipe() {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
             />
           )}
         </View>

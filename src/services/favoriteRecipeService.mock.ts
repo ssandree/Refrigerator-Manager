@@ -1,6 +1,6 @@
 // Mock Favorite recipe service for development
 import { Recipe } from "../data/mockRecipes";
-import { ApiResponse } from "./api";
+import { ApiResponse } from "./apiClient";
 
 class FavoriteRecipeServiceMock {
   /**

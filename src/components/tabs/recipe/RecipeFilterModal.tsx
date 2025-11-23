@@ -55,15 +55,13 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
     onSetCalorieRange,
   } = props;
 
-  const ingredients = useFridgeStore((s) => s.ingredients);
+  const foods = useFridgeStore((s) => s.foods);
 
   // 냉장고 재료에서 이름을 유니크하게 추출 (name 필드 가정)
-  const ingredientNames = useMemo(() => {
-    const names = ingredients
-      .map((i: any) => i.name)
-      .filter(Boolean) as string[];
+  const foodNames = useMemo(() => {
+    const names = foods.map((i: any) => i.name).filter(Boolean) as string[];
     return Array.from(new Set(names));
-  }, [ingredients]);
+  }, [foods]);
 
   return (
     <Modal
@@ -92,7 +90,7 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
             {/* 재료 선택 */}
             <Text style={styles.sectionTitle}>재료</Text>
             <View style={styles.chipsRow}>
-              {ingredientNames.map((name) => (
+              {foodNames.map((name) => (
                 <FilterChip
                   key={name}
                   label={name}
@@ -100,7 +98,7 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
                   onPress={() => onToggleIngredient(name)}
                 />
               ))}
-              {ingredientNames.length === 0 && (
+              {foodNames.length === 0 && (
                 <Text style={styles.emptyText}>
                   냉장고에 등록된 재료가 없습니다.
                 </Text>

@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { mockRecipes, Recipe } from "../data/mockRecipes";
+import favoriteRecipeService from "../services/favoriteRecipeService";
 import recipeService from "../services/recipeService";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
@@ -106,10 +107,59 @@ export const useRecipeStore = create<RecipeState>(
 
         try {
           set({ isLoading: true, error: null });
-          const response = await recipeService.getAllRecipes();
-          if (response.success && response.data) {
+
+          // 레시피와 즐겨찾기 목록을 병렬로 로드
+          const [recipesResponse, favoritesResponse] = await Promise.all([
+            recipeService.getAllRecipes(),
+            favoriteRecipeService
+              .getAllFavorites()
+              .catch(() => ({ success: false, data: [] })),
+          ]);
+
+          if (recipesResponse.success && recipesResponse.data) {
+            // 즐겨찾기 레시피 ID 집합 생성
+            const favoriteRecipeIds = new Set<string>();
+            if (favoritesResponse.success && favoritesResponse.data) {
+              favoritesResponse.data.forEach((recipe) => {
+                favoriteRecipeIds.add(recipe.id);
+              });
+            }
+
+            // 냉장고 재료 목록 가져오기 (다른 스토어에서)
+            const { useFridgeStore } = await import("./useFridgeStore");
+            const fridgeState = useFridgeStore.getState();
+            const userFoods = fridgeState.foods;
+            const userFoodNames = new Set(
+              userFoods.map((food) => food.name.toLowerCase())
+            );
+
+            // 각 레시피에 UI 필드 계산 및 추가
+            const enrichedRecipes: Recipe[] = recipesResponse.data.map(
+              (recipe) => {
+                // ingredientsOwned, totalIngredients 계산
+                const requiredfoods = recipe.requiredfoods || [];
+                const totalIngredients = requiredfoods.length;
+                const ingredientsOwned = requiredfoods.filter((foodName) =>
+                  userFoodNames.has(foodName.toLowerCase())
+                ).length;
+
+                // isFavorite 확인 (백엔드 응답에 있으면 사용, 없으면 즐겨찾기 목록에서 확인)
+                const isFavorite =
+                  recipe.isFavorite !== undefined
+                    ? recipe.isFavorite
+                    : favoriteRecipeIds.has(recipe.id);
+
+                return {
+                  ...recipe,
+                  ingredientsOwned,
+                  totalIngredients,
+                  isFavorite,
+                };
+              }
+            );
+
             set({
-              recipes: response.data,
+              recipes: enrichedRecipes,
               error: null,
               lastSyncedAt: Date.now(),
             });
@@ -124,7 +174,8 @@ export const useRecipeStore = create<RecipeState>(
             } else {
               set({
                 error:
-                  response.message ?? "레시피 목록을 불러오는데 실패했습니다.",
+                  recipesResponse.message ??
+                  "레시피 목록을 불러오는데 실패했습니다.",
                 lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
               });
             }

@@ -1,7 +1,7 @@
 // Mock Health goal service for development
 import { mockHealthGoals } from "../data/mockHealthGoals";
 import { HealthGoal } from "../stores/useHealthGoalStore";
-import { ApiResponse } from "./api";
+import { ApiResponse } from "./apiClient";
 
 class HealthGoalServiceMock {
   /**

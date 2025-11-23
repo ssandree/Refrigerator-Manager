@@ -1,6 +1,6 @@
 // Meal service for managing meals/meals consumed by users
 import { Meal } from "../stores/useMealStore";
-import apiClient, { ApiResponse } from "./api";
+import apiClient, { ApiResponse } from "./apiClient";
 
 class MealService {
   private readonly basePath = "/meals";
@@ -17,7 +17,9 @@ class MealService {
    */
   async getMealsByDateRange(startDate: string, endDate: string) {
     return await apiClient.get<Meal[]>(
-      `${this.basePath}?startDate=${startDate}&endDate=${endDate}`
+      `${this.basePath}/range?startDate=${encodeURIComponent(
+        startDate
+      )}&endDate=${encodeURIComponent(endDate)}`
     );
   }
 
@@ -46,7 +48,9 @@ class MealService {
    * Delete a meal
    */
   async deleteMeal(mealId: string) {
-    return await apiClient.delete(`${this.basePath}/${mealId}`);
+    return await apiClient.delete<{ message: string }>(
+      `${this.basePath}/${mealId}`
+    );
   }
 
   /**

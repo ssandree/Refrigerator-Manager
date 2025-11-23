@@ -4,7 +4,7 @@ import { AlertTriangle, Bell, CheckCircle, ChefHat } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SecondaryButton } from "../../../components/Buttons";
-import { Ingredient } from "../../../data/mockFood";
+import { Food } from "../../../data/mockFood";
 import { useFridgeStore } from "../../../stores/useFridgeStore";
 import { Colors, commonStyles, FontSizes } from "../../../styles/common";
 
@@ -82,30 +82,28 @@ function ExpiringIngredientCard({
 }
 
 export default function ExpiringIngredientSection() {
-  const ingredients = useFridgeStore((s) => s.ingredients);
+  const foods = useFridgeStore((s) => s.foods);
 
   // 3일 이하 임박 재료 필터링
-  const getExpiringIngredients = (): (Ingredient & { daysLeft: number })[] => {
+  const getExpiringFoods = (): (Food & { daysLeft: number })[] => {
     const today = new Date();
-    return ingredients
-      .map((ingredient) => {
-        const expiryDate = new Date(ingredient.expiryDate);
+    return foods
+      .map((food) => {
+        const expiryDate = new Date(food.expiryDate);
         const daysLeft = Math.ceil(
           (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
         );
-        return { ...ingredient, daysLeft };
+        return { ...food, daysLeft };
       })
-      .filter(
-        (ingredient) => ingredient.daysLeft <= 3 && ingredient.daysLeft >= 0
-      );
+      .filter((food) => food.daysLeft <= 3 && food.daysLeft >= 0);
   };
 
-  const expiringIngredients = getExpiringIngredients();
+  const expiringFoods = getExpiringFoods();
 
   return (
     <View style={tabsStyles.section}>
       <Text style={tabsStyles.sectionTitle}>⚠️ 임박 재료</Text>
-      {expiringIngredients.length === 0 ? (
+      {expiringFoods.length === 0 ? (
         <View
           style={{
             padding: 24,
@@ -160,11 +158,11 @@ export default function ExpiringIngredientSection() {
         </View>
       ) : (
         <View style={tabsStyles.expiringContainer}>
-          {expiringIngredients.map((ingredient) => (
+          {expiringFoods.map((food) => (
             <ExpiringIngredientCard
-              key={ingredient.id}
-              name={ingredient.name}
-              daysLeft={ingredient.daysLeft}
+              key={food.id}
+              name={food.name}
+              daysLeft={food.daysLeft}
             />
           ))}
         </View>

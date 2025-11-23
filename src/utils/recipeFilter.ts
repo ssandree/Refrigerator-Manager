@@ -103,6 +103,6 @@ export function hasActiveFilters(options: RecipeFilterOptions): boolean {
     selectedCookingTimes.length > 0 ||
     selectedDifficulties.length > 0 ||
     calorieRange[0] > 0 ||
-    calorieRange[1] < 1000
+    calorieRange[1] < 10000 // 초기값이 [0, 10000]이므로 10000보다 작을 때만 활성화된 것으로 간주
   );
 }

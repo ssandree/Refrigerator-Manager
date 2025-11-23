@@ -7,13 +7,13 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Ingredient } from "../data/mockFood";
-import { IngredientCategoryColor } from "../enums/ingredientCategory";
+import { Food } from "../data/mockFood";
+import { FoodCategoryColor } from "../enums/ingredientCategory";
 import { StorageLocation } from "../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from "../styles/common";
 
 interface FoodCardProps {
-  ingredient: Ingredient;
+  food: Food;
   selectable?: boolean;
   selected?: boolean;
   onSelect?: () => void;
@@ -25,7 +25,7 @@ interface FoodCardProps {
 }
 
 export default function FoodCard({
-  ingredient,
+  food,
   selectable = false,
   selected = false,
   onSelect,
@@ -48,7 +48,7 @@ export default function FoodCard({
       <View
         style={[
           styles.categoryBar,
-          { backgroundColor: IngredientCategoryColor[ingredient.category] },
+          { backgroundColor: FoodCategoryColor[food.category] },
         ]}
       />
 
@@ -72,17 +72,17 @@ export default function FoodCard({
           />
         </View>
         <View style={styles.storageIconContainer}>
-          {ingredient.storageLocation === StorageLocation.FRIDGE && (
+          {food.storageLocation === StorageLocation.FRIDGE && (
             <Refrigerator
               size={18}
               color={Colors.textSecondary}
               strokeWidth={2}
             />
           )}
-          {ingredient.storageLocation === StorageLocation.FREEZER && (
+          {food.storageLocation === StorageLocation.FREEZER && (
             <Snowflake size={18} color={Colors.textSecondary} strokeWidth={2} />
           )}
-          {ingredient.storageLocation === StorageLocation.ROOM_TEMP && (
+          {food.storageLocation === StorageLocation.ROOM_TEMP && (
             <Thermometer
               size={18}
               color={Colors.textSecondary}
@@ -97,16 +97,14 @@ export default function FoodCard({
         <View style={styles.foodCardInfoSection}>
           <View style={styles.nameRow}>
             <Text style={styles.foodCardName} numberOfLines={1}>
-              {ingredient.name}
+              {food.name}
             </Text>
             {isExpiringSoon && <Text style={styles.expiryWarning}>⚠️</Text>}
           </View>
           <Text style={styles.foodCardQuantity}>
-            {ingredient.quantity}개 · {ingredient.weight}
+            {food.quantity}개 · {food.weight}
           </Text>
-          <Text style={styles.foodCardExpiryDate}>
-            {ingredient.expiryDate}까지
-          </Text>
+          <Text style={styles.foodCardExpiryDate}>{food.expiryDate}까지</Text>
         </View>
       </View>
     </TouchableOpacity>

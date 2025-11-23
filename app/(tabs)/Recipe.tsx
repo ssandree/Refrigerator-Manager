@@ -25,20 +25,29 @@ export default function RecipeScreen() {
   const recipes = useRecipeStore((s) => s.recipes);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
+  const favoriteRecipes = useFavoriteRecipeStore((s) => s.favoriteRecipes);
+  const loadFavorites = useFavoriteRecipeStore((s) => s.loadFavorites);
+  const isLoadingFavorites = useFavoriteRecipeStore((s) => s.isLoading);
+  const lastSyncedAtFavorites = useFavoriteRecipeStore((s) => s.lastSyncedAt);
   const [refreshing, setRefreshing] = useState(false);
   const toggleFavorite = useFavoriteRecipeStore((s) => s.toggleFavorite);
 
   useStoreWithError(useRecipeStore);
+  useStoreWithError(useFavoriteRecipeStore);
   useAutoLoadData(recipes, isLoading, loadRecipes);
+  useAutoLoadData(favoriteRecipes, isLoadingFavorites, loadFavorites, {
+    checkLastSynced: true,
+    lastSyncedAt: lastSyncedAtFavorites,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadRecipes(true);
+      await Promise.all([loadRecipes(true), loadFavorites(true)]);
     } finally {
       setRefreshing(false);
     }
-  }, [loadRecipes]);
+  }, [loadRecipes, loadFavorites]);
 
   const params = useLocalSearchParams<{ q?: string; ingredients?: string }>();
   const [searchQuery, setSearchQuery] = useState<string>(
@@ -70,7 +79,10 @@ export default function RecipeScreen() {
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
     []
   );
-  const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 1000]);
+  // 초기 열량 범위를 넓게 설정하여 모든 레시피가 포함되도록 함
+  const [calorieRange, setCalorieRange] = useState<[number, number]>([
+    0, 10000,
+  ]);
 
   // 토글 함수들
   const toggleIngredient = useToggleArray(setSelectedIngredients);
@@ -84,7 +96,7 @@ export default function RecipeScreen() {
     setIncludeExpiring(false);
     setSelectedCookingTimes([]);
     setSelectedDifficulties([]);
-    setCalorieRange([0, 1000]);
+    setCalorieRange([0, 10000]);
   };
 
   // 필터 옵션 객체 (useMemo로 최적화)
@@ -226,7 +238,11 @@ export default function RecipeScreen() {
                   params: { id: recipe.id, name: recipe.recipeName },
                 });
               }}
-              onFavoriteToggle={() => toggleFavorite(recipe)}
+              onFavoriteToggle={async () => {
+                await toggleFavorite(recipe);
+                // 즐겨찾기 상태 변경 후 목록 새로고침
+                await loadFavorites(true);
+              }}
             />
           ))}
         </ScrollView>

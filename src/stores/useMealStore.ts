@@ -1,7 +1,7 @@
 // 식단(Meal) 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Ingredient } from "../data/mockFood";
+import { Food } from "../data/mockFood";
 import { Recipe } from "../data/mockRecipes";
 import { mealService } from "../services/mealService";
 import { getErrorMessage } from "../utils/storeErrorHandler";
@@ -18,7 +18,7 @@ import { validateArray, validateSyncTimestamp } from "./storeUtils";
 export interface Meal {
   id: string;
   recipe: Recipe | null;
-  ingredients: Ingredient[];
+  foods: Food[];
   quantity: string;
   consumedAt: string;
   registeredAt: string;
@@ -56,7 +56,7 @@ interface MealState {
   clearError: () => void;
 }
 
-export const useMealStore = create<MealState>(
+export const useMealStore = create<MealState>()(
   persist(
     (set, get) => ({
       meals: initialMeals,
@@ -123,8 +123,18 @@ export const useMealStore = create<MealState>(
           set({ isLoading: true, error: null });
           const response = await mealService.getAllMeals();
           if (response.success && response.data) {
+            // 백엔드 응답을 프론트엔드 타입으로 변환
+            // 백엔드: { recipe, ingredients } -> 프론트엔드: { recipe, foods }
+            const transformedMeals: Meal[] = response.data.map((meal: any) => ({
+              ...meal,
+              // ingredients 필드가 있으면 foods로 변환
+              foods: meal.ingredients || meal.foods || [],
+              // ingredients 필드 제거 (타입 안전성)
+              ingredients: undefined,
+            }));
+
             set({
-              meals: response.data,
+              meals: transformedMeals,
               error: null,
               lastSyncedAt: Date.now(),
             });

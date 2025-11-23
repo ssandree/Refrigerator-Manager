@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { View } from "react-native";
 import { z } from "zod";
-import { AuthLayout } from "../../src/components/AuthLayout";
 import { OutlinedButton, PrimaryButton } from "../../src/components/Buttons";
 import { InputForm, LoginFormValues } from "../../src/components/InputForm";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useAuthStore } from "../../src/stores/useAuthStore";
+import { applyOnboardingData } from "../../src/utils/applyOnboardingData";
 
 const loginSchema = z.object({
   email: z.string().email("올바른 이메일을 입력하세요"),
@@ -36,40 +36,59 @@ export default function LoginScreen() {
   const onSubmit = async (data: LoginFormValues) => {
     const response = await loginWithCredentials(data.email, data.password);
     if (response.success) {
-      router.dismissAll();
-      router.replace("/(tabs)/Home");
+      try {
+        // 로그인 성공 후 온보딩 데이터 적용 (실패해도 홈으로 이동)
+        const user = useAuthStore.getState().user;
+        if (user?.id) {
+          await applyOnboardingData(user.id).catch((error) => {
+            console.error("온보딩 데이터 적용 실패:", error);
+            // 온보딩 데이터 적용 실패해도 계속 진행
+          });
+        }
+      } catch (error) {
+        console.error("온보딩 데이터 적용 중 오류:", error);
+        // 에러가 발생해도 홈으로 이동
+      }
+
+      // 홈 화면으로 이동
+      // (auth)가 modal로 설정되어 있으므로 dismissAll 후 replace
+      try {
+        router.dismissAll();
+        // dismissAll이 비동기일 수 있으므로 약간의 지연 후 이동
+        setTimeout(() => {
+          router.replace("/(tabs)/Home");
+        }, 50);
+      } catch (navError) {
+        console.error("네비게이션 오류:", navError);
+        // 네비게이션 실패 시 다른 방법 시도
+        router.push("/(tabs)/Home");
+      }
+    } else {
+      // 로그인 실패 시 에러 메시지는 useStoreWithError가 처리
+      console.error("로그인 실패:", response.message);
     }
   };
 
   return (
-    <AuthLayout
-      title="냉장고 매니징"
-      subtitle="스마트한 냉장고 관리의 시작"
-      footerText="계정이 없으신가요?"
-      footerLinkText="회원가입"
-      footerLinkPath="/(auth)/Signup"
-      showSocialButtons={true}
-    >
-      <View style={{ width: "100%" }}>
-        <InputForm
-          control={control}
-          errors={errors}
-          showPassword={showPassword}
-          onToggleShowPassword={() => setShowPassword(!showPassword)}
+    <View style={{ width: "100%" }}>
+      <InputForm
+        control={control}
+        errors={errors}
+        showPassword={showPassword}
+        onToggleShowPassword={() => setShowPassword(!showPassword)}
+      />
+      <View style={{ marginTop: 12 }}>
+        <OutlinedButton
+          label="이전으로 돌아가기"
+          onPress={() => router.push("/onboarding/GetHealthGoal")}
         />
-        <View style={{ marginTop: 12 }}>
-          <OutlinedButton
-            label="이전으로 돌아가기"
-            onPress={() => router.push("/onboarding/GetHealthGoal")}
-          />
-          <PrimaryButton
-            label="로그인"
-            onPress={handleSubmit(onSubmit)}
-            disabled={isLoading}
-            style={{ marginBottom: 16 }}
-          />
-        </View>
+        <PrimaryButton
+          label="로그인"
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
+          style={{ marginBottom: 16 }}
+        />
       </View>
-    </AuthLayout>
+    </View>
   );
 }

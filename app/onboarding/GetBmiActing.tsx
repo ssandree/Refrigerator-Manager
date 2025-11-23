@@ -1,19 +1,20 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Keyboard,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
+import { saveOnboardingData } from "../../src/utils/onboardingStorage";
 
 export default function GetBmiActing() {
   const insets = useSafeAreaInsets();
@@ -23,7 +24,24 @@ export default function GetBmiActing() {
     "veryLow" | "low" | "medium" | "high" | "veryHigh" | null
   >(null);
 
-  const handleGoToNext = () => {
+  const handleGoToNext = async () => {
+    const heightNum = parseFloat(height);
+    const weightNum = parseFloat(weight);
+    if (
+      !height ||
+      !weight ||
+      !activity ||
+      isNaN(heightNum) ||
+      isNaN(weightNum)
+    ) {
+      return;
+    }
+    // 온보딩 데이터 저장
+    await saveOnboardingData({
+      height: heightNum,
+      weight: weightNum,
+      activityLevel: activity,
+    });
     router.push("./GetHealthGoal");
   };
 

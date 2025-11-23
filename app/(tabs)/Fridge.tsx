@@ -17,8 +17,8 @@ import LoadingSpinner from "../../src/components/LoadingSpinner";
 import ProfileCircle from "../../src/components/ProfileCircle";
 import QuickFoodAdd from "../../src/components/QuickFoodAdd";
 import {
-  IngredientCategory,
-  IngredientCategoryLabel,
+  FoodCategory,
+  FoodCategoryLabel,
 } from "../../src/enums/ingredientCategory";
 import {
   StorageLocation,
@@ -32,16 +32,16 @@ import { Colors, FontSizes, commonStyles } from "../../src/styles/common";
 import { isExpiringSoon } from "../../src/utils/expiryUtils";
 
 export default function FridgeScreen() {
-  const ingredients = useFridgeStore((s) => s.ingredients);
-  const loadIngredients = useFridgeStore((s) => s.loadIngredients);
+  const foods = useFridgeStore((s) => s.foods);
+  const loadFoods = useFridgeStore((s) => s.loadFoods);
   const isLoading = useFridgeStore((s) => s.isLoading);
 
   useStoreWithError(useFridgeStore);
-  useAutoLoadData(ingredients, isLoading, loadIngredients);
+  useAutoLoadData(foods, isLoading, loadFoods);
 
-  const [selectedCategories, setSelectedCategories] = useState<
-    IngredientCategory[]
-  >([]);
+  const [selectedCategories, setSelectedCategories] = useState<FoodCategory[]>(
+    []
+  );
   const [selectedStorage, setSelectedStorage] = useState<
     StorageLocation | "ALL"
   >("ALL");
@@ -61,25 +61,25 @@ export default function FridgeScreen() {
 
   // 현재 보관 위치에 따른 필터링 (useMemo로 최적화)
   const currentStorageIngredients = useMemo(() => {
-    return ingredients.filter((ingredient) => {
+    return foods.filter((food) => {
       return (
-        selectedStorage === "ALL" ||
-        ingredient.storageLocation === selectedStorage
+        selectedStorage === "ALL" || food.storageLocation === selectedStorage
       );
     });
-  }, [ingredients, selectedStorage]);
+  }, [foods, selectedStorage]);
 
   // 필터링된 재료 (useMemo로 최적화)
   const filteredIngredients = useMemo(() => {
-    return currentStorageIngredients.filter((ingredient) => {
+    return currentStorageIngredients.filter((food) => {
       const matchCategory =
         selectedCategories.length === 0 ||
-        selectedCategories.includes(ingredient.category);
-      const matchSearch = ingredient.name
+        selectedCategories.includes(food.category);
+      const matchSearch = food.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
       const matchExpiry =
-        !showExpiringOnly || isExpiringSoon(ingredient.expiryDate);
+        !showExpiringOnly ||
+        (food.expiryDate !== null && isExpiringSoon(food.expiryDate));
       return matchCategory && matchSearch && matchExpiry;
     });
   }, [
@@ -91,8 +91,8 @@ export default function FridgeScreen() {
 
   // 임박한 재료 개수 계산 (useMemo로 최적화)
   const expiringCount = useMemo(() => {
-    return currentStorageIngredients.filter((ingredient) =>
-      isExpiringSoon(ingredient.expiryDate)
+    return currentStorageIngredients.filter(
+      (food) => food.expiryDate !== null && isExpiringSoon(food.expiryDate)
     ).length;
   }, [currentStorageIngredients]);
 
@@ -111,8 +111,8 @@ export default function FridgeScreen() {
   // 재료 삭제 처리
   const handleDeleteIngredient = (ingredientId: string) => {
     setActionModalVisible(false);
-    const removeIngredient = useFridgeStore.getState().removeIngredient;
-    removeIngredient(ingredientId);
+    const removeFood = useFridgeStore.getState().removeFood;
+    removeFood(ingredientId);
   };
 
   // 길게 누르기 핸들러
@@ -133,8 +133,8 @@ export default function FridgeScreen() {
     // 선택된 재료 ID를 이름으로 변환
     const selectedIngredientNames = selectedIngredients
       .map((id) => {
-        const ingredient = ingredients.find((ing) => ing.id === id);
-        return ingredient?.name;
+        const food = foods.find((f) => f.id === id);
+        return food?.name;
       })
       .filter(Boolean) as string[];
 
@@ -152,6 +152,7 @@ export default function FridgeScreen() {
       <View style={styles.container}>
         {/* 헤더 */}
         <View style={styles.header}>
+          <View style={styles.headerLeft} />
           <Text style={styles.headerTitle}>냉장고</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity
@@ -169,7 +170,9 @@ export default function FridgeScreen() {
 
         {/* 검색 & 필터 */}
         <View style={styles.filterBar}>
-          <Ionicons name="search" size={20} color="#666" />
+          <View style={styles.searchIconContainer}>
+            <Ionicons name="search" size={20} color="#666" />
+          </View>
           <TextInput
             style={styles.searchInput}
             placeholder="재료 검색"
@@ -204,9 +207,8 @@ export default function FridgeScreen() {
           {["ALL", ...Object.values(StorageLocation)].map((storage) => {
             const count =
               storage === "ALL"
-                ? ingredients.length
-                : ingredients.filter((i) => i.storageLocation === storage)
-                    .length;
+                ? foods.length
+                : foods.filter((f) => f.storageLocation === storage).length;
             return (
               <TouchableOpacity
                 key={storage}
@@ -254,7 +256,7 @@ export default function FridgeScreen() {
 
           {isCategoryExpanded && (
             <View style={styles.categoryTextContainer}>
-              {Object.values(IngredientCategory).map((category, index) => (
+              {Object.values(FoodCategory).map((category, index) => (
                 <React.Fragment key={category}>
                   <TouchableOpacity onPress={() => toggleCategory(category)}>
                     <Text
@@ -264,10 +266,10 @@ export default function FridgeScreen() {
                           styles.categoryTextSelected,
                       ]}
                     >
-                      {IngredientCategoryLabel[category]}
+                      {FoodCategoryLabel[category]}
                     </Text>
                   </TouchableOpacity>
-                  {index < Object.values(IngredientCategory).length - 1 && (
+                  {index < Object.values(FoodCategory).length - 1 && (
                     <Text style={styles.categorySeparator}>|</Text>
                   )}
                 </React.Fragment>
@@ -285,16 +287,19 @@ export default function FridgeScreen() {
             contentContainerStyle={styles.ingredientsGrid}
           >
             {filteredIngredients.length > 0 ? (
-              filteredIngredients.map((ingredient) => (
-                <View key={ingredient.id} style={styles.foodCardContainer}>
+              filteredIngredients.map((food) => (
+                <View key={food.id} style={styles.foodCardContainer}>
                   <FoodCard
-                    ingredient={ingredient}
+                    food={food}
                     selectable={true}
-                    selected={selectedIngredients.includes(ingredient.id)}
-                    onSelect={() => handleIngredientPress(ingredient.id)}
-                    onPress={() => handleIngredientPress(ingredient.id)}
-                    onLongPress={() => handleLongPress(ingredient.id)}
-                    isExpiringSoon={isExpiringSoon(ingredient.expiryDate)}
+                    selected={selectedIngredients.includes(food.id)}
+                    onSelect={() => handleIngredientPress(food.id)}
+                    onPress={() => handleIngredientPress(food.id)}
+                    onLongPress={() => handleLongPress(food.id)}
+                    isExpiringSoon={
+                      food.expiryDate !== null &&
+                      isExpiringSoon(food.expiryDate)
+                    }
                   />
                 </View>
               ))
@@ -376,21 +381,39 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: Colors.surface,
   },
+  headerLeft: {
+    width: 80, // headerRight와 동일한 너비로 가운데 정렬
+  },
   headerTitle: {
     fontSize: FontSizes.xl,
     fontWeight: "bold",
     color: Colors.textPrimary,
+    textAlign: "center",
+    flex: 1,
+    position: "absolute",
+    left: 0,
+    right: 0,
   },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    width: 80, // headerLeft와 동일한 너비
+    justifyContent: "flex-end",
+  },
   iconButton: { padding: 8 },
   filterBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.surface,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+  },
+  searchIconContainer: {
+    paddingLeft: 8,
+    paddingRight: 4,
   },
   searchInput: {
     flex: 1,

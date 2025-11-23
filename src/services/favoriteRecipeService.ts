@@ -1,6 +1,6 @@
 // Favorite recipe service for managing user's favorite recipes
 import { Recipe } from "../data/mockRecipes";
-import apiClient, { ApiResponse } from "./api";
+import apiClient, { ApiResponse } from "./apiClient";
 
 class FavoriteRecipeService {
   private readonly basePath = "/favorite-recipes";
@@ -23,7 +23,9 @@ class FavoriteRecipeService {
    * Remove a recipe from favorites
    */
   async removeFromFavorites(recipeId: string) {
-    return await apiClient.delete(`${this.basePath}/${recipeId}`);
+    return await apiClient.delete<{ message: string }>(
+      `${this.basePath}/${recipeId}`
+    );
   }
 
   /**
@@ -56,9 +58,12 @@ class FavoriteRecipeService {
    * Get favorite recipes by tags
    */
   async getFavoritesByTags(tags: string[]) {
-    return await apiClient.post<Recipe[]>(`${this.basePath}/filter-by-tags`, {
-      tags,
-    });
+    const queryParams = tags
+      .map((tag) => `tags=${encodeURIComponent(tag)}`)
+      .join("&");
+    return await apiClient.get<Recipe[]>(
+      `${this.basePath}/filter-by-tags?${queryParams}`
+    );
   }
 }
 

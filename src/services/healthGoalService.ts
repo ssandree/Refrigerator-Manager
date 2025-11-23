@@ -1,6 +1,6 @@
 // Health goal service for managing user's health goals
 import { HealthGoal } from "../stores/useHealthGoalStore";
-import apiClient, { ApiResponse } from "./api";
+import apiClient, { ApiResponse } from "./apiClient";
 
 class HealthGoalService {
   private readonly basePath = "/health-goals";
@@ -43,7 +43,9 @@ class HealthGoalService {
    * Remove a health goal from user's selection
    */
   async removeSelectedGoal(goalId: number) {
-    return await apiClient.delete(`${this.basePath}/user-selected/${goalId}`);
+    return await apiClient.delete<{ message: string }>(
+      `${this.basePath}/user-selected/${goalId}`
+    );
   }
 
   /**
@@ -62,6 +64,26 @@ class HealthGoalService {
       goalsAchieved: number;
       achievementRate: number;
     }>(`${this.basePath}/user-statistics`);
+  }
+
+  /**
+   * Get weekly health statistics
+   */
+  async getWeeklyStats(startDate: string) {
+    return await apiClient.get<Record<string, any>>(
+      `${this.basePath}/stats/weekly?startDate=${encodeURIComponent(startDate)}`
+    );
+  }
+
+  /**
+   * Get nutrition statistics
+   */
+  async getNutritionStats(startDate: string, endDate: string) {
+    return await apiClient.get<Record<string, any>>(
+      `${this.basePath}/stats/nutrition?startDate=${encodeURIComponent(
+        startDate
+      )}&endDate=${encodeURIComponent(endDate)}`
+    );
   }
 }
 

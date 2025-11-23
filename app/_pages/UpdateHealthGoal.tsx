@@ -1,14 +1,11 @@
-import { healthGoalService } from "@/services/healthGoalService";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
-import {
-  useHealthGoalStore,
-  type HealthGoal,
-} from "../../src/stores/useHealthGoalStore";
+import { mockHealthGoals } from "../../src/data/mockHealthGoals";
+import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { useHealthGoalStore } from "../../src/stores/useHealthGoalStore";
 import { Colors, FontSizes } from "../../src/styles/common";
-import { logger } from "../../src/utils/logger";
 
 interface UpdateHealthGoalProps {
   onClose: () => void;
@@ -16,33 +13,32 @@ interface UpdateHealthGoalProps {
 
 export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
   const insets = useSafeAreaInsets();
+  // 건강 목표는 상수에서 직접 가져옴
+  const allGoals = mockHealthGoals;
   const selectedGoals = useHealthGoalStore((state) => state.selectedGoals);
+  const loadUserSelectedGoals = useHealthGoalStore(
+    (state) => state.loadUserSelectedGoals
+  );
   const setSelectedGoals = useHealthGoalStore(
     (state) => state.setSelectedGoals
   );
+
+  useStoreWithError(useHealthGoalStore);
+
+  // 컴포넌트 마운트 시 사용자 선택 목표 로드
+  useEffect(() => {
+    loadUserSelectedGoals(true);
+  }, [loadUserSelectedGoals]);
 
   // 초기값: 전역 상태에서 가져온 선택된 목표 ID들
   const [localSelectedIds, setLocalSelectedIds] = useState<number[]>(() =>
     selectedGoals.map((goal) => goal.id)
   );
-  const [healthGoals, setHealthGoals] = useState<HealthGoal[]>([]);
 
-  // Service를 통해 건강 목표 목록 로드
+  // selectedGoals가 변경되면 localSelectedIds도 업데이트
   useEffect(() => {
-    const loadHealthGoals = async () => {
-      try {
-        const response = await healthGoalService.getAllGoals();
-        if (response.success && response.data) {
-          setHealthGoals(response.data);
-        } else {
-          logger.error("건강 목표 로드 실패:", response.message);
-        }
-      } catch (error) {
-        logger.error("건강 목표 로드 중 오류:", error);
-      }
-    };
-    loadHealthGoals();
-  }, []);
+    setLocalSelectedIds(selectedGoals.map((goal) => goal.id));
+  }, [selectedGoals]);
 
   // 토글 함수 (3개 제한 로직 포함)
   // 로컬 상태만 업데이트하며, 저장 시점에만 전역 상태에 반영됨
@@ -60,20 +56,24 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
   };
 
   // 저장 시점에만 전역 상태 업데이트
-  const handleSave = () => {
+  const handleSave = async () => {
     if (localSelectedIds.length === 0) {
       alert("최소 1개의 건강 목표를 선택해주세요.");
       return;
     }
 
     // 로컬 상태를 기반으로 선택된 목표 데이터 생성
-    const selectedGoalsData = healthGoals.filter((goal) =>
+    const selectedGoalsData = allGoals.filter((goal) =>
       localSelectedIds.includes(goal.id)
     );
 
-    // 전역 상태 업데이트
-    setSelectedGoals(selectedGoalsData);
-    onClose();
+    // 전역 상태 업데이트 (서버에 저장)
+    const success = await setSelectedGoals(selectedGoalsData);
+    if (success) {
+      // 서버 동기화 성공 시 사용자 선택 목표 다시 로드
+      await loadUserSelectedGoals(true);
+      onClose();
+    }
   };
 
   // 취소 시 로컬 상태는 버리고 모달만 닫음
@@ -114,7 +114,7 @@ export default function UpdateHealthGoal({ onClose }: UpdateHealthGoalProps) {
         <Text style={styles.limitText}>최대 3개까지 선택 가능</Text>
 
         <HealthGoalSelector
-          healthGoals={healthGoals}
+          healthGoals={allGoals}
           selectedGoalIds={localSelectedIds}
           onGoalToggle={toggleGoal}
           maxSelection={3}

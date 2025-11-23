@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MealCardList from "../../src/components/tabs/meal/MealCardList";
 import TodayTotal from "../../src/components/tabs/meal/todaytotal";
 import { Colors, createShadowStyle } from "../../src/styles/common";
@@ -20,7 +19,6 @@ const summaryCardShadow = createShadowStyle({
 });
 
 export default function Meal() {
-  const insets = useSafeAreaInsets();
   const [selectedDateISO, setSelectedDateISO] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -67,7 +65,7 @@ export default function Meal() {
       {/* 기본 헤더 사용 (tabs/_layout.tsx) */}
 
       {/* 날짜 헤더 (좌/우 화살표) */}
-      <View style={[styles.dateHeader, { paddingTop: insets.top }]}>
+      <View style={styles.dateHeader}>
         <TouchableOpacity
           style={styles.dateArrow}
           onPress={goPrevDay}
@@ -75,7 +73,7 @@ export default function Meal() {
         >
           <Ionicons
             name="chevron-back"
-            size={22}
+            size={20}
             color={isOneWeekAgo ? "#CCC" : "#666"}
           />
         </TouchableOpacity>
@@ -87,7 +85,7 @@ export default function Meal() {
         >
           <Ionicons
             name="chevron-forward"
-            size={22}
+            size={20}
             color={isToday ? "#CCC" : "#666"}
           />
         </TouchableOpacity>
@@ -127,8 +125,8 @@ const styles = StyleSheet.create({
   dateHeader: {
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
+    paddingVertical: 10,
+    borderBottomWidth: 2,
     borderBottomColor: "#E0E0E0",
     flexDirection: "row",
     alignItems: "center",
@@ -141,7 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateArrow: {
-    padding: 8,
+    padding: 6,
   },
   content: {
     flex: 1,

@@ -1,30 +1,36 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Keyboard,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 import { Colors, commonStyles, FontSizes } from "../../src/styles/common";
+import { saveOnboardingData } from "../../src/utils/onboardingStorage";
 
 export default function GetSexAge() {
   const insets = useSafeAreaInsets();
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [age, setAge] = useState("");
 
-  const handleGoToNext = () => {
+  const handleGoToNext = async () => {
     const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
+    if (isNaN(ageNum) || ageNum < 1 || ageNum > 150 || !gender) {
       return;
     }
+    // 온보딩 데이터 저장
+    await saveOnboardingData({
+      sex: gender,
+      age: ageNum,
+    });
     router.push("./GetBmiActing");
   };
 

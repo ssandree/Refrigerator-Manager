@@ -1,25 +1,33 @@
-import { IngredientCategory } from "../enums/ingredientCategory";
+import { FoodCategory } from "../enums/ingredientCategory";
 import { StorageLocation } from "../enums/storageLocation";
 
-export interface Ingredient {
+export interface Food {
   id: string;
-  imageUrl: string;
-  category: IngredientCategory;
+  imageUrl: string | null;
+  category: FoodCategory;
   name: string;
-  quantity: number;
-  weight: string;
+  quantity: number | null;
+  weight: string | null;
   registeredAt: string;
-  purchaseDate: string;
-  expiryDate: string;
+  purchaseDate: string | null;
+  expiryDate: string | null;
   storageLocation: StorageLocation;
-  alertBeforeDays: number;
+  alertBeforeDays: number | null;
+  calories_per_gram?: number | null;
+  carbohydrates?: number | null;
+  protein?: number | null;
+  fat?: number | null;
+  sodium?: number | null;
+  vitamin_c?: number | null;
+  vitamin_d?: number | null;
+  zinc?: number | null;
 }
 
-export const mockIngredients: Ingredient[] = [
+export const mockFoods: Food[] = [
   {
     id: "1",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.MEAT,
+    category: FoodCategory.MEAT,
     name: "소고기 등심",
     quantity: 2,
     weight: "500g",
@@ -32,7 +40,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "2",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.MEAT,
+    category: FoodCategory.MEAT,
     name: "돼지고기 삼겹살",
     quantity: 1,
     weight: "1kg",
@@ -45,7 +53,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "3",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.MEAT,
+    category: FoodCategory.MEAT,
     name: "닭가슴살",
     quantity: 5,
     weight: "200g",
@@ -58,7 +66,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "4",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.FISH,
+    category: FoodCategory.FISH,
     name: "연어",
     quantity: 2,
     weight: "300g",
@@ -71,7 +79,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "5",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.FISH,
+    category: FoodCategory.FISH,
     name: "고등어",
     quantity: 3,
     weight: "400g",
@@ -84,7 +92,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "6",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.VEGETABLE,
+    category: FoodCategory.VEGETABLE,
     name: "토마토",
     quantity: 6,
     weight: "1kg",
@@ -97,7 +105,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "7",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.VEGETABLE,
+    category: FoodCategory.VEGETABLE,
     name: "양파",
     quantity: 4,
     weight: "800g",
@@ -110,7 +118,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "8",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.VEGETABLE,
+    category: FoodCategory.VEGETABLE,
     name: "당근",
     quantity: 5,
     weight: "600g",
@@ -123,7 +131,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "9",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.VEGETABLE,
+    category: FoodCategory.VEGETABLE,
     name: "시금치",
     quantity: 2,
     weight: "200g",
@@ -136,7 +144,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "10",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.FRUIT,
+    category: FoodCategory.FRUIT,
     name: "사과",
     quantity: 4,
     weight: "800g",
@@ -149,7 +157,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "11",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.FRUIT,
+    category: FoodCategory.FRUIT,
     name: "바나나",
     quantity: 6,
     weight: "600g",
@@ -162,7 +170,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "12",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.DAIRY,
+    category: FoodCategory.DAIRY,
     name: "우유",
     quantity: 2,
     weight: "1L",
@@ -175,7 +183,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "13",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.DAIRY,
+    category: FoodCategory.DAIRY,
     name: "치즈",
     quantity: 1,
     weight: "200g",
@@ -188,7 +196,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "14",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.DAIRY,
+    category: FoodCategory.DAIRY,
     name: "요거트",
     quantity: 4,
     weight: "400g",
@@ -201,7 +209,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "15",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.GRAIN,
+    category: FoodCategory.GRAIN,
     name: "쌀",
     quantity: 1,
     weight: "5kg",
@@ -214,7 +222,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "16",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.GRAIN,
+    category: FoodCategory.GRAIN,
     name: "파스타",
     quantity: 3,
     weight: "500g",
@@ -227,7 +235,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "17",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.SEASONING,
+    category: FoodCategory.SEASONING,
     name: "소금",
     quantity: 1,
     weight: "500g",
@@ -240,7 +248,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "18",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.SEASONING,
+    category: FoodCategory.SEASONING,
     name: "올리브오일",
     quantity: 1,
     weight: "500ml",
@@ -253,7 +261,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "19",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.OTHER,
+    category: FoodCategory.OTHER,
     name: "달걀",
     quantity: 12,
     weight: "600g",
@@ -266,7 +274,7 @@ export const mockIngredients: Ingredient[] = [
   {
     id: "20",
     imageUrl: "../assets/images/tomato.jpg",
-    category: IngredientCategory.OTHER,
+    category: FoodCategory.OTHER,
     name: "버터",
     quantity: 2,
     weight: "200g",

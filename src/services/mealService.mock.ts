@@ -1,6 +1,6 @@
 // Mock Meal service for development
 import { Meal } from "../stores/useMealStore";
-import { ApiResponse } from "./api";
+import { ApiResponse } from "./apiClient";
 
 class MealServiceMock {
   /**

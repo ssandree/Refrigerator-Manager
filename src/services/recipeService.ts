@@ -1,6 +1,6 @@
 // Recipe service for managing recipes
 import { Recipe } from "../data/mockRecipes";
-import apiClient, { ApiResponse } from "./api";
+import apiClient, { ApiResponse } from "./apiClient";
 
 class RecipeService {
   private readonly basePath = "/recipes";
@@ -23,16 +23,21 @@ class RecipeService {
    * Search recipes by query
    */
   async searchRecipes(query: string) {
-    return await apiClient.get<Recipe[]>(`${this.basePath}/search?q=${query}`);
+    return await apiClient.get<Recipe[]>(
+      `${this.basePath}/search/?q=${encodeURIComponent(query)}`
+    );
   }
 
   /**
    * Get recipes by tags
    */
   async getRecipesByTags(tags: string[]) {
-    return await apiClient.post<Recipe[]>(`${this.basePath}/filter-by-tags`, {
-      tags,
-    });
+    const queryParams = tags
+      .map((tag) => `tags=${encodeURIComponent(tag)}`)
+      .join("&");
+    return await apiClient.get<Recipe[]>(
+      `${this.basePath}/filter-by-tags?${queryParams}`
+    );
   }
 
   /**
@@ -56,10 +61,8 @@ class RecipeService {
   /**
    * Get recommended recipes based on user's ingredients
    */
-  async getRecommendedRecipes(ingredientIds: string[]) {
-    return await apiClient.post<Recipe[]>(`${this.basePath}/recommend`, {
-      ingredientIds,
-    });
+  async getRecommendedRecipes() {
+    return await apiClient.post<Recipe[]>(`${this.basePath}/recommend`, {});
   }
 }
 

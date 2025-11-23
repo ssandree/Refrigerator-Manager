@@ -1,14 +1,16 @@
 // Authentication service for user login, logout, and user management
-import apiClient from "./api";
-import { deleteToken, saveToken } from "./tokenStorage";
+import apiClient from "./apiClient";
+import { deleteToken, getToken, saveToken } from "./tokenStorage";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  age?: number;
-  sex?: string;
-  bmi?: number;
+  age?: number | null;
+  sex?: string | null;
+  weight?: number | null;
+  activityLevel?: string | null;
+  bmi?: number | null;
 }
 
 export interface LoginRequest {
@@ -20,14 +22,31 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
-  age?: number;
-  sex?: string;
-  bmi?: number;
+}
+
+export interface RefreshRequest {
+  token: string;
+}
+
+export interface UserUpdateRequest {
+  name?: string | null;
+  age?: number | null;
+  sex?: string | null;
+  weight?: number | null;
+  activityLevel?: string | null;
+  bmi?: number | null;
+}
+
+// 백엔드 응답 구조에 맞춘 타입 정의
+export interface AuthDataResponse {
+  user: User;
+  token: string;
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  success: boolean;
+  message?: string;
+  data: AuthDataResponse;
 }
 
 class AuthService {
@@ -37,12 +56,12 @@ class AuthService {
    * Login with email and password
    */
   async login(credentials: LoginRequest) {
-    const response = await apiClient.post<AuthResponse>(
+    const response = await apiClient.post<AuthDataResponse>(
       `${this.basePath}/login`,
       credentials
     );
 
-    if (response.success && response.data) {
+    if (response.success && response.data?.token) {
       // API 헤더에 토큰 적용 + 보안 저장소에 영구 저장
       apiClient.setToken(response.data.token);
       await saveToken(response.data.token);
@@ -55,12 +74,12 @@ class AuthService {
    * Register a new user
    */
   async register(userData: RegisterRequest) {
-    const response = await apiClient.post<AuthResponse>(
+    const response = await apiClient.post<AuthDataResponse>(
       `${this.basePath}/register`,
       userData
     );
 
-    if (response.success && response.data) {
+    if (response.success && response.data?.token) {
       // 회원가입 후 자동 로그인과 동일하게 토큰 저장
       apiClient.setToken(response.data.token);
       await saveToken(response.data.token);
@@ -94,7 +113,7 @@ class AuthService {
   /**
    * Update user information
    */
-  async updateUser(userId: string, userData: Partial<User>) {
+  async updateUser(userId: string, userData: UserUpdateRequest) {
     return await apiClient.put<User>(
       `${this.basePath}/user/${userId}`,
       userData
@@ -105,19 +124,30 @@ class AuthService {
    * Delete user account
    */
   async deleteUser(userId: string) {
-    return await apiClient.delete(`${this.basePath}/user/${userId}`);
+    return await apiClient.delete<{ success: boolean; message: string }>(
+      `${this.basePath}/user/${userId}`
+    );
   }
 
   /**
    * Refresh authentication token
    */
   async refreshToken() {
-    const response = await apiClient.post<{ token: string }>(
+    const currentToken = await getToken();
+    if (!currentToken) {
+      return {
+        success: false as const,
+        error: "No token available",
+        message: "토큰이 없습니다.",
+      };
+    }
+
+    const response = await apiClient.post<AuthDataResponse>(
       `${this.basePath}/refresh`,
-      {}
+      { token: currentToken } as RefreshRequest
     );
 
-    if (response.success && response.data) {
+    if (response.success && response.data?.token) {
       // 토큰 재발급 시에도 동일하게 반영
       apiClient.setToken(response.data.token);
       await saveToken(response.data.token);
