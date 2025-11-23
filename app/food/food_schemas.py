@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import date, datetime
+from typing import List, Optional
 
 class FoodCreate(BaseModel):
     imageUrl: str | None = None
@@ -62,4 +63,34 @@ class FoodResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# -----------------------------
+# Standard API Response Formats
+# -----------------------------
+
+class BaseResponse(BaseModel):
+    success: bool = True
+    message: Optional[str] = None
+
+
+class SingleFoodResponse(BaseResponse):
+    data: FoodResponse
+
+
+class FoodListResponse(BaseResponse):
+    data: List[FoodResponse]
+
+
+class DeleteResponse(BaseResponse):
+    message: str
+
+
+class BulkDeleteRequest(BaseModel):
+    foodIds: List[str]
+
+
+class BulkDeleteResponse(BaseResponse):
+    deletedCount: int
+    message: str
 

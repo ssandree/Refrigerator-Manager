@@ -12,5 +12,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     age = Column(Integer, nullable=True)
     sex = Column(String(20), nullable=True)
+    weight = Column(Float, nullable=True)
+    activityLevel = Column(String(20), nullable=True)
     bmi = Column(Float, nullable=True)
 

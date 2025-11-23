@@ -32,8 +32,9 @@ router = APIRouter(
 @router.get("", response_model=HealthGoalListResponse)
 def find_all(db: Session = Depends(get_db)):
     goals = get_all_goals(db)
+    # HEALTH_GOALS는 dict 리스트이므로 직접 변환
     return HealthGoalListResponse(
-        data=[HealthGoalResponse.model_validate(goal) for goal in goals]
+        data=[HealthGoalResponse(**goal) for goal in goals]
     )
 
 
@@ -53,7 +54,8 @@ def find_one(goalId: int, db: Session = Depends(get_db)):
     goal = get_goal_by_id(db, goalId)
     if not goal:
         raise HTTPException(status_code=404, detail="HEALTH_GOAL_NOT_FOUND")
-    return SingleHealthGoalResponse(data=HealthGoalResponse.model_validate(goal))
+    # HEALTH_GOALS는 dict이므로 직접 변환
+    return SingleHealthGoalResponse(data=HealthGoalResponse(**goal))
 
 
 # -----------------------------
@@ -62,8 +64,9 @@ def find_one(goalId: int, db: Session = Depends(get_db)):
 @router.get("/user-selected", response_model=HealthGoalListResponse)
 def find_user_selected(userId=Depends(get_current_user), db: Session = Depends(get_db)):
     goals = get_user_goals(db, userId)
+    # HEALTH_GOALS는 dict 리스트이므로 직접 변환
     return HealthGoalListResponse(
-        data=[HealthGoalResponse.model_validate(goal) for goal in goals]
+        data=[HealthGoalResponse(**goal) for goal in goals]
     )
 
 
@@ -77,8 +80,9 @@ def set_user_selected(
     db: Session = Depends(get_db)
 ):
     goals = set_user_goals(db, userId, req.goalIds)
+    # HEALTH_GOALS는 dict 리스트이므로 직접 변환
     return HealthGoalListResponse(
-        data=[HealthGoalResponse.model_validate(goal) for goal in goals]
+        data=[HealthGoalResponse(**goal) for goal in goals]
     )
 
 
@@ -98,7 +102,8 @@ def add_user_goal_api(goalId: int, userId=Depends(get_current_user), db: Session
     goal = add_user_goal(db, userId, goalId)
     if not goal:
         raise HTTPException(status_code=404, detail="HEALTH_GOAL_NOT_FOUND")
-    return SingleHealthGoalResponse(data=HealthGoalResponse.model_validate(goal))
+    # HEALTH_GOALS는 dict이므로 직접 변환
+    return SingleHealthGoalResponse(data=HealthGoalResponse(**goal))
 
 
 # -----------------------------

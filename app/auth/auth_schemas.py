@@ -5,13 +5,21 @@ class RegisterRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
-    age: int | None = None
-    sex: str | None = None
-    bmi: float | None = None
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class RefreshRequest(BaseModel):
+    token: str
+
+class UserUpdateRequest(BaseModel):
+    name: str | None = None
+    age: int | None = None
+    sex: str | None = None
+    weight: float | None = None
+    activityLevel: str | None = None
+    bmi: float | None = None
 
 class UserResponse(BaseModel):
     id: str
@@ -19,6 +27,8 @@ class UserResponse(BaseModel):
     email: str
     age: int | None
     sex: str | None
+    weight: float | None
+    activityLevel: str | None
     bmi: float | None
 
     class Config:
