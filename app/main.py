@@ -26,3 +26,18 @@ app.include_router(dashboard_router)
 @app.get("/")
 def root():
     return {"message": "Refrigerator API is running!"}
+
+
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "*",  # 개발 단계에서는 전체 허용
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

@@ -21,8 +21,7 @@ from app.health_goals.health_services import (
 
 router = APIRouter(
     prefix="/health-goals",
-    tags=["Health Goals"],
-    dependencies=[Depends(get_current_user)]
+    tags=["Health Goals"]
 )
 
 
