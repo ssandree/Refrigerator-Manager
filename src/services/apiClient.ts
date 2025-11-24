@@ -10,7 +10,7 @@ import { getToken } from "./tokenStorage";
 // Mac/Linux: ifconfig 또는 ip addr 명령어로 확인
 // 백엔드가 /api prefix 없이 실행되면 "/api"를 제거하세요
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.2:8000";
+  process.env.EXPO_PUBLIC_API_URL || "http://172.16.69.179:8000";
 
 // 성공 응답 타입
 export interface ApiSuccessResponse<T> {
@@ -55,12 +55,15 @@ class ApiClient {
   constructor(baseURL: string) {
     this.axiosInstance = axios.create({
       baseURL,
+      timeout: 5000, // 5초 타임아웃
       headers: {
         "Content-Type": "application/json",
       },
     });
 
     // 요청 인터셉터: 토큰 자동 삽입
+    // 매 요청마다 보안 저장소에서 토큰을 가져와 Authorization 헤더에 추가
+    // 로그인 시 saveToken()으로 저장된 토큰이 자동으로 사용됨
     this.axiosInstance.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         const token = await getToken();

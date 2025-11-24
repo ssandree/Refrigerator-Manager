@@ -13,6 +13,8 @@ interface DailyDietCardProps {
   time?: string;
   onPress?: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
+  onLongPress?: () => void;
 }
 
 export default function DailyDietCard({
@@ -24,22 +26,36 @@ export default function DailyDietCard({
   time,
   onPress,
   onDelete,
+  onEdit,
+  onLongPress,
 }: DailyDietCardProps) {
   const renderRightActions = () => {
-    if (!onDelete) return null;
+    if (!onDelete && !onEdit) return null;
     return (
       <View style={styles.rightActionContainer}>
-        <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-          <Trash2 size={20} color={Colors.surface} strokeWidth={2} />
-          <Text style={styles.deleteButtonText}>삭제</Text>
-        </TouchableOpacity>
+        {onEdit && (
+          <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+            <Text style={styles.editButtonText}>수정</Text>
+          </TouchableOpacity>
+        )}
+        {onDelete && (
+          <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+            <Trash2 size={20} color={Colors.surface} strokeWidth={2} />
+            <Text style={styles.deleteButtonText}>삭제</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
 
   return (
     <Swipeable renderRightActions={renderRightActions}>
-      <View style={[commonStyles.card, styles.container]}>
+      <TouchableOpacity
+        style={[commonStyles.card, styles.container]}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        activeOpacity={0.7}
+      >
         {/* 헤더 */}
         <View style={styles.header}>
           <Text style={styles.recipeName} numberOfLines={1}>
@@ -138,7 +154,7 @@ export default function DailyDietCard({
             </View>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     </Swipeable>
   );
 }
@@ -226,10 +242,26 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   rightActionContainer: {
-    justifyContent: "center",
-    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
     marginVertical: 4,
     marginRight: 16,
+  },
+  editButton: {
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: "100%",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+  },
+  editButtonText: {
+    color: Colors.surface,
+    fontSize: FontSizes.sm,
+    fontWeight: "600",
   },
   deleteButton: {
     backgroundColor: Colors.error,

@@ -33,10 +33,9 @@ export default function Meal() {
     });
   }, [selectedDateISO]);
 
-  const isToday = useMemo(() => {
-    const todayIso = new Date().toISOString().split("T")[0];
-    return selectedDateISO === todayIso;
-  }, [selectedDateISO]);
+  const todayISO = useMemo(() => {
+    return new Date().toISOString().split("T")[0];
+  }, []);
 
   const isOneWeekAgo = useMemo(() => {
     const today = new Date();
@@ -46,18 +45,34 @@ export default function Meal() {
     return selectedDateISO === oneWeekAgoIso;
   }, [selectedDateISO]);
 
+  const isTodayOrAfter = useMemo(() => {
+    return selectedDateISO >= todayISO;
+  }, [selectedDateISO, todayISO]);
+
   const goPrevDay = () => {
     if (isOneWeekAgo) return; // 일주일 전이면 더 이상 이전으로 이동 불가
-    const d = new Date(selectedDateISO + "T00:00:00");
-    d.setDate(d.getDate() - 1);
-    setSelectedDateISO(d.toISOString().split("T")[0]);
+
+    // ISO 문자열을 직접 파싱하여 날짜 계산 (타임존 문제 방지)
+    const [year, month, day] = selectedDateISO.split("-").map(Number);
+    const currentDate = new Date(Date.UTC(year, month - 1, day));
+    currentDate.setUTCDate(currentDate.getUTCDate() - 1);
+
+    const prevDateISO = currentDate.toISOString().split("T")[0];
+    setSelectedDateISO(prevDateISO);
   };
 
   const goNextDay = () => {
-    if (isToday) return; // 오늘이면 더 이상 다음으로 이동 불가
-    const d = new Date(selectedDateISO + "T00:00:00");
-    d.setDate(d.getDate() + 1);
-    setSelectedDateISO(d.toISOString().split("T")[0]);
+    // 다음 날짜가 오늘 이후면 이동 불가
+    const [year, month, day] = selectedDateISO.split("-").map(Number);
+    const currentDate = new Date(Date.UTC(year, month - 1, day));
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+
+    const nextDateISO = currentDate.toISOString().split("T")[0];
+
+    // 다음 날짜가 오늘 이후면 이동 불가
+    if (nextDateISO > todayISO) return;
+
+    setSelectedDateISO(nextDateISO);
   };
 
   return (
@@ -81,12 +96,12 @@ export default function Meal() {
         <TouchableOpacity
           style={styles.dateArrow}
           onPress={goNextDay}
-          disabled={isToday}
+          disabled={isTodayOrAfter}
         >
           <Ionicons
             name="chevron-forward"
             size={20}
-            color={isToday ? "#CCC" : "#666"}
+            color={isTodayOrAfter ? "#CCC" : "#666"}
           />
         </TouchableOpacity>
       </View>

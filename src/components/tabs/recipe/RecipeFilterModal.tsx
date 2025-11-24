@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useFridgeStore } from "../../../stores/useFridgeStore";
 import { Colors } from "../../../styles/common";
-import { FilterChip } from "../../FilterChip";
+import { FilterChip } from "./FilterChip";
 
 interface RecipeFilterModalProps {
   visible: boolean;
@@ -24,19 +24,9 @@ interface RecipeFilterModalProps {
   includeExpiring: boolean;
   onToggleExpiring: () => void;
 
-  selectedCookingTimes: string[];
-  onToggleCookingTime: (time: string) => void;
-
-  selectedDifficulties: string[];
-  onToggleDifficulty: (difficulty: string) => void;
-
   calorieRange: [number, number];
   onSetCalorieRange: (range: [number, number]) => void;
 }
-
-// 간단한 선택 옵션들 (기존 Recipe.tsx 로직과 호환되는 라벨)
-const COOKING_TIME_OPTIONS = ["짧음 (≤30분)", "중간 (31-60분)", "긴 (60분+)"];
-const DIFFICULTY_OPTIONS = ["쉬움", "보통", "어려움"];
 
 export default function RecipeFilterModal(props: RecipeFilterModalProps) {
   const {
@@ -47,10 +37,6 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
     onToggleIngredient,
     includeExpiring,
     onToggleExpiring,
-    selectedCookingTimes,
-    onToggleCookingTime,
-    selectedDifficulties,
-    onToggleDifficulty,
     calorieRange,
     onSetCalorieRange,
   } = props;
@@ -123,37 +109,11 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
               </TouchableOpacity>
             </View>
 
-            {/* 요리 시간 */}
-            <Text style={styles.sectionTitle}>요리 시간</Text>
-            <View style={styles.chipsRow}>
-              {COOKING_TIME_OPTIONS.map((opt) => (
-                <FilterChip
-                  key={opt}
-                  label={opt}
-                  selected={selectedCookingTimes.includes(opt)}
-                  onPress={() => onToggleCookingTime(opt)}
-                />
-              ))}
-            </View>
-
-            {/* 난이도 */}
-            <Text style={styles.sectionTitle}>난이도</Text>
-            <View style={styles.chipsRow}>
-              {DIFFICULTY_OPTIONS.map((opt) => (
-                <FilterChip
-                  key={opt}
-                  label={opt}
-                  selected={selectedDifficulties.includes(opt)}
-                  onPress={() => onToggleDifficulty(opt)}
-                />
-              ))}
-            </View>
-
             {/* 열량 범위 (듀얼 슬라이더) */}
             <Text style={styles.sectionTitle}>열량(kcal)</Text>
             <DualRangeSlider
               min={0}
-              max={2000}
+              max={5000}
               step={10}
               values={calorieRange}
               onChange={onSetCalorieRange}

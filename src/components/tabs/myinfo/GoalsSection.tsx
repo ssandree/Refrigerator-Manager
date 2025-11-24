@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { mockHealthGoals } from "../../../data/mockHealthGoals";
 import { useHealthGoalStore } from "../../../stores/useHealthGoalStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";
@@ -37,18 +38,26 @@ export default function GoalsSection({ onEditGoals }: GoalsSectionProps) {
               ]}
             >
               <View style={styles.goalItemContent}>
-                <View
-                  style={[
-                    styles.goalIconContainer,
-                    { backgroundColor: goal.color + "20" },
-                  ]}
-                >
-                  <Ionicons
-                    name={goal.icon as keyof typeof Ionicons.glyphMap}
-                    size={20}
-                    color={goal.color as string}
-                  />
-                </View>
+                {(() => {
+                  const fallback = mockHealthGoals.find(
+                    (mockGoal) => mockGoal.id === goal.id
+                  );
+                  const iconName = (goal.icon ||
+                    fallback?.icon ||
+                    "sparkles-outline") as keyof typeof Ionicons.glyphMap;
+                  const iconColor =
+                    goal.color || fallback?.color || Colors.primary;
+                  return (
+                    <View
+                      style={[
+                        styles.goalIconContainer,
+                        { backgroundColor: iconColor + "20" },
+                      ]}
+                    >
+                      <Ionicons name={iconName} size={24} color={iconColor} />
+                    </View>
+                  );
+                })()}
                 <View style={styles.goalTextContent}>
                   <Text style={styles.goalLabel}>{goal.title}</Text>
                   <Text style={styles.goalDescription}>{goal.description}</Text>
@@ -96,12 +105,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   goalIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 16,
   },
   goalTextContent: {
     flex: 1,

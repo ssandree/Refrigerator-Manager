@@ -1,16 +1,10 @@
-import {
-  CheckCircle2,
-  Circle,
-  Refrigerator,
-  Snowflake,
-  Thermometer,
-} from "lucide-react-native";
+import { CheckCircle2, Circle } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Food } from "../data/mockFood";
-import { FoodCategoryColor } from "../enums/ingredientCategory";
-import { StorageLocation } from "../enums/storageLocation";
-import { Colors, FontSizes, commonStyles } from "../styles/common";
+import { Food } from "../../../data/mockFood";
+import { FoodCategoryColor } from "../../../enums/ingredientCategory";
+import { StorageLocation } from "../../../enums/storageLocation";
+import { Colors, FontSizes, commonStyles } from "../../../styles/common";
 
 interface FoodCardProps {
   food: Food;
@@ -35,6 +29,19 @@ export default function FoodCard({
   onDelete,
   isExpiringSoon = false,
 }: FoodCardProps) {
+  const getStorageEmoji = () => {
+    switch (food.storageLocation) {
+      case StorageLocation.FRIDGE:
+        return "🧊";
+      case StorageLocation.FREEZER:
+        return "❄️";
+      case StorageLocation.ROOM_TEMP:
+        return "🌡️";
+      default:
+        return "📦";
+    }
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -52,13 +59,26 @@ export default function FoodCard({
         ]}
       />
 
-      {/* 선택 상태 표시 */}
-      {selectable && (
+      {/* 선택 상태 및 임박 표시 */}
+      {(selectable || isExpiringSoon) && (
         <View style={styles.selectionIndicator}>
-          {selected ? (
-            <CheckCircle2 size={22} color={Colors.primary} strokeWidth={2.5} />
-          ) : (
-            <Circle size={22} color={Colors.textSecondary} strokeWidth={2} />
+          {isExpiringSoon && <Text style={styles.expiryWarning}>⚠️</Text>}
+          {selectable && (
+            <View style={styles.selectionCircle}>
+              {selected ? (
+                <CheckCircle2
+                  size={22}
+                  color={Colors.primary}
+                  strokeWidth={2.5}
+                />
+              ) : (
+                <Circle
+                  size={22}
+                  color={Colors.textSecondary}
+                  strokeWidth={2}
+                />
+              )}
+            </View>
           )}
         </View>
       )}
@@ -67,28 +87,9 @@ export default function FoodCard({
       <View style={styles.topRow}>
         <View style={styles.foodCardImageContainer}>
           <Image
-            source={require("../assets/images/tomato.jpg")}
+            source={require("../../../assets/images/tomato.jpg")}
             style={styles.foodCardImage}
           />
-        </View>
-        <View style={styles.storageIconContainer}>
-          {food.storageLocation === StorageLocation.FRIDGE && (
-            <Refrigerator
-              size={18}
-              color={Colors.textSecondary}
-              strokeWidth={2}
-            />
-          )}
-          {food.storageLocation === StorageLocation.FREEZER && (
-            <Snowflake size={18} color={Colors.textSecondary} strokeWidth={2} />
-          )}
-          {food.storageLocation === StorageLocation.ROOM_TEMP && (
-            <Thermometer
-              size={18}
-              color={Colors.textSecondary}
-              strokeWidth={2}
-            />
-          )}
         </View>
       </View>
 
@@ -99,10 +100,9 @@ export default function FoodCard({
             <Text style={styles.foodCardName} numberOfLines={1}>
               {food.name}
             </Text>
-            {isExpiringSoon && <Text style={styles.expiryWarning}>⚠️</Text>}
           </View>
           <Text style={styles.foodCardQuantity}>
-            {food.quantity}개 · {food.weight}
+            {food.quantity}개 · {food.weight} · {getStorageEmoji()}
           </Text>
           <Text style={styles.foodCardExpiryDate}>{food.expiryDate}까지</Text>
         </View>
@@ -165,9 +165,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     // backgroundColor: Colors.backgroundDark,
   },
-  storageIconContainer: {
-    padding: 2,
-  },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -211,5 +208,13 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
     zIndex: 3,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  selectionCircle: {
+    marginLeft: 4,
+  },
+  storageEmoji: {
+    fontSize: FontSizes.lg,
   },
 });

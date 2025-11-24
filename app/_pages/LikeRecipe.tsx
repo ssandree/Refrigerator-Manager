@@ -1,46 +1,89 @@
 import { router, Stack } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import RecipeCard from "../../src/components/RecipeCard";
-import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
+import RecipeCard from "../../src/components/tabs/recipe/RecipeCard";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import favoriteRecipeServiceApi from "../../src/services/favoriteRecipeService";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { Recipe } from "../../src/types/recipe";
+import { logger } from "../../src/utils/logger";
 
 export default function LikeRecipe() {
   const favoriteRecipes = useFavoriteRecipeStore(
     (state) => state.favoriteRecipes
   );
-  const loadFavorites = useFavoriteRecipeStore((state) => state.loadFavorites);
   const isLoading = useFavoriteRecipeStore((state) => state.isLoading);
-  const lastSyncedAt = useFavoriteRecipeStore((state) => state.lastSyncedAt);
+  const toggleFavorite = useFavoriteRecipeStore(
+    (state) => state.toggleFavorite
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   useStoreWithError(useFavoriteRecipeStore);
-  useAutoLoadData(favoriteRecipes, isLoading, loadFavorites, {
-    checkLastSynced: true,
-    lastSyncedAt,
-  });
+
+  const fetchFavorites = useCallback(async (withSpinner: boolean = true) => {
+    if (withSpinner) {
+      useFavoriteRecipeStore.setState((state) => ({
+        ...state,
+        isLoading: true,
+      }));
+    }
+    try {
+      const response = await favoriteRecipeServiceApi.getAllFavorites();
+      if (response.success && response.data) {
+        useFavoriteRecipeStore.setState((state) => ({
+          ...state,
+          favoriteRecipes: response.data,
+          error: null,
+          lastSyncedAt: Date.now(),
+        }));
+      } else {
+        const message =
+          response.message ?? "즐겨찾기 레시피를 불러오지 못했습니다.";
+        useFavoriteRecipeStore.setState((state) => ({
+          ...state,
+          error: message,
+        }));
+      }
+    } catch (error) {
+      logger.error("Failed to load favorite recipes:", error);
+      useFavoriteRecipeStore.setState((state) => ({
+        ...state,
+        error: "즐겨찾기 목록을 불러오는 중 오류가 발생했습니다.",
+      }));
+    } finally {
+      if (withSpinner) {
+        useFavoriteRecipeStore.setState((state) => ({
+          ...state,
+          isLoading: false,
+        }));
+      }
+    }
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadFavorites(true);
+      await fetchFavorites(false);
     } finally {
       setRefreshing(false);
     }
-  }, [loadFavorites]);
+  }, [fetchFavorites]);
 
-  const renderRecipeCard = ({ item }: { item: any }) => (
+  useEffect(() => {
+    fetchFavorites(true);
+  }, [fetchFavorites]);
+
+  const renderRecipeCard = ({ item }: { item: Recipe }) => (
     <RecipeCard
       recipe={item}
       onPress={() => {
@@ -48,6 +91,10 @@ export default function LikeRecipe() {
           pathname: "/_pages/RecipeDetail",
           params: { id: item.id, name: item.recipeName },
         });
+      }}
+      onFavoriteToggle={async () => {
+        await toggleFavorite(item);
+        await fetchFavorites(false);
       }}
     />
   );

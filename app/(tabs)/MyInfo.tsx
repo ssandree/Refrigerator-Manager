@@ -1,12 +1,19 @@
 import { useRouter } from "expo-router";
+import { Settings } from "lucide-react-native";
 import React, { useState } from "react";
-import { Modal, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import GoalsSection from "../../src/components/tabs/myinfo/GoalsSection";
 import HealthGoalStats from "../../src/components/tabs/myinfo/HealthGoalStats";
 import ProfileSection from "../../src/components/tabs/myinfo/ProfileSection";
-import SettingsMenu from "../../src/components/tabs/myinfo/SettingsMenu";
 import StatsSection from "../../src/components/tabs/myinfo/StatsSection";
-import { Colors } from "../../src/styles/common";
+import { Colors, FontSizes, commonStyles } from "../../src/styles/common";
 import { tabsStyles } from "../../src/styles/tabs";
 import UpdateHealthGoal from "../_pages/UpdateHealthGoal";
 
@@ -34,6 +41,10 @@ export default function MyInfoScreen() {
     setIsModalVisible(false);
   };
 
+  const handleSettingsPress = () => {
+    router.push("/_pages/NotiSettings");
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -50,7 +61,21 @@ export default function MyInfoScreen() {
           <HealthGoalStats />
           <StatsSection onWeeklyAchievePress={handleWeeklyAchievePress} />
 
-          <SettingsMenu />
+          {/* 설정 메뉴 */}
+          <View style={styles.settingsSection}>
+            <TouchableOpacity
+              style={[commonStyles.card, styles.settingsItem]}
+              onPress={handleSettingsPress}
+            >
+              <Settings size={24} color={Colors.primary} strokeWidth={2} />
+              <View style={styles.settingsItemContent}>
+                <Text style={styles.settingsItemTitle}>알림 설정</Text>
+                <Text style={styles.settingsItemDescription}>
+                  알림 수신 설정을 관리합니다
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -78,5 +103,28 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 0,
+  },
+  settingsSection: {
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  settingsItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+  },
+  settingsItemContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  settingsItemTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  settingsItemDescription: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
   },
 });

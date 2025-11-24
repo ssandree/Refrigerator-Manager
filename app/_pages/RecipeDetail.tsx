@@ -2,19 +2,19 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import { Recipe } from "../../src/data/mockRecipes";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { recipeService } from "../../src/services/recipeService";
 import { useMealStore } from "../../src/stores/useMealStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { Recipe } from "../../src/types/recipe";
 
 export default function RecipeDetail() {
   const params = useLocalSearchParams<{ id?: string; name?: string }>();
@@ -59,16 +59,15 @@ export default function RecipeDetail() {
     return d.toISOString().split("T")[0];
   }, []);
 
-  const handleRegisterMeal = () => {
+  const handleRegisterMeal = async () => {
     if (!recipe) {
       Alert.alert("오류", "레시피 정보를 찾을 수 없습니다.");
       return;
     }
 
-    const success = addMeal({
-      id: Date.now().toString(),
+    const success = await addMeal({
       recipe: recipe,
-      ingredients: [],
+      foods: [],
       quantity: "1인분",
       consumedAt: todayStr,
       registeredAt: todayStr,

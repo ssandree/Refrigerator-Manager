@@ -1,6 +1,6 @@
 // Recipe service for managing recipes
-import { Recipe } from "../data/mockRecipes";
-import apiClient, { ApiResponse } from "./apiClient";
+import { Recipe } from "../types/recipe";
+import apiClientInstance, { ApiResponse } from "./apiClient";
 
 class RecipeService {
   private readonly basePath = "/recipes";
@@ -9,21 +9,21 @@ class RecipeService {
    * Get all recipes
    */
   async getAllRecipes(): Promise<ApiResponse<Recipe[]>> {
-    return await apiClient.get<Recipe[]>(this.basePath);
+    return await apiClientInstance.get<Recipe[]>(this.basePath);
   }
 
   /**
    * Get recipe by ID
    */
   async getRecipeById(recipeId: string): Promise<ApiResponse<Recipe>> {
-    return await apiClient.get<Recipe>(`${this.basePath}/${recipeId}`);
+    return await apiClientInstance.get<Recipe>(`${this.basePath}/${recipeId}`);
   }
 
   /**
    * Search recipes by query
    */
   async searchRecipes(query: string) {
-    return await apiClient.get<Recipe[]>(
+    return await apiClientInstance.get<Recipe[]>(
       `${this.basePath}/search/?q=${encodeURIComponent(query)}`
     );
   }
@@ -35,7 +35,7 @@ class RecipeService {
     const queryParams = tags
       .map((tag) => `tags=${encodeURIComponent(tag)}`)
       .join("&");
-    return await apiClient.get<Recipe[]>(
+    return await apiClientInstance.get<Recipe[]>(
       `${this.basePath}/filter-by-tags?${queryParams}`
     );
   }
@@ -44,7 +44,7 @@ class RecipeService {
    * Get recipes by difficulty
    */
   async getRecipesByDifficulty(difficulty: Recipe["difficulty"]) {
-    return await apiClient.get<Recipe[]>(
+    return await apiClientInstance.get<Recipe[]>(
       `${this.basePath}/difficulty/${difficulty}`
     );
   }
@@ -53,7 +53,7 @@ class RecipeService {
    * Get recipes by time category
    */
   async getRecipesByTimeCategory(timeCategory: string) {
-    return await apiClient.get<Recipe[]>(
+    return await apiClientInstance.get<Recipe[]>(
       `${this.basePath}/time/${timeCategory}`
     );
   }
@@ -62,7 +62,17 @@ class RecipeService {
    * Get recommended recipes based on user's ingredients
    */
   async getRecommendedRecipes() {
-    return await apiClient.post<Recipe[]>(`${this.basePath}/recommend`, {});
+    return await apiClientInstance.post<Recipe[]>(
+      `${this.basePath}/recommend`,
+      {}
+    );
+  }
+
+  /**
+   * Get dashboard recommendations (상위 추천 레시피)
+   */
+  async getDashboardRecommendations(): Promise<ApiResponse<Recipe[]>> {
+    return await apiClientInstance.get<Recipe[]>("/dashboard/recommendations");
   }
 }
 

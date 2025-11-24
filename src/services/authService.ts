@@ -8,6 +8,7 @@ export interface User {
   email: string;
   age?: number | null;
   sex?: string | null;
+  height?: number | null;
   weight?: number | null;
   activityLevel?: string | null;
   bmi?: number | null;
@@ -32,6 +33,7 @@ export interface UserUpdateRequest {
   name?: string | null;
   age?: number | null;
   sex?: string | null;
+  height?: number | null;
   weight?: number | null;
   activityLevel?: string | null;
   bmi?: number | null;
@@ -62,8 +64,8 @@ class AuthService {
     );
 
     if (response.success && response.data?.token) {
-      // API 헤더에 토큰 적용 + 보안 저장소에 영구 저장
-      apiClient.setToken(response.data.token);
+      // 보안 저장소에 토큰 저장 (apiClient 인터셉터가 자동으로 헤더에 추가)
+      // 로그인 직후부터 모든 API 요청에 Authorization 헤더가 자동으로 포함됨
       await saveToken(response.data.token);
     }
 
@@ -80,8 +82,7 @@ class AuthService {
     );
 
     if (response.success && response.data?.token) {
-      // 회원가입 후 자동 로그인과 동일하게 토큰 저장
-      apiClient.setToken(response.data.token);
+      // 보안 저장소에 토큰 저장 (apiClient 인터셉터가 자동으로 헤더에 추가)
       await saveToken(response.data.token);
     }
 
@@ -148,8 +149,7 @@ class AuthService {
     );
 
     if (response.success && response.data?.token) {
-      // 토큰 재발급 시에도 동일하게 반영
-      apiClient.setToken(response.data.token);
+      // 보안 저장소에 토큰 저장 (apiClient 인터셉터가 자동으로 헤더에 추가)
       await saveToken(response.data.token);
     }
 

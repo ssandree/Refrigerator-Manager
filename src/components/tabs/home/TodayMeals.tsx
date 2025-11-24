@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { mealService } from "../../../services/mealService";
 import { Meal } from "../../../stores/useMealStore";
 import { tabsStyles } from "../../../styles/tabs";
+import { logger } from "../../../utils/logger";
 import LoadingSpinner from "../../LoadingSpinner";
 import DailyDietCard from "../meal/MealCard";
 
@@ -17,27 +19,33 @@ export default function TodayMeals() {
     return today.toISOString().split("T")[0];
   }, []);
 
-  useEffect(() => {
-    const loadTodayMeals = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await mealService.getMealsByDate(todayDate);
-        if (response.success && response.data) {
-          setMeals(response.data);
-        } else {
-          setError(response.message || "식사 목록을 불러오는데 실패했습니다.");
-        }
-      } catch (err) {
-        setError("식사 목록을 불러오는 중 오류가 발생했습니다.");
-        console.error("Failed to load today's meals:", err);
-      } finally {
-        setIsLoading(false);
+  const loadTodayMeals = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await mealService.getMealsByDate(todayDate);
+      if (response.success && response.data) {
+        setMeals(response.data);
+      } else {
+        setError(response.message || "식사 목록을 불러오는데 실패했습니다.");
       }
-    };
-
-    loadTodayMeals();
+    } catch (err) {
+      setError("식사 목록을 불러오는 중 오류가 발생했습니다.");
+      logger.error("Failed to load today's meals:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [todayDate]);
+
+  useEffect(() => {
+    loadTodayMeals();
+  }, [loadTodayMeals]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTodayMeals();
+    }, [loadTodayMeals])
+  );
 
   const sections = useMemo(
     () =>

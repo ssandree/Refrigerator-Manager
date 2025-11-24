@@ -1,5 +1,5 @@
 // Favorite recipe service for managing user's favorite recipes
-import { Recipe } from "../data/mockRecipes";
+import { Recipe } from "../types/recipe";
 import apiClient, { ApiResponse } from "./apiClient";
 
 class FavoriteRecipeService {

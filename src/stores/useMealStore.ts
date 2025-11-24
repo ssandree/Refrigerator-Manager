@@ -2,16 +2,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Food } from "../data/mockFood";
-import { Recipe } from "../data/mockRecipes";
 import { mealService } from "../services/mealService";
+import { Recipe } from "../types/recipe";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
-import {
-  createAddEntity,
-  createGetEntityById,
-  createRemoveEntity,
-  createUpdateEntity,
-} from "./storeCrudHelpers";
+import { createGetEntityById } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
 
 // 식단 도메인 모델 (레시피/재료, 섭취일/등록일, 메모/식사유형 포함)
@@ -36,11 +31,11 @@ interface MealState {
   isLoading: boolean;
   lastSyncedAt: number | null; // 마지막 서버 동기화 시간
   // 식단 추가 (중복 ID 방지)
-  addMeal: (meal: Meal) => boolean;
-  // 식단 일부 필드 업데이트
-  updateMeal: (id: string, updatedMeal: Partial<Meal>) => boolean;
-  // 식단 삭제
-  removeMeal: (id: string) => boolean;
+  addMeal: (meal: Omit<Meal, "id">) => Promise<boolean>;
+  // 식단 일부 필드 업데이트 (API 호출)
+  updateMeal: (id: string, updatedMeal: Partial<Meal>) => Promise<boolean>;
+  // 식단 삭제 (API 호출)
+  removeMeal: (id: string) => Promise<boolean>;
   // 단건 조회
   getMealById: (id: string) => Meal | undefined;
   // 날짜별 조회 (consumedAt 기준)
@@ -64,29 +59,91 @@ export const useMealStore = create<MealState>()(
       isLoading: false,
       lastSyncedAt: null,
 
-      // 식단 추가 (이미 존재하면 무시)
-      addMeal: createAddEntity<Meal>(
-        "식단",
-        () => get().meals,
-        (meals) => set({ meals, error: null }),
-        (error) => set({ error })
-      ),
+      // 식단 추가 (API 호출)
+      addMeal: async (mealData: Omit<Meal, "id">) => {
+        try {
+          set({ error: null });
+          const response = await mealService.createMeal(mealData);
+          if (response.success && response.data) {
+            set({
+              meals: [...get().meals, response.data],
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return true;
+          } else {
+            set({
+              error: response.message ?? "식단 등록에 실패했습니다.",
+            });
+            return false;
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식단 등록 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
-      // 식단 업데이트
-      updateMeal: createUpdateEntity<Meal>(
-        "식단",
-        () => get().meals,
-        (meals) => set({ meals, error: null }),
-        (error) => set({ error })
-      ),
+      // 식단 업데이트 (API 호출)
+      updateMeal: async (id: string, updatedMeal: Partial<Meal>) => {
+        try {
+          set({ error: null });
+          const response = await mealService.updateMeal(id, updatedMeal);
+          if (response.success && response.data) {
+            const entities = get().meals;
+            set({
+              meals: entities.map((e) => (e.id === id ? response.data : e)),
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return true;
+          } else {
+            set({
+              error: response.message ?? "식단 수정에 실패했습니다.",
+            });
+            return false;
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식단 수정 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
-      // 식단 삭제
-      removeMeal: createRemoveEntity<Meal>(
-        "식단",
-        () => get().meals,
-        (meals) => set({ meals, error: null }),
-        (error) => set({ error })
-      ),
+      // 식단 삭제 (API 호출)
+      removeMeal: async (id: string) => {
+        try {
+          set({ error: null });
+          const response = await mealService.deleteMeal(id);
+          if (response.success) {
+            const entities = get().meals;
+            set({
+              meals: entities.filter((e) => e.id !== id),
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return true;
+          } else {
+            set({
+              error: response.message ?? "식단 삭제에 실패했습니다.",
+            });
+            return false;
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식단 삭제 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
       // ID로 단건 조회
       getMealById: createGetEntityById<Meal>(() => get().meals),

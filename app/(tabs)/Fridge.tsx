@@ -4,7 +4,6 @@ import { Edit3, Trash2 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,10 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import FoodCard from "../../src/components/FoodCard";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import ProfileCircle from "../../src/components/ProfileCircle";
 import QuickFoodAdd from "../../src/components/QuickFoodAdd";
+import FoodCard from "../../src/components/tabs/fridge/FoodCard";
 import {
   FoodCategory,
   FoodCategoryLabel,
@@ -35,9 +35,14 @@ export default function FridgeScreen() {
   const foods = useFridgeStore((s) => s.foods);
   const loadFoods = useFridgeStore((s) => s.loadFoods);
   const isLoading = useFridgeStore((s) => s.isLoading);
+  const lastSyncedAt = useFridgeStore((s) => s.lastSyncedAt);
 
   useStoreWithError(useFridgeStore);
-  useAutoLoadData(foods, isLoading, loadFoods);
+  // GET /foods API를 통해 현재 사용자의 음식 데이터 자동 로드
+  useAutoLoadData(foods, isLoading, loadFoods, {
+    checkLastSynced: true,
+    lastSyncedAt: lastSyncedAt,
+  });
 
   const [selectedCategories, setSelectedCategories] = useState<FoodCategory[]>(
     []

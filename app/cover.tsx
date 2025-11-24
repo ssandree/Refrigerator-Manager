@@ -8,6 +8,7 @@ import { useAuthStore } from "../src/stores/useAuthStore";
 import { Colors } from "../src/styles/colors";
 import { FontSizes } from "../src/styles/common";
 import { logger } from "../src/utils/logger";
+import { needsOnboarding } from "../src/utils/onboardingGuard";
 
 export default function Cover() {
   const [isChecking, setIsChecking] = useState(false);
@@ -26,17 +27,20 @@ export default function Cover() {
         // 3. 인증 상태와 사용자 정보가 있으면 바로 Home으로 이동
         const currentAuth = useAuthStore.getState();
         if (currentAuth.isAuthenticated && currentAuth.user) {
-          router.replace("/(tabs)/Home");
+          const shouldGoOnboarding = needsOnboarding(currentAuth.user);
+          router.replace(
+            shouldGoOnboarding ? "/onboarding/GetSexAge" : "/(tabs)/Home"
+          );
           return;
         }
       }
 
-      // 토큰 없음 또는 인증되지 않음 → 온보딩 시작
-      router.replace("./onboarding/GetSexAge");
+      // 토큰 없음 또는 인증되지 않음 → 로그인부터 시작
+      router.replace("/(auth)/Login");
     } catch (error) {
       logger.error("Auth check error:", error);
-      // 에러 발생 시 온보딩으로 이동
-      router.replace("./onboarding/GetSexAge");
+      // 에러 발생 시 로그인으로 이동
+      router.replace("/(auth)/Login");
     } finally {
       setIsChecking(false);
     }

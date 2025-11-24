@@ -56,6 +56,7 @@
 
 - **expo-secure-store** - 보안 토큰 저장
 - **react-native-toast-message** - 토스트 알림
+- **react-native-gesture-handler** - 제스처 처리 (Swipeable 등)
 - **lucide-react-native** - 아이콘
 - **dayjs** - 날짜 처리
 
@@ -90,18 +91,24 @@ refrigerator/
 │
 ├── src/
 │   ├── components/         # 재사용 가능한 컴포넌트
-│   │   ├── AuthLayout.tsx
 │   │   ├── Buttons.tsx
 │   │   ├── ErrorBoundary.tsx
 │   │   ├── FoodCard.tsx
 │   │   ├── RecipeCard.tsx
 │   │   └── tabs/           # 탭별 컴포넌트
+│   │       ├── home/       # 홈 화면 컴포넌트
+│   │       │   ├── TodayMeals.tsx
+│   │       │   ├── RecipeRecommand.tsx
+│   │       │   └── ...
+│   │       ├── meal/       # 식단 화면 컴포넌트
+│   │       └── ...
 │   │
 │   ├── services/           # API 서비스 레이어
 │   │   ├── api.ts          # API 클라이언트
 │   │   ├── authService.ts
-│   │   ├── fridgeService.ts
-│   │   ├── fridgeService.mock.ts  # Mock 서비스
+│   │   ├── foodService.ts  # 재료 관리 서비스 (fridgeService에서 변경)
+│   │   ├── foodService.mock.ts  # Mock 서비스
+│   │   ├── mealService.ts  # 식사 관리 서비스
 │   │   ├── recipeService.ts
 │   │   ├── recipeService.mock.ts
 │   │   └── index.ts        # 서비스 중앙 export
@@ -129,16 +136,19 @@ refrigerator/
 │   │   ├── logger.ts       # 로깅 유틸리티
 │   │   ├── toast.ts        # 토스트 메시지
 │   │   ├── storeErrorHandler.ts  # 에러 처리
-│   │   ├── recipeScoring.ts      # 레시피 점수 계산
-│   │   ├── recipeFilter.ts      # 레시피 필터링
-│   │   ├── expiryUtils.ts        # 유통기한 유틸리티
-│   │   └── healthGoalCalculator/ # 건강 목표 계산
+│   │   ├── recipeFilter.ts      # 레시피 필터링 (클라이언트 사이드)
+│   │   └── expiryUtils.ts        # 유통기한 유틸리티
+│   │
+│   │   # 참고: recipeScoring.ts와 healthGoalCalculator/ 제거됨
+│   │   # (백엔드에서 계산 처리)
 │   │
 │   ├── data/               # Mock 데이터 (개발용)
 │   │   ├── mockFood.ts
-│   │   ├── mockRecipes.ts
 │   │   ├── mockHealthGoals.ts
 │   │   └── mockHealthMetrics.ts
+│   │
+│   ├── types/              # 전역 타입 정의
+│   │   └── recipe.ts
 │   │
 │   ├── styles/             # 스타일 정의
 │   │   ├── colors.ts
@@ -238,6 +248,15 @@ src / services / index.ts;
 - **Zod**: 런타임 스키마 검증
 - **타입 가드**: `isApiSuccess`, `isHttpError` 등
 
+### 6. 백엔드 중심 아키텍처
+
+**중요한 설계 원칙:**
+
+- **계산 로직은 백엔드에서 처리**: 레시피 점수, 건강 목표 계산 등
+- **프론트엔드는 표시에 집중**: 백엔드에서 받은 데이터를 UI에 표시
+- **Mock Fallback**: 개발 환경에서 API 실패 시 Mock 데이터 자동 사용
+- **타입 일관성**: 백엔드 API 응답과 프론트엔드 타입 정의 일치 유지
+
 ---
 
 ## 주요 기능
@@ -263,24 +282,18 @@ src / services / index.ts;
 **기능:**
 
 - 보유 재료 기반 레시피 추천
-- 레시피 점수 계산 (유통기한 점수 + 재료 매칭 점수)
-- 필터링 (난이도, 조리 시간, 태그 등)
+- **백엔드에서 점수 계산 및 정렬** (프론트엔드 계산 로직 제거)
+- 필터링 (난이도, 조리 시간, 태그, 열량 범위 등)
 - 즐겨찾기 기능
+- 검색 기능
 
-**점수 계산 로직:**
-
-```typescript
-// src/utils/recipeScoring.ts
-- 유통기한 점수: 임박한 재료일수록 높은 점수
-- 재료 매칭 점수: 보유한 재료 비율
-- 최종 점수 = 유통기한 점수 + (재료 매칭 점수 × 10)
-```
+**중요:** 레시피 점수 계산은 백엔드에서 처리됩니다. 프론트엔드는 백엔드에서 받은 정렬된 레시피 목록을 그대로 표시합니다.
 
 **주요 파일:**
 
 - `app/(tabs)/Recipe.tsx` - 메인 화면
 - `src/stores/useRecipeStore.ts` - 상태 관리
-- `src/utils/recipeScoring.ts` - 점수 계산 로직
+- `src/utils/recipeFilter.ts` - 클라이언트 사이드 필터링 (검색, 난이도, 시간 등)
 
 ### 3. 식단 관리 (Meal)
 
@@ -302,21 +315,24 @@ src / services / index.ts;
 **기능:**
 
 - 건강 목표 선택 (최대 3개)
-- 목표별 영양 권장량 계산
-- 달성률 추적
+- **백엔드에서 건강 목표 계획 및 달성률 계산** (프론트엔드 계산 로직 제거)
+- 목표별 영양 권장량 표시
 - 주간 통계
+
+**중요:** 건강 목표 관련 계산(BMR, TDEE, 목표 계획 등)은 백엔드에서 처리됩니다.
 
 **주요 파일:**
 
 - `app/onboarding/GetHealthGoal.tsx` - 온보딩
 - `app/_pages/UpdateHealthGoal.tsx` - 수정 화면
-- `src/utils/healthGoalCalculator/` - 계산 로직
+- `app/_pages/weeklyAchieve.tsx` - 주간 달성도 화면
 
 ### 5. 홈 대시보드 (Home)
 
 **기능:**
 
 - 임박 재료 알림
+- **오늘의 식사 목록** (BE API `/meals/date/{date}` 사용)
 - 오늘의 레시피 추천
 - 오늘의 영양 목표 진행률
 - 인사말 (시간대별)
@@ -324,7 +340,8 @@ src / services / index.ts;
 **주요 파일:**
 
 - `app/(tabs)/Home.tsx` - 메인 화면
-- `src/components/tabs/home/` - 홈 컴포넌트들
+- `src/components/tabs/home/TodayMeals.tsx` - 오늘의 식사 컴포넌트
+- `src/components/tabs/home/` - 기타 홈 컴포넌트들
 
 ---
 
@@ -337,9 +354,9 @@ src / services / index.ts;
     ↓
 RegisterFood.tsx (UI)
     ↓
-useFridgeStore.addIngredient() (상태 업데이트)
+useFridgeStore.addFood() (상태 업데이트)
     ↓
-fridgeService.addIngredient() (API 호출)
+foodService.addFood() (API 호출)
     ↓
 apiClient.post() (HTTP 요청)
     ↓
@@ -348,23 +365,39 @@ apiClient.post() (HTTP 요청)
 응답 처리 및 상태 업데이트
 ```
 
+**참고:** `ingredients` → `foods`로 네이밍 변경됨
+
 ### 2. 레시피 추천 플로우
 
 ```
 Home.tsx 마운트
     ↓
-useFridgeStore.loadIngredients() (재료 로드)
+useFridgeStore.loadFoods() (재료 로드)
     ↓
 useRecipeStore.loadRecipes() (레시피 로드)
     ↓
-useRecipeStore.getScoredRecipes() (점수 계산)
+백엔드에서 이미 정렬된 레시피 목록 수신
     ↓
-recipeScoring.calculateRecipeScore() (점수 계산 로직)
-    ↓
-정렬 및 상위 8개 표시
+상위 8개 표시 (RecipeRecommand 컴포넌트)
 ```
 
-### 3. 인증 플로우
+**중요:** 레시피 점수 계산 및 정렬은 백엔드에서 처리됩니다.
+
+### 3. 오늘의 식사 조회 플로우
+
+```
+Home.tsx 마운트
+    ↓
+TodayMeals 컴포넌트 렌더링
+    ↓
+mealService.getMealsByDate(todayDate) (API 호출)
+    ↓
+백엔드 API: GET /meals/date/{date}
+    ↓
+식사 유형별(아침/점심/저녁/간식) 분류 및 카드 표시
+```
+
+### 4. 인증 플로우
 
 ```
 앱 시작 (cover.tsx)
@@ -378,6 +411,8 @@ recipeScoring.calculateRecipeScore() (점수 계산 로직)
 인증됨 → Home 화면
 인증 안됨 → 온보딩/로그인
 ```
+
+**참고:** 인증 레이아웃(`AuthLayout.tsx`)은 `app/(auth)/_layout.tsx`에 통합되었습니다.
 
 ---
 
@@ -400,17 +435,29 @@ npm run web
 
 ### 2. Mock 데이터 사용
 
-**개발 중 Mock 서비스 사용:**
+**개발 중 Mock 데이터 Fallback:**
+
+프로젝트는 개발 환경(`__DEV__`)에서 API 호출 실패 시 자동으로 Mock 데이터를 사용합니다.
+
+**스토어별 Mock Fallback:**
+
+- `useRecipeStore`: API 기반(이제 Mock Fallback 없음)
+- `useFridgeStore`: API 실패 시 `mockFoods` 사용
+- `useMealStore`: 사용자별 데이터이므로 빈 배열 반환
+
+**Mock 서비스 사용 (선택사항):**
 
 `src/services/index.ts` 파일 수정:
 
 ```typescript
 // API 서비스 주석 처리
-// export { default as fridgeService } from "./fridgeService";
+// export { default as foodService } from "./foodService";
 
 // Mock 서비스 활성화
-export { default as fridgeService } from "./fridgeService.mock";
+export { default as foodService } from "./foodService.mock";
 ```
+
+**참고:** `fridgeService` → `foodService`로 네이밍 변경됨
 
 ### 3. 새로운 기능 추가 가이드
 
@@ -581,15 +628,16 @@ logger.error("에러 메시지");
 
 #### `useFridgeStore.ts`
 
-- 재료 목록 관리
-- CRUD 작업
-- 서버 동기화 (`loadIngredients`)
+- 재료 목록 관리 (`foods` 배열)
+- CRUD 작업 (`addFood`, `updateFood`, `removeFood`)
+- 서버 동기화 (`loadFoods`)
+- **참고:** `ingredients` → `foods`로 네이밍 변경됨
 
 #### `useRecipeStore.ts`
 
 - 레시피 목록 관리
-- 점수 계산 (`getScoredRecipes`)
-- 검색 기능
+- 서버 동기화 (`loadRecipes`)
+- **참고:** 점수 계산은 백엔드에서 처리되므로 `getScoredRecipes` 메서드 제거됨
 
 #### `useMealStore.ts`
 
@@ -605,20 +653,28 @@ logger.error("에러 메시지");
 
 ### 유틸리티 파일
 
-#### `recipeScoring.ts`
-
-- 레시피 점수 계산 알고리즘
-- 유통기한 점수 + 재료 매칭 점수
-
 #### `recipeFilter.ts`
 
-- 레시피 필터링 로직
-- 다중 필터 조건 지원
+- 레시피 필터링 로직 (클라이언트 사이드)
+- 다중 필터 조건 지원 (검색어, 재료, 난이도, 조리 시간, 열량 범위)
+- **참고:** 점수 계산은 백엔드에서 처리됨
 
 #### `expiryUtils.ts`
 
 - 유통기한 관련 유틸리티
-- 임박 여부 계산
+- 임박 여부 계산 (7일 이내)
+
+### 제거된 파일
+
+#### `recipeScoring.ts` (제거됨)
+
+- 레시피 점수 계산은 백엔드에서 처리됩니다.
+- 백엔드 API `/recipes/recommend`에서 점수와 함께 반환합니다.
+
+#### `healthGoalCalculator/` (제거됨)
+
+- 건강 목표 계산 로직은 백엔드에서 처리됩니다.
+- BMR, TDEE, 목표 계획 등은 백엔드 API를 통해 받아옵니다.
 
 ---
 
@@ -690,5 +746,30 @@ logger.error("에러 메시지");
 ## 문의 및 지원
 
 코드베이스에 대한 질문이나 개선 제안이 있으면 팀에 공유해주세요.
+
+---
+
+## 최근 주요 변경사항
+
+### 2025년 1월
+
+- ✅ **백엔드 중심 아키텍처로 전환**
+  - 레시피 점수 계산 로직 제거 (백엔드에서 처리)
+  - 건강 목표 계산 로직 제거 (백엔드에서 처리)
+- ✅ **네이밍 통일**
+  - `ingredients` → `foods`로 변경
+  - `fridgeService` → `foodService`로 변경
+- ✅ **개발 경험 개선**
+  - Mock 데이터 자동 Fallback 추가
+  - 에러 처리 통일 (`lastSyncedAt` 설정)
+- ✅ **컴포넌트 개선**
+
+  - `TodayMeals` 컴포넌트 추가 (오늘의 식사 목록)
+  - `AuthLayout` 통합 (`app/(auth)/_layout.tsx`)
+  - `GestureHandlerRootView` 추가 (제스처 처리)
+
+- ✅ **코드 품질 개선**
+  - `console.log` → `logger` 사용으로 통일
+  - 중복 로드 방지 로직 개선
 
 **마지막 업데이트**: 2025-01-XX

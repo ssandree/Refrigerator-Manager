@@ -1,6 +1,9 @@
 import { ChevronRight } from "lucide-react-native";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
+import { useFridgeStore } from "../../../stores/useFridgeStore";
+import { useMealStore } from "../../../stores/useMealStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";
 
@@ -17,6 +20,30 @@ interface StatsSectionProps {
 export default function StatsSection({
   onWeeklyAchievePress,
 }: StatsSectionProps) {
+  const foods = useFridgeStore((state) => state.foods);
+  const favoriteRecipes = useFavoriteRecipeStore(
+    (state) => state.favoriteRecipes
+  );
+  const meals = useMealStore((state) => state.meals);
+
+  // 등록된 재료 개수
+  const registeredFoodsCount = foods.length;
+
+  // 즐겨찾기 레시피 개수
+  const favoriteRecipesCount = favoriteRecipes.length;
+
+  // 이번 주 식사 개수 계산
+  const weeklyMealCount = useMemo(() => {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7);
+
+    return meals.filter((meal) => {
+      const mealDate = new Date(meal.consumedAt);
+      return mealDate >= weekAgo && mealDate <= today;
+    }).length;
+  }, [meals]);
+
   return (
     <View style={tabsStyles.section}>
       <View style={styles.sectionHeader}>
@@ -33,20 +60,16 @@ export default function StatsSection({
       </View>
       <View style={styles.statsCard}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>15</Text>
+          <Text style={styles.statNumber}>{registeredFoodsCount}</Text>
           <Text style={styles.statLabel}>등록된 재료</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>8</Text>
+          <Text style={styles.statNumber}>{favoriteRecipesCount}</Text>
           <Text style={styles.statLabel}>즐겨찾기 레시피</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>23</Text>
+          <Text style={styles.statNumber}>{weeklyMealCount}</Text>
           <Text style={styles.statLabel}>이번 주 식사</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>7</Text>
-          <Text style={styles.statLabel}>연속 기록일</Text>
         </View>
       </View>
     </View>

@@ -60,7 +60,11 @@ export const HealthGoalSelector: React.FC<HealthGoalSelectorProps> = ({
                 <Ionicons
                   name={goal.icon as keyof typeof Ionicons.glyphMap}
                   size={24}
-                  color={isSelected ? goal.color : "#666"}
+                  color={
+                    isSelected
+                      ? goal.color || Colors.primary
+                      : Colors.textSecondary
+                  }
                 />
               </View>
               <View style={styles.goalTextContainer}>

@@ -1,7 +1,7 @@
 import { tabsStyles } from "@/styles/tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -11,9 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Recipe } from "../../../data/mockRecipes";
-import { useRecipeStore } from "../../../stores/useRecipeStore";
+import recipeService from "../../../services/recipeService";
 import { Colors, createShadowStyle } from "../../../styles/common";
+import { Recipe } from "../../../types/recipe";
+import { logger } from "../../../utils/logger";
+import LoadingSpinner from "../../LoadingSpinner";
 
 interface RecipeCardData {
   id: string;
@@ -26,30 +28,85 @@ interface RecipeCardData {
 }
 
 export default function RecipeRecommand() {
-  const recipes = useRecipeStore((s) => s.recipes);
+  const [recommendations, setRecommendations] = useState<Recipe[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 상위 8개 레시피 가져오기 (BE에서 정렬된 순서로 받아옴)
+  // /dashboard/recommendations API 호출
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await recipeService.getDashboardRecommendations();
+        if (response.success && response.data) {
+          setRecommendations(response.data.slice(0, 8));
+        } else {
+          setError(
+            response.message || "레시피 추천을 불러오는데 실패했습니다."
+          );
+        }
+      } catch (err) {
+        logger.error("레시피 추천 로드 실패:", err);
+        setError("레시피 추천을 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRecommendations();
+  }, []);
+
+  // 상위 8개 레시피 데이터 변환
   const data = useMemo<RecipeCardData[]>(() => {
-    if (recipes.length === 0) {
-      return [];
-    }
-    return recipes.slice(0, 8).map((recipe: Recipe) => ({
+    return recommendations.map((recipe: Recipe) => ({
       id: recipe.id,
       name: recipe.recipeName,
-      desc: recipe.description,
+      desc: recipe.description || "",
       calories: recipe.calories,
       time: recipe.time,
       owned: `${recipe.totalIngredients || 0} 재료`,
-      imageUrl: recipe.imageUrl,
+      imageUrl: recipe.imageUrl || "",
     }));
-  }, [recipes]);
+  }, [recommendations]);
 
   const screenWidth = Dimensions.get("window").width;
   const cardHorizontalMargin = 12;
   const sidePadding = 16; // section 좌우 padding과 맞춤
   const cardWidth = (screenWidth - sidePadding * 2) * 0.85; // 카드 가로 길이를 줄임 (85%)
   const cardHeight = 280; // 카드 높이 증가
+
+  if (isLoading) {
+    return (
+      <View style={tabsStyles.section}>
+        <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
+        <LoadingSpinner message="레시피를 불러오는 중..." size="small" />
+      </View>
+    );
+  }
+
+  if (error && data.length === 0) {
+    return (
+      <View style={tabsStyles.section}>
+        <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
+        <Text style={{ color: Colors.textSecondary, textAlign: "center" }}>
+          {error}
+        </Text>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={tabsStyles.section}>
+        <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>
+        <Text style={{ color: Colors.textSecondary, textAlign: "center" }}>
+          추천할 레시피가 없습니다
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={tabsStyles.section}>
@@ -77,7 +134,9 @@ export default function RecipeRecommand() {
 
       <FlatList
         data={data}
-        keyExtractor={(item: RecipeCardData) => item.id}
+        keyExtractor={(item: RecipeCardData, index: number) =>
+          item.id || `recipe-${index}`
+        }
         horizontal
         showsHorizontalScrollIndicator={false}
         pagingEnabled
@@ -92,7 +151,13 @@ export default function RecipeRecommand() {
           setCurrentIndex(index);
         }}
         scrollEventThrottle={16}
-        renderItem={({ item }: { item: RecipeCardData }) => (
+        renderItem={({
+          item,
+          index,
+        }: {
+          item: RecipeCardData;
+          index: number;
+        }) => (
           <TouchableOpacity
             activeOpacity={0.9}
             style={[
@@ -154,9 +219,9 @@ export default function RecipeRecommand() {
       {/* 인디케이터 */}
       {data.length > 1 && (
         <View style={styles.indicatorContainer}>
-          {data.map((_, index) => (
+          {data.map((item, index) => (
             <View
-              key={index}
+              key={`indicator-${item.id}-${index}`}
               style={[
                 styles.indicator,
                 index === currentIndex && styles.indicatorActive,

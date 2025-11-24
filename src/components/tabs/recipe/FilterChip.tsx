@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import { Colors } from "../styles/common";
+import { Colors } from "../../../styles/common";
 
 interface FilterChipProps {
   label: string;

@@ -1,9 +1,9 @@
 // 레시피 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { mockRecipes, Recipe } from "../data/mockRecipes";
-import favoriteRecipeService from "../services/favoriteRecipeService";
-import recipeService from "../services/recipeService";
+import favoriteRecipeServiceApi from "../services/favoriteRecipeService";
+import recipeServiceApi from "../services/recipeService";
+import { Recipe } from "../types/recipe";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import {
@@ -40,7 +40,7 @@ interface RecipeState {
   loadRecipes: (force?: boolean) => Promise<void>;
 }
 
-export const useRecipeStore = create<RecipeState>(
+export const useRecipeStore = create<RecipeState>()(
   persist(
     (set, get) => ({
       recipes: initialRecipes,
@@ -110,8 +110,8 @@ export const useRecipeStore = create<RecipeState>(
 
           // 레시피와 즐겨찾기 목록을 병렬로 로드
           const [recipesResponse, favoritesResponse] = await Promise.all([
-            recipeService.getAllRecipes(),
-            favoriteRecipeService
+            recipeServiceApi.getAllRecipes(),
+            favoriteRecipeServiceApi
               .getAllFavorites()
               .catch(() => ({ success: false, data: [] })),
           ]);
@@ -164,40 +164,22 @@ export const useRecipeStore = create<RecipeState>(
               lastSyncedAt: Date.now(),
             });
           } else {
-            // 개발 환경: API 실패 시 mock 데이터 사용 (BE 연결 전까지)
-            if (__DEV__ && state.recipes.length === 0) {
-              set({
-                recipes: mockRecipes,
-                error: null,
-                lastSyncedAt: Date.now(),
-              });
-            } else {
-              set({
-                error:
-                  recipesResponse.message ??
-                  "레시피 목록을 불러오는데 실패했습니다.",
-                lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
-              });
-            }
-          }
-        } catch (error: unknown) {
-          // 개발 환경: 네트워크 에러 시 mock 데이터 사용 (BE 연결 전까지)
-          if (__DEV__ && state.recipes.length === 0) {
             set({
-              recipes: mockRecipes,
-              error: null,
-              lastSyncedAt: Date.now(),
-            });
-          } else {
-            const errorMessage = getErrorMessage(
-              error,
-              "레시피 목록을 불러오는 중 오류가 발생했습니다."
-            );
-            set({
-              error: errorMessage,
+              error:
+                recipesResponse.message ??
+                "레시피 목록을 불러오는데 실패했습니다.",
               lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
             });
           }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "레시피 목록을 불러오는 중 오류가 발생했습니다."
+          );
+          set({
+            error: errorMessage,
+            lastSyncedAt: Date.now(), // 에러 시에도 설정하여 재시도 방지
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -205,6 +187,20 @@ export const useRecipeStore = create<RecipeState>(
     }),
     {
       name: "recipe-storage",
+      version: 2,
+      migrate: (persistedState: any, version) => {
+        if (!persistedState) {
+          return persistedState;
+        }
+        if (version < 2) {
+          return {
+            ...persistedState,
+            recipes: initialRecipes,
+            lastSyncedAt: null,
+          };
+        }
+        return persistedState;
+      },
       storage:
         createSecureStorage<Pick<RecipeState, "recipes" | "lastSyncedAt">>(),
       // error와 isLoading은 임시 상태이므로 persist에서 제외

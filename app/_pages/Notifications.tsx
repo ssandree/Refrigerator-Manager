@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Stack, router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   RefreshControl,
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
@@ -45,11 +47,15 @@ export default function Notifications() {
     loadNotifications(filterRead, 50, 0, true);
   }, [filterRead, loadNotifications]);
 
-  // 초기 로드
+  // 초기 로드 (필터가 null일 때만)
   useAutoLoadData(
     notifications,
     isLoading,
-    () => loadNotifications(filterRead),
+    async () => {
+      if (filterRead === null) {
+        await loadNotifications(null);
+      }
+    },
     {
       checkLastSynced: true,
       lastSyncedAt,
@@ -137,234 +143,236 @@ export default function Notifications() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Ionicons
-            name="notifications"
-            size={24}
-            color={Colors.primary}
-            style={styles.headerIcon}
-          />
-          <View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          {/* 헤더 */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>← 뒤로</Text>
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>알림</Text>
-            {unreadCount > 0 && (
-              <Text style={styles.headerSubtitle}>
-                읽지 않은 알림 {unreadCount}개
-              </Text>
-            )}
+            <View style={styles.headerRight} />
           </View>
-        </View>
-      </View>
 
-      {/* 필터 버튼 */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filterRead === null && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilterRead(null)}
-        >
-          <Ionicons
-            name="list-outline"
-            size={16}
-            color={
-              filterRead === null ? Colors.textLight : Colors.textSecondary
-            }
-            style={styles.filterIcon}
-          />
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterRead === null && styles.filterButtonTextActive,
-            ]}
-          >
-            전체
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filterRead === false && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilterRead(false)}
-        >
-          <Ionicons
-            name="mail-unread-outline"
-            size={16}
-            color={
-              filterRead === false ? Colors.textLight : Colors.textSecondary
-            }
-            style={styles.filterIcon}
-          />
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterRead === false && styles.filterButtonTextActive,
-            ]}
-          >
-            읽지 않음
-          </Text>
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
+          {/* 필터 버튼 */}
+          <View style={styles.filterContainer}>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterRead === null && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterRead(null)}
+            >
+              <Ionicons
+                name="list-outline"
+                size={16}
+                color={
+                  filterRead === null ? Colors.textLight : Colors.textSecondary
+                }
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterRead === null && styles.filterButtonTextActive,
+                ]}
+              >
+                전체
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterRead === false && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterRead(false)}
+            >
+              <Ionicons
+                name="mail-unread-outline"
+                size={16}
+                color={
+                  filterRead === false ? Colors.textLight : Colors.textSecondary
+                }
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterRead === false && styles.filterButtonTextActive,
+                ]}
+              >
+                읽지 않음
+              </Text>
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterRead === true && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterRead(true)}
+            >
+              <Ionicons
+                name="mail-outline"
+                size={16}
+                color={
+                  filterRead === true ? Colors.textLight : Colors.textSecondary
+                }
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterRead === true && styles.filterButtonTextActive,
+                ]}
+              >
+                읽음
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 읽지 않은 알림이 있고 전체/읽지 않음 필터일 때 전체 읽음 처리 버튼 */}
+          {unreadCount > 0 && filterRead !== true && (
+            <View style={styles.actionContainer}>
+              <TouchableOpacity
+                style={styles.markAllReadButton}
+                onPress={handleMarkAllAsRead}
+              >
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={18}
+                  color={Colors.textLight}
+                  style={styles.markAllReadIcon}
+                />
+                <Text style={styles.markAllReadButtonText}>전체 읽음 처리</Text>
+              </TouchableOpacity>
             </View>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filterRead === true && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilterRead(true)}
-        >
-          <Ionicons
-            name="mail-outline"
-            size={16}
-            color={
-              filterRead === true ? Colors.textLight : Colors.textSecondary
-            }
-            style={styles.filterIcon}
-          />
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterRead === true && styles.filterButtonTextActive,
-            ]}
-          >
-            읽음
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* 읽지 않은 알림이 있고 전체/읽지 않음 필터일 때 전체 읽음 처리 버튼 */}
-      {unreadCount > 0 && filterRead !== true && (
-        <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.markAllReadButton}
-            onPress={handleMarkAllAsRead}
-          >
-            <Ionicons
-              name="checkmark-done-outline"
-              size={18}
-              color={Colors.textLight}
-              style={styles.markAllReadIcon}
-            />
-            <Text style={styles.markAllReadButtonText}>전체 읽음 처리</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* 알림 목록 */}
-      {isLoading && notifications.length === 0 ? (
-        <LoadingSpinner message="알림을 불러오는 중..." fullScreen />
-      ) : notifications.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIconContainer}>
-            <Ionicons
-              name="notifications-off-outline"
-              size={64}
-              color={Colors.textTertiary}
-            />
-          </View>
-          <Text style={styles.emptyStateTitle}>알림이 없습니다</Text>
-          <Text style={styles.emptyStateText}>
-            새로운 알림이 오면 여기에 표시됩니다
-          </Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {notifications.map((noti) => (
-            <View
-              key={noti.id}
-              style={[
-                styles.notificationItem,
-                !noti.read && styles.notificationItemUnread,
-              ]}
+          {/* 알림 목록 */}
+          {isLoading && notifications.length === 0 ? (
+            <LoadingSpinner message="알림을 불러오는 중..." fullScreen />
+          ) : notifications.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons
+                  name="notifications-off-outline"
+                  size={64}
+                  color={Colors.textTertiary}
+                />
+              </View>
+              <Text style={styles.emptyStateTitle}>알림이 없습니다</Text>
+              <Text style={styles.emptyStateText}>
+                새로운 알림이 오면 여기에 표시됩니다
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.content}
+              contentContainerStyle={styles.scrollContent}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
             >
-              <View style={styles.notificationIconContainer}>
+              {notifications.map((noti) => (
                 <View
+                  key={noti.id}
                   style={[
-                    styles.notificationIconWrapper,
-                    {
-                      backgroundColor: `${getNotificationIconColor(
-                        noti.type
-                      )}15`,
-                    },
+                    styles.notificationItem,
+                    !noti.read && styles.notificationItemUnread,
                   ]}
                 >
-                  <Ionicons
-                    name={getNotificationIcon(noti.type) as any}
-                    size={24}
-                    color={getNotificationIconColor(noti.type)}
-                  />
-                </View>
-              </View>
-              <View style={styles.notificationContent}>
-                <View style={styles.notificationHeader}>
-                  <Text style={styles.notificationTitle}>{noti.title}</Text>
-                  {!noti.read && <View style={styles.unreadDot} />}
-                </View>
-                <Text style={styles.notificationMessage}>{noti.message}</Text>
-                <View style={styles.notificationFooter}>
-                  <View style={styles.dateContainer}>
-                    <Ionicons
-                      name="time-outline"
-                      size={12}
-                      color={Colors.textTertiary}
-                      style={styles.dateIcon}
-                    />
-                    <Text style={styles.notificationDate}>
-                      {formatDate(noti.createdAt)}
+                  <View style={styles.notificationIconContainer}>
+                    <View
+                      style={[
+                        styles.notificationIconWrapper,
+                        {
+                          backgroundColor: `${getNotificationIconColor(
+                            noti.type
+                          )}15`,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={getNotificationIcon(noti.type) as any}
+                        size={24}
+                        color={getNotificationIconColor(noti.type)}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.notificationContent}>
+                    <View style={styles.notificationHeader}>
+                      <Text style={styles.notificationTitle}>{noti.title}</Text>
+                      {!noti.read && <View style={styles.unreadDot} />}
+                    </View>
+                    <Text style={styles.notificationMessage}>
+                      {noti.message}
                     </Text>
+                    <View style={styles.notificationFooter}>
+                      <View style={styles.dateContainer}>
+                        <Ionicons
+                          name="time-outline"
+                          size={12}
+                          color={Colors.textTertiary}
+                          style={styles.dateIcon}
+                        />
+                        <Text style={styles.notificationDate}>
+                          {formatDate(noti.createdAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.notificationActions}>
+                    {!noti.read && (
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleMarkAsRead(noti.id)}
+                      >
+                        <Ionicons
+                          name="checkmark-outline"
+                          size={16}
+                          color={Colors.textLight}
+                          style={styles.actionIcon}
+                        />
+                        <Text style={styles.actionButtonText}>읽음</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.deleteButton]}
+                      onPress={() => handleDelete(noti.id)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={Colors.textLight}
+                        style={styles.actionIcon}
+                      />
+                      <Text
+                        style={[
+                          styles.actionButtonText,
+                          styles.deleteButtonText,
+                        ]}
+                      >
+                        삭제
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-              </View>
-              <View style={styles.notificationActions}>
-                {!noti.read && (
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => handleMarkAsRead(noti.id)}
-                  >
-                    <Ionicons
-                      name="checkmark-outline"
-                      size={16}
-                      color={Colors.textLight}
-                      style={styles.actionIcon}
-                    />
-                    <Text style={styles.actionButtonText}>읽음</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.deleteButton]}
-                  onPress={() => handleDelete(noti.id)}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={16}
-                    color={Colors.textLight}
-                    style={styles.actionIcon}
-                  />
-                  <Text
-                    style={[styles.actionButtonText, styles.deleteButtonText]}
-                  >
-                    삭제
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-    </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -375,34 +383,39 @@ const cardShadow = createShadowStyle({
 });
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-    ...cardShadow,
-  },
-  headerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  headerIcon: {
-    marginRight: 12,
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: FontSizes.lg,
+    color: Colors.primary,
+    fontWeight: "600",
   },
   headerTitle: {
-    fontSize: FontSizes["2xl"],
-    fontWeight: "700",
+    fontSize: FontSizes.xl,
+    fontWeight: "bold",
     color: Colors.textPrimary,
   },
-  headerSubtitle: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
+  headerRight: {
+    width: 60, // 뒤로 버튼과 균형을 맞추기 위한 공간
   },
   filterContainer: {
     flexDirection: "row",

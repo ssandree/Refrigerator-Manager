@@ -38,6 +38,7 @@ export const applyOnboardingData = async (userId: string): Promise<boolean> => {
     const updateResponse = await authService.updateUser(userId, {
       sex: onboardingData.sex || null,
       age: onboardingData.age || null,
+      height: onboardingData.height || null,
       weight: onboardingData.weight || null,
       activityLevel: onboardingData.activityLevel || null,
       bmi: bmi,
@@ -53,7 +54,10 @@ export const applyOnboardingData = async (userId: string): Promise<boolean> => {
     updateUser({
       sex: updateResponse.data.sex || undefined,
       age: updateResponse.data.age ?? undefined,
+      height: updateResponse.data.height ?? undefined,
       bmi: updateResponse.data.bmi ?? undefined,
+      weight: updateResponse.data.weight ?? undefined,
+      activityLevel: updateResponse.data.activityLevel || undefined,
     });
 
     // 건강 목표 저장

@@ -2,10 +2,10 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-    Colors,
-    createShadowStyle,
-    FontSizes,
-    noShadowStyle,
+  Colors,
+  createShadowStyle,
+  FontSizes,
+  noShadowStyle,
 } from "../../styles/common";
 
 const primaryButtonShadow = createShadowStyle({
@@ -40,8 +40,8 @@ export const OnboardingFooterButton: React.FC<OnboardingFooterButtonProps> = ({
             styles.secondaryButton,
             prevDisabled && styles.secondaryButtonDisabled,
           ]}
-          onPress={onPressPrev}
-          disabled={prevDisabled}
+          onPress={onPressPrev || (() => {})}
+          disabled={prevDisabled || !onPressPrev}
         >
           <Text
             style={[
@@ -127,4 +127,3 @@ const styles = StyleSheet.create({
 });
 
 export default OnboardingFooterButton;
-

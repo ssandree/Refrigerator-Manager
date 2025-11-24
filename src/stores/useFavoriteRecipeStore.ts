@@ -1,8 +1,8 @@
 // 즐겨찾기 레시피 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Recipe } from "../data/mockRecipes";
 import favoriteRecipeService from "../services/favoriteRecipeService";
+import { Recipe } from "../types/recipe";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";

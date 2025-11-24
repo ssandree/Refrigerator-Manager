@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import RecipeCard from "../../src/components/RecipeCard";
+import RecipeCard from "../../src/components/tabs/recipe/RecipeCard";
 import RecipeFilterModal from "../../src/components/tabs/recipe/RecipeFilterModal";
 import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
 import { useModalAnimation } from "../../src/hooks/useModalAnimation";
@@ -25,6 +25,7 @@ export default function RecipeScreen() {
   const recipes = useRecipeStore((s) => s.recipes);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
+  const lastSyncedAt = useRecipeStore((s) => s.lastSyncedAt);
   const favoriteRecipes = useFavoriteRecipeStore((s) => s.favoriteRecipes);
   const loadFavorites = useFavoriteRecipeStore((s) => s.loadFavorites);
   const isLoadingFavorites = useFavoriteRecipeStore((s) => s.isLoading);
@@ -34,7 +35,15 @@ export default function RecipeScreen() {
 
   useStoreWithError(useRecipeStore);
   useStoreWithError(useFavoriteRecipeStore);
-  useAutoLoadData(recipes, isLoading, loadRecipes);
+  // GET /recipes API를 통해 모든 레시피 자동 로드
+  useAutoLoadData(
+    recipes,
+    isLoading,
+    useCallback(() => loadRecipes(true), [loadRecipes]),
+    {
+      checkLastSynced: false,
+    }
+  );
   useAutoLoadData(favoriteRecipes, isLoadingFavorites, loadFavorites, {
     checkLastSynced: true,
     lastSyncedAt: lastSyncedAtFavorites,
@@ -73,30 +82,18 @@ export default function RecipeScreen() {
     }
   );
   const [includeExpiring, setIncludeExpiring] = useState<boolean>(false);
-  const [selectedCookingTimes, setSelectedCookingTimes] = useState<string[]>(
-    []
-  );
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
-    []
-  );
   // 초기 열량 범위를 넓게 설정하여 모든 레시피가 포함되도록 함
-  const [calorieRange, setCalorieRange] = useState<[number, number]>([
-    0, 10000,
-  ]);
+  const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 5000]);
 
   // 토글 함수들
   const toggleIngredient = useToggleArray(setSelectedIngredients);
-  const toggleCookingTime = useToggleArray(setSelectedCookingTimes);
-  const toggleDifficulty = useToggleArray(setSelectedDifficulties);
 
   // 필터 초기화
   const clearAllFilters = () => {
     setSearchQuery("");
     setSelectedIngredients([]);
     setIncludeExpiring(false);
-    setSelectedCookingTimes([]);
-    setSelectedDifficulties([]);
-    setCalorieRange([0, 10000]);
+    setCalorieRange([0, 5000]);
   };
 
   // 필터 옵션 객체 (useMemo로 최적화)
@@ -105,18 +102,9 @@ export default function RecipeScreen() {
       searchQuery,
       selectedIngredients,
       includeExpiring,
-      selectedCookingTimes,
-      selectedDifficulties,
       calorieRange,
     }),
-    [
-      searchQuery,
-      selectedIngredients,
-      includeExpiring,
-      selectedCookingTimes,
-      selectedDifficulties,
-      calorieRange,
-    ]
+    [searchQuery, selectedIngredients, includeExpiring, calorieRange]
   );
 
   // 필터링된 레시피 목록 (필터 옵션이 변경될 때만 재계산)
@@ -157,29 +145,8 @@ export default function RecipeScreen() {
             </TouchableOpacity>
           )}
 
-          {/* 요리 시간 필터 칩 */}
-          {selectedCookingTimes.length > 0 && (
-            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
-              <Text style={styles.filterChipText}>
-                ⏰{" "}
-                {selectedCookingTimes
-                  .map((time) => time.split(" ")[0])
-                  .join(", ")}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* 난이도 필터 칩 */}
-          {selectedDifficulties.length > 0 && (
-            <TouchableOpacity style={styles.filterChip} onPress={showModal}>
-              <Text style={styles.filterChipText}>
-                🎯 {selectedDifficulties.join(", ")}
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* 열량 필터 칩 */}
-          {(calorieRange[0] > 0 || calorieRange[1] < 1000) && (
+          {(calorieRange[0] > 0 || calorieRange[1] < 5000) && (
             <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
                 🔥 {calorieRange[0]}-{calorieRange[1]}kcal
@@ -257,10 +224,6 @@ export default function RecipeScreen() {
         onToggleIngredient={toggleIngredient}
         includeExpiring={includeExpiring}
         onToggleExpiring={() => setIncludeExpiring(!includeExpiring)}
-        selectedCookingTimes={selectedCookingTimes}
-        onToggleCookingTime={toggleCookingTime}
-        selectedDifficulties={selectedDifficulties}
-        onToggleDifficulty={toggleDifficulty}
         calorieRange={calorieRange}
         onSetCalorieRange={setCalorieRange}
       />

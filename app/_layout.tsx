@@ -27,9 +27,10 @@ const defaultQueryClientOptions: DefaultOptions = {
       ) {
         return false;
       }
-      return failureCount < 2;
+      // 네트워크 에러는 재시도하지 않음 (타임아웃으로 빠르게 실패)
+      return false;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -82,12 +83,7 @@ export default function RootLayout() {
             <StatusBar style="dark" />
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="(auth)"
-                options={{
-                  presentation: "modal",
-                }}
-              />
+              <Stack.Screen name="(auth)" />
               <Stack.Screen name="_pages" />
               <Stack.Screen name="onboarding" />
               <Stack.Screen name="index" />

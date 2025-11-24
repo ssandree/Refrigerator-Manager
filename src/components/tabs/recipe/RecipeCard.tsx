@@ -7,10 +7,10 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { Recipe } from "../data/mockRecipes";
-import { useFavoriteRecipeStore } from "../stores/useFavoriteRecipeStore";
-import { Colors } from "../styles/common";
-import { recipeCardStyles } from "./styles";
+import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
+import { Colors } from "../../../styles/common";
+import { Recipe } from "../../../types/recipe";
+import { recipeCardStyles } from "../../styles";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -35,23 +35,11 @@ export default function RecipeCard({
       onFavoriteToggle();
     }
   };
-  const getHealthColor = (healthGoal: number) => {
-    if (healthGoal >= 80) return Colors.success;
-    if (healthGoal >= 60) return Colors.warning;
+  const getHealthColor = (healthGoal?: number | null) => {
+    const normalized = typeof healthGoal === "number" ? healthGoal : 0;
+    if (normalized >= 80) return Colors.success;
+    if (normalized >= 60) return Colors.warning;
     return Colors.error;
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "쉬움":
-        return Colors.success;
-      case "보통":
-        return Colors.warning;
-      case "어려움":
-        return Colors.error;
-      default:
-        return Colors.textTertiary;
-    }
   };
 
   return (
@@ -59,7 +47,7 @@ export default function RecipeCard({
       {/* 이미지 (왼쪽) */}
       <View style={recipeCardStyles.imageContainer}>
         <Image
-          source={require("../assets/images/tomato.jpg")}
+          source={require("../../../assets/images/tomato.jpg")}
           style={recipeCardStyles.image}
         />
       </View>
@@ -118,16 +106,6 @@ export default function RecipeCard({
             />
             <Text style={recipeCardStyles.ingredientText}>
               {recipe.ingredientsOwned}/{recipe.totalIngredients} 재료 보유
-            </Text>
-          </View>
-          <View
-            style={[
-              recipeCardStyles.difficultyTag,
-              { backgroundColor: getDifficultyColor(recipe.difficulty) },
-            ]}
-          >
-            <Text style={recipeCardStyles.difficultyText}>
-              {recipe.difficulty}
             </Text>
           </View>
         </View>

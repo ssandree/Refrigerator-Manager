@@ -1,8 +1,7 @@
-import { router, Stack } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,13 +9,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
-import { useMealStore } from "../../src/stores/useMealStore";
+import { Meal, useMealStore } from "../../src/stores/useMealStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
 export default function RegisterMeal() {
+  const { mealId } = useLocalSearchParams<{ mealId: string }>();
   const addMeal = useMealStore((s) => s.addMeal);
+  const updateMeal = useMealStore((s) => s.updateMeal);
+  const getMealById = useMealStore((s) => s.getMealById);
+  const meals = useMealStore((s) => s.meals);
   const { clearError } = useStoreWithError(useMealStore);
+
+  const [meal, setMeal] = useState<Meal | null>(null);
 
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -31,7 +38,34 @@ export default function RegisterMeal() {
   const [foodName, setFoodName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
-  const onSave = () => {
+  // mealId가 있으면 수정 모드로 동작
+  useEffect(() => {
+    if (mealId) {
+      const foundMeal = getMealById(mealId);
+      if (foundMeal) {
+        setMeal(foundMeal);
+        setMealType(foundMeal.mealType);
+        setQuantity(foundMeal.quantity);
+        setConsumedAt(foundMeal.consumedAt);
+        // notes에서 음식명과 메모 분리 (간단한 파싱)
+        const notesStr = foundMeal.notes || "";
+        if (notesStr.includes(" - ")) {
+          const [name, ...rest] = notesStr.split(" - ");
+          setFoodName(name);
+          setNotes(rest.join(" - "));
+        } else {
+          setFoodName(notesStr);
+          setNotes("");
+        }
+      } else {
+        Alert.alert("오류", "식사를 찾을 수 없습니다.", [
+          { text: "확인", onPress: () => router.back() },
+        ]);
+      }
+    }
+  }, [mealId, meals, getMealById]);
+
+  const onSave = async () => {
     if (!quantity || !consumedAt) {
       Alert.alert("오류", "수량과 섭취일을 입력해주세요.");
       return;
@@ -48,23 +82,58 @@ export default function RegisterMeal() {
     // 에러 상태 초기화
     clearError();
 
-    // 식단 추가
-    const success = addMeal({
-      id: Date.now().toString(),
-      recipe: null,
-      ingredients: [],
-      quantity,
-      consumedAt,
-      registeredAt: nowStr,
-      notes: combinedNotes,
-      mealType,
-    });
+    const isEditMode = !!mealId && !!meal;
 
-    // 성공 시 화면 이동 (에러는 store에서 처리되고 useStoreError 훅이 토스트로 표시함)
-    if (success) {
-      router.replace("/(tabs)/Meal");
+    if (isEditMode) {
+      // 수정 모드: PUT API 호출
+      const success = await updateMeal(meal!.id, {
+        quantity,
+        consumedAt,
+        notes: combinedNotes,
+        mealType,
+      });
+
+      if (success) {
+        Alert.alert("성공", "식사 정보가 성공적으로 수정되었습니다!", [
+          {
+            text: "확인",
+            onPress: () => router.back(),
+          },
+        ]);
+      }
+    } else {
+      // 추가 모드: POST API 호출
+      const success = await addMeal({
+        recipe: null,
+        foods: [],
+        quantity,
+        consumedAt,
+        registeredAt: nowStr,
+        notes: combinedNotes,
+        mealType,
+      });
+
+      // 성공 시 화면 이동 (에러는 store에서 처리되고 useStoreError 훅이 토스트로 표시함)
+      if (success) {
+        router.replace("/(tabs)/Meal");
+      }
     }
   };
+
+  // 수정 모드인데 meal이 로드되지 않았으면 로딩 표시
+  const isEditMode = !!mealId;
+  if (isEditMode && !meal) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.container}>
+            <LoadingSpinner message="식사 정보를 불러오는 중..." fullScreen />
+          </View>
+        </SafeAreaView>
+      </>
+    );
+  }
 
   return (
     <>
@@ -79,7 +148,9 @@ export default function RegisterMeal() {
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>식사 등록</Text>
+            <Text style={styles.headerTitle}>
+              {mealId ? "식사 수정" : "식사 등록"}
+            </Text>
             <View style={styles.headerRightPlaceholder} />
           </View>
 
@@ -130,7 +201,6 @@ export default function RegisterMeal() {
                 placeholder="예: 된장찌개, 닭가슴살 샐러드"
                 placeholderTextColor={Colors.textSecondary}
               />
-              <Text style={styles.helperText}>최근 본 레시피</Text>
             </View>
 
             {/* 수량 */}
@@ -172,7 +242,9 @@ export default function RegisterMeal() {
 
             {/* 저장 버튼 */}
             <TouchableOpacity style={styles.saveButton} onPress={onSave}>
-              <Text style={styles.saveButtonText}>저장</Text>
+              <Text style={styles.saveButtonText}>
+                {mealId ? "수정 완료" : "저장"}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -232,11 +304,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
-  },
-  helperText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 6,
   },
   textInput: {
     borderWidth: 1,

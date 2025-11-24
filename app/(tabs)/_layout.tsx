@@ -168,9 +168,9 @@ export default function TabsLayout() {
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.headerIconButton}
-                onPress={() => router.push("/_pages/Settings")}
+                onPress={() => router.push("/_pages/NotiSettings")}
               >
-                <Text style={styles.settingsIcon}>⚙️</Text>
+                <Text style={styles.settingsIcon}>🎛️</Text>
               </TouchableOpacity>
             </View>
           ),

@@ -2,7 +2,6 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,77 +9,83 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import { Ingredient } from "../../src/data/mockFood";
+import { Food } from "../../src/data/mockFood";
 import {
-  IngredientCategory,
-  IngredientCategoryLabel,
+  FoodCategory,
+  FoodCategoryLabel,
 } from "../../src/enums/ingredientCategory";
 import {
   StorageLocation,
   StorageLocationLabel,
 } from "../../src/enums/storageLocation";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { foodService } from "../../src/services/foodService";
 import { useFridgeStore } from "../../src/stores/useFridgeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { logger } from "../../src/utils/logger";
 
 export default function EditFood() {
   const { ingredientId } = useLocalSearchParams<{ ingredientId: string }>();
 
   // URL 파라미터로 받은 ingredientId로 실제 재료 정보 찾기
-  const [ingredient, setIngredient] = useState<Ingredient | null>(null);
-  const ingredients = useFridgeStore((s) => s.ingredients);
-  const getIngredientById = useFridgeStore((s) => s.getIngredientById);
-  const addIngredient = useFridgeStore((s) => s.addIngredient);
-  const updateIngredient = useFridgeStore((s) => s.updateIngredient);
-  const removeIngredient = useFridgeStore((s) => s.removeIngredient);
+  const [food, setFood] = useState<Food | null>(null);
+  const foods = useFridgeStore((s) => s.foods);
+  const getFoodById = useFridgeStore((s) => s.getFoodById);
+  const addFood = useFridgeStore((s) => s.addFood);
+  const updateFood = useFridgeStore((s) => s.updateFood);
+  const removeFood = useFridgeStore((s) => s.removeFood);
+  const clearError = useFridgeStore((s) => s.clearError);
 
   useStoreWithError(useFridgeStore);
 
   useEffect(() => {
     if (ingredientId) {
-      const foundIngredient = getIngredientById(ingredientId);
-      if (foundIngredient) {
-        setIngredient(foundIngredient);
+      const foundFood = getFoodById(ingredientId);
+      if (foundFood) {
+        setFood(foundFood);
       } else {
         Alert.alert("오류", "재료를 찾을 수 없습니다.", [
           { text: "확인", onPress: () => router.back() },
         ]);
       }
     }
-  }, [ingredientId, ingredients, getIngredientById]);
+  }, [ingredientId, foods, getFoodById]);
 
-  const [formData, setFormData] = useState<Partial<Ingredient>>({});
+  const [formData, setFormData] = useState<Partial<Food>>({});
 
-  // ingredient가 로드되면 formData 초기화
+  // food가 로드되면 formData 초기화
   useEffect(() => {
-    if (ingredient) {
+    if (food) {
       setFormData({
-        name: ingredient.name,
-        category: ingredient.category,
-        quantity: ingredient.quantity,
-        weight: ingredient.weight,
-        purchaseDate: ingredient.purchaseDate,
-        expiryDate: ingredient.expiryDate,
-        storageLocation: ingredient.storageLocation,
-        alertBeforeDays: ingredient.alertBeforeDays,
+        name: food.name,
+        category: food.category,
+        quantity: food.quantity,
+        weight: food.weight,
+        purchaseDate: food.purchaseDate,
+        expiryDate: food.expiryDate,
+        storageLocation: food.storageLocation,
+        alertBeforeDays: food.alertBeforeDays,
       });
     }
-  }, [ingredient]);
+  }, [food]);
 
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showStoragePicker, setShowStoragePicker] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleInputChange = (
-    field: keyof Ingredient,
-    value: string | number
+    field: keyof Food,
+    value: string | number | null
   ) => {
-    setFormData((prev) => {
+    setFormData((prev: Partial<Food>) => {
       const newData = { ...prev, [field]: value };
 
       // 카테고리가 변경되면 보관 위치와 유통기한 자동 설정
       if (field === "category") {
-        const category = value as IngredientCategory;
+        const category = value as FoodCategory;
         const today = new Date();
         const expiryDate = new Date(today);
 
@@ -88,21 +93,21 @@ export default function EditFood() {
         let storageLocation: StorageLocation;
         if (
           [
-            IngredientCategory.MEAT,
-            IngredientCategory.FISH,
-            IngredientCategory.VEGETABLE,
-            IngredientCategory.FRUIT,
-            IngredientCategory.DAIRY,
-            IngredientCategory.SIDE,
-            IngredientCategory.SAUCE,
+            FoodCategory.MEAT,
+            FoodCategory.FISH,
+            FoodCategory.VEGETABLE,
+            FoodCategory.FRUIT,
+            FoodCategory.DAIRY,
+            FoodCategory.SIDE,
+            FoodCategory.SAUCE,
           ].includes(category)
         ) {
           storageLocation = StorageLocation.FRIDGE;
         } else if (
           [
-            IngredientCategory.RICE_CAKE,
-            IngredientCategory.FROZEN,
-            IngredientCategory.INSTANT,
+            FoodCategory.RICE_CAKE,
+            FoodCategory.FROZEN,
+            FoodCategory.INSTANT,
           ].includes(category)
         ) {
           storageLocation = StorageLocation.FREEZER;
@@ -112,22 +117,22 @@ export default function EditFood() {
 
         // 카테고리별 유통기한 설정
         switch (category) {
-          case IngredientCategory.MEAT:
+          case FoodCategory.MEAT:
             expiryDate.setDate(today.getDate() + 3);
             break;
-          case IngredientCategory.FISH:
+          case FoodCategory.FISH:
             expiryDate.setDate(today.getDate() + 2);
             break;
-          case IngredientCategory.VEGETABLE:
+          case FoodCategory.VEGETABLE:
             expiryDate.setDate(today.getDate() + 7);
             break;
-          case IngredientCategory.FRUIT:
+          case FoodCategory.FRUIT:
             expiryDate.setDate(today.getDate() + 7);
             break;
-          case IngredientCategory.DAIRY:
+          case FoodCategory.DAIRY:
             expiryDate.setDate(today.getDate() + 14);
             break;
-          case IngredientCategory.DRINK:
+          case FoodCategory.DRINK:
             expiryDate.setDate(today.getDate() + 14);
             break;
           default:
@@ -142,7 +147,7 @@ export default function EditFood() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // 필수 필드 검증
     if (!formData.name || !formData.weight || !formData.expiryDate) {
       Alert.alert("오류", "모든 필수 항목을 입력해주세요.");
@@ -152,56 +157,76 @@ export default function EditFood() {
     // 에러 상태 초기화
     clearError();
 
-    const isEditMode = !!ingredientId && !!ingredient;
+    const isEditMode = !!ingredientId && !!food;
+    setIsSaving(true);
 
-    if (isEditMode) {
-      // 수정 모드: 기존 재료 업데이트
-      const success = updateIngredient(ingredient!.id, {
-        name: formData.name!,
-        category: formData.category!,
-        quantity: formData.quantity!,
-        weight: formData.weight!,
-        purchaseDate: formData.purchaseDate!,
-        expiryDate: formData.expiryDate!,
-        storageLocation: formData.storageLocation!,
-        alertBeforeDays: formData.alertBeforeDays!,
-      });
+    try {
+      if (isEditMode) {
+        const payload: Partial<Food> = {
+          name: formData.name!,
+          category: formData.category!,
+          quantity: formData.quantity ?? null,
+          weight: formData.weight!,
+          purchaseDate: formData.purchaseDate ?? null,
+          expiryDate: formData.expiryDate!,
+          storageLocation: formData.storageLocation!,
+          alertBeforeDays: formData.alertBeforeDays ?? null,
+        };
 
-      if (success) {
-        Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
-          {
-            text: "확인",
-            onPress: () => router.back(),
-          },
-        ]);
+        const response = await foodService.updateFood(food!.id, payload);
+        if (!response.success || !response.data) {
+          throw new Error(response.message ?? "재료 수정에 실패했습니다.");
+        }
+
+        const success = updateFood(food!.id, response.data);
+        if (success) {
+          Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
+            {
+              text: "확인",
+              onPress: () => router.back(),
+            },
+          ]);
+        }
+      } else {
+        const payload: Omit<Food, "id"> = {
+          imageUrl: null,
+          name: formData.name!,
+          category: formData.category!,
+          quantity: formData.quantity ?? null,
+          weight: formData.weight!,
+          registeredAt: new Date().toISOString().split("T")[0],
+          purchaseDate:
+            formData.purchaseDate || new Date().toISOString().split("T")[0],
+          expiryDate: formData.expiryDate!,
+          storageLocation: formData.storageLocation!,
+          alertBeforeDays: formData.alertBeforeDays ?? 3,
+        };
+
+        const response = await foodService.addFood(payload);
+        if (!response.success || !response.data) {
+          throw new Error(response.message ?? "재료 추가에 실패했습니다.");
+        }
+
+        const success = addFood(response.data);
+        if (success) {
+          Alert.alert("성공", "재료가 성공적으로 추가되었습니다!", [
+            {
+              text: "확인",
+              onPress: () => router.back(),
+            },
+          ]);
+        }
       }
-    } else {
-      // 추가 모드: 새 재료 추가
-      const newIngredient: Ingredient = {
-        id: Date.now().toString(), // 임시 ID 생성
-        imageUrl: "", // 기본 이미지 URL
-        name: formData.name!,
-        category: formData.category!,
-        quantity: formData.quantity || 1,
-        weight: formData.weight!,
-        registeredAt: new Date().toISOString().split("T")[0],
-        purchaseDate:
-          formData.purchaseDate || new Date().toISOString().split("T")[0],
-        expiryDate: formData.expiryDate!,
-        storageLocation: formData.storageLocation!,
-        alertBeforeDays: formData.alertBeforeDays || 3,
-      };
-
-      const success = addIngredient(newIngredient);
-
-      if (success) {
-        Alert.alert("성공", "재료가 성공적으로 추가되었습니다!", [
-          {
-            text: "확인",
-            onPress: () => router.back(),
-          },
-        ]);
-      }
+    } catch (error) {
+      logger.error("Food save failed:", error);
+      Alert.alert(
+        "오류",
+        error instanceof Error
+          ? error.message
+          : "재료 저장 중 문제가 발생했습니다."
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -214,28 +239,43 @@ export default function EditFood() {
       {
         text: "삭제",
         style: "destructive",
-        onPress: () => {
-          // 에러 상태 초기화
-          clearError();
-          // 재료 삭제
-          const success = removeIngredient(ingredient!.id);
-          // 성공 시 메시지 표시 (에러는 store에서 처리되고 useStoreError 훅이 토스트로 표시함)
-          if (success) {
-            Alert.alert("삭제 완료", "재료가 삭제되었습니다.", [
-              {
-                text: "확인",
-                onPress: () => router.back(),
-              },
-            ]);
+        onPress: async () => {
+          if (!food) return;
+          setIsDeleting(true);
+          try {
+            clearError();
+            const response = await foodService.deleteFood(food.id);
+            if (!response.success) {
+              throw new Error(response.message ?? "재료 삭제에 실패했습니다.");
+            }
+            const success = removeFood(food.id);
+            if (success) {
+              Alert.alert("삭제 완료", "재료가 삭제되었습니다.", [
+                {
+                  text: "확인",
+                  onPress: () => router.back(),
+                },
+              ]);
+            }
+          } catch (error) {
+            logger.error("Food delete failed:", error);
+            Alert.alert(
+              "오류",
+              error instanceof Error
+                ? error.message
+                : "재료 삭제 중 문제가 발생했습니다."
+            );
+          } finally {
+            setIsDeleting(false);
           }
         },
       },
     ]);
   };
 
-  // 수정 모드인데 ingredient가 로드되지 않았으면 로딩 표시
+  // 수정 모드인데 food가 로드되지 않았으면 로딩 표시
   const isEditMode = !!ingredientId;
-  if (isEditMode && !ingredient) {
+  if (isEditMode && !food) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
@@ -298,14 +338,16 @@ export default function EditFood() {
                 onPress={() => setShowCategoryPicker(!showCategoryPicker)}
               >
                 <Text style={styles.pickerButtonText}>
-                  {IngredientCategoryLabel[formData.category!]}
+                  {formData.category
+                    ? FoodCategoryLabel[formData.category]
+                    : "카테고리를 선택하세요"}
                 </Text>
                 <Text style={styles.pickerArrow}>▼</Text>
               </TouchableOpacity>
 
               {showCategoryPicker && (
                 <View style={styles.pickerContainer}>
-                  {Object.values(IngredientCategory).map((category) => (
+                  {Object.values(FoodCategory).map((category) => (
                     <TouchableOpacity
                       key={category}
                       style={[
@@ -325,7 +367,7 @@ export default function EditFood() {
                             styles.pickerOptionTextSelected,
                         ]}
                       >
-                        {IngredientCategoryLabel[category]}
+                        {FoodCategoryLabel[category]}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -338,9 +380,9 @@ export default function EditFood() {
               <Text style={styles.label}>수량 *</Text>
               <TextInput
                 style={styles.textInput}
-                value={formData.quantity?.toString()}
+                value={formData.quantity?.toString() || ""}
                 onChangeText={(value) =>
-                  handleInputChange("quantity", parseInt(value) || 1)
+                  handleInputChange("quantity", value ? parseInt(value) : null)
                 }
                 placeholder="수량을 입력하세요"
                 placeholderTextColor={Colors.textSecondary}
@@ -353,8 +395,10 @@ export default function EditFood() {
               <Text style={styles.label}>무게/용량 *</Text>
               <TextInput
                 style={styles.textInput}
-                value={formData.weight}
-                onChangeText={(value) => handleInputChange("weight", value)}
+                value={formData.weight || ""}
+                onChangeText={(value) =>
+                  handleInputChange("weight", value || null)
+                }
                 placeholder="예: 500g, 1L, 1kg"
                 placeholderTextColor={Colors.textSecondary}
               />
@@ -365,9 +409,9 @@ export default function EditFood() {
               <Text style={styles.label}>구매일 *</Text>
               <TextInput
                 style={styles.textInput}
-                value={formData.purchaseDate}
+                value={formData.purchaseDate || ""}
                 onChangeText={(value) =>
-                  handleInputChange("purchaseDate", value)
+                  handleInputChange("purchaseDate", value || null)
                 }
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={Colors.textSecondary}
@@ -379,8 +423,10 @@ export default function EditFood() {
               <Text style={styles.label}>유통기한 *</Text>
               <TextInput
                 style={styles.textInput}
-                value={formData.expiryDate}
-                onChangeText={(value) => handleInputChange("expiryDate", value)}
+                value={formData.expiryDate || ""}
+                onChangeText={(value) =>
+                  handleInputChange("expiryDate", value || null)
+                }
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={Colors.textSecondary}
               />
@@ -394,7 +440,9 @@ export default function EditFood() {
                 onPress={() => setShowStoragePicker(!showStoragePicker)}
               >
                 <Text style={styles.pickerButtonText}>
-                  {StorageLocationLabel[formData.storageLocation!]}
+                  {formData.storageLocation
+                    ? StorageLocationLabel[formData.storageLocation]
+                    : "보관 위치를 선택하세요"}
                 </Text>
                 <Text style={styles.pickerArrow}>▼</Text>
               </TouchableOpacity>
@@ -434,9 +482,12 @@ export default function EditFood() {
               <Text style={styles.label}>유통기한 알림 (일 전)</Text>
               <TextInput
                 style={styles.textInput}
-                value={formData.alertBeforeDays?.toString()}
+                value={formData.alertBeforeDays?.toString() || ""}
                 onChangeText={(value) =>
-                  handleInputChange("alertBeforeDays", parseInt(value) || 3)
+                  handleInputChange(
+                    "alertBeforeDays",
+                    value ? parseInt(value) : null
+                  )
                 }
                 placeholder="3"
                 placeholderTextColor={Colors.textSecondary}
@@ -445,9 +496,20 @@ export default function EditFood() {
             </View>
 
             {/* 저장 버튼 */}
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                (isSaving || isDeleting) && styles.buttonDisabled,
+              ]}
+              onPress={handleSave}
+              disabled={isSaving || isDeleting}
+            >
               <Text style={styles.saveButtonText}>
-                {ingredientId ? "수정 완료" : "추가 완료"}
+                {isSaving
+                  ? "저장 중..."
+                  : ingredientId
+                  ? "수정 완료"
+                  : "추가 완료"}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -575,6 +637,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     marginBottom: 40,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     fontSize: FontSizes.lg,

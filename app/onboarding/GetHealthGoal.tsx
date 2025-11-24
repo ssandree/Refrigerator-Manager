@@ -9,6 +9,7 @@ import { OnboardingFooterButton } from "../../src/components/onboarding/Onboardi
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
 import { mockHealthGoals } from "../../src/data/mockHealthGoals";
+import { useAuthStore } from "../../src/stores/useAuthStore";
 import {
   Colors,
   commonStyles,
@@ -16,6 +17,8 @@ import {
   FontSizes,
   noShadowStyle,
 } from "../../src/styles/common";
+import { applyOnboardingData } from "../../src/utils/applyOnboardingData";
+import { logger } from "../../src/utils/logger";
 import { saveOnboardingData } from "../../src/utils/onboardingStorage";
 
 export default function GetHealthGoal() {
@@ -26,6 +29,7 @@ export default function GetHealthGoal() {
   // 화면 내 임시 선택 상태(3개 초과 선택 방지)
   const [localSelectedIds, setLocalSelectedIds] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const userId = useAuthStore((state) => state.user?.id);
 
   // 목표 선택/해제 토글
   const toggleGoal = (goalId: number) => {
@@ -49,15 +53,29 @@ export default function GetHealthGoal() {
     setIsSubmitting(true);
 
     try {
-      // 건강 목표 ID 저장 (회원가입/로그인 후 사용)
+      if (!userId) {
+        Alert.alert("오류", "로그인 정보가 없습니다. 다시 로그인해주세요.");
+        router.replace("/(auth)/Login");
+        return;
+      }
+
+      // 건강 목표 ID 저장 (로그인 후 사용자 정보 업데이트에 사용)
       await saveOnboardingData({
         healthGoalIds: localSelectedIds,
       });
 
-      // 로그인/회원가입 화면으로 이동
-      router.push("/(auth)/Login");
+      const applied = await applyOnboardingData(userId);
+      if (!applied) {
+        Alert.alert(
+          "오류",
+          "데이터를 저장하는 중 문제가 발생했습니다. 다시 시도해주세요."
+        );
+        return;
+      }
+
+      router.replace("/(tabs)/Home");
     } catch (error) {
-      console.error("온보딩 데이터 저장 중 오류:", error);
+      logger.error("온보딩 데이터 저장 중 오류:", error);
       Alert.alert(
         "오류",
         "데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요."

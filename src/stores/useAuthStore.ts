@@ -15,7 +15,10 @@ interface User {
   email: string;
   age?: number;
   sex?: string;
+  height?: number;
   bmi?: number;
+  weight?: number;
+  activityLevel?: string;
 }
 
 // 인증 스토어의 상태와 액션 정의
@@ -68,7 +71,10 @@ export const useAuthStore = create<AuthState>(
               email: apiUser.email,
               age: apiUser.age,
               sex: apiUser.sex,
+              height: apiUser.height ?? undefined,
               bmi: apiUser.bmi,
+              weight: apiUser.weight,
+              activityLevel: apiUser.activityLevel,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });
@@ -130,7 +136,10 @@ export const useAuthStore = create<AuthState>(
               email: apiUser.email,
               age: apiUser.age,
               sex: apiUser.sex,
+              height: apiUser.height ?? undefined,
               bmi: apiUser.bmi,
+              weight: apiUser.weight,
+              activityLevel: apiUser.activityLevel,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });
