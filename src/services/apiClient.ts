@@ -10,7 +10,7 @@ import { getToken } from "./tokenStorage";
 // Mac/Linux: ifconfig 또는 ip addr 명령어로 확인
 // 백엔드가 /api prefix 없이 실행되면 "/api"를 제거하세요
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://172.16.69.179:8000";
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.2:8000";
 
 // 성공 응답 타입
 export interface ApiSuccessResponse<T> {

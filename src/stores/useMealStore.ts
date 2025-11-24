@@ -24,6 +24,34 @@ export interface Meal {
 // 초기값: 빈 배열 (서버에서 로드)
 const initialMeals: Meal[] = [];
 
+// 백엔드 응답에서 ingredients 필드를 foods로 치환하기 위한 타입/헬퍼
+type BackendMeal = Meal & { ingredients?: Food[] };
+
+export interface MealStatistics {
+  totalCalories: number;
+  totalMeals: number;
+  averagePerMeal: number;
+}
+
+const normalizeMeal = (meal: BackendMeal): Meal => {
+  const { ingredients, foods, ...rest } = meal;
+  return {
+    ...rest,
+    foods: ingredients ?? foods ?? [],
+  };
+};
+
+const normalizeMeals = (meals: BackendMeal[] = []): Meal[] =>
+  meals.map((meal) => normalizeMeal(meal));
+
+const mergeMeals = (currentMeals: Meal[], incomingMeals: Meal[]): Meal[] => {
+  const mealMap = new Map(currentMeals.map((meal) => [meal.id, meal]));
+  incomingMeals.forEach((meal) => {
+    mealMap.set(meal.id, meal);
+  });
+  return Array.from(mealMap.values());
+};
+
 // 스토어 상태와 액션 정의
 interface MealState {
   meals: Meal[];
@@ -38,12 +66,16 @@ interface MealState {
   removeMeal: (id: string) => Promise<boolean>;
   // 단건 조회
   getMealById: (id: string) => Meal | undefined;
+  fetchMealById: (id: string) => Promise<Meal | null>;
   // 날짜별 조회 (consumedAt 기준)
-  getMealsByDate: (date: string) => Meal[];
+  getMealsByDate: (date: string) => Promise<Meal[]>;
+  getMealsByDateRange: (startDate: string, endDate: string) => Promise<Meal[]>;
   // 레시피별 조회
-  getMealsByRecipe: (recipeId: string) => Meal[];
+  getMealsByRecipe: (recipeId: string) => Promise<Meal[]>;
   // 식사 유형별 조회
-  getMealsByMealType: (mealType: Meal["mealType"]) => Meal[];
+  getMealsByMealType: (mealType: Meal["mealType"]) => Promise<Meal[]>;
+  // 사용자 통계
+  getMealStatistics: () => Promise<MealStatistics | null>;
   // Service를 통해 데이터 로드
   loadMeals: (force?: boolean) => Promise<void>;
   // 전체 초기화
@@ -65,8 +97,9 @@ export const useMealStore = create<MealState>()(
           set({ error: null });
           const response = await mealService.createMeal(mealData);
           if (response.success && response.data) {
+            const normalized = normalizeMeal(response.data as BackendMeal);
             set({
-              meals: [...get().meals, response.data],
+              meals: [...get().meals, normalized],
               error: null,
               lastSyncedAt: Date.now(),
             });
@@ -93,9 +126,10 @@ export const useMealStore = create<MealState>()(
           set({ error: null });
           const response = await mealService.updateMeal(id, updatedMeal);
           if (response.success && response.data) {
+            const updated = normalizeMeal(response.data as BackendMeal);
             const entities = get().meals;
             set({
-              meals: entities.map((e) => (e.id === id ? response.data : e)),
+              meals: entities.map((e) => (e.id === id ? updated : e)),
               error: null,
               lastSyncedAt: Date.now(),
             });
@@ -148,19 +182,176 @@ export const useMealStore = create<MealState>()(
       // ID로 단건 조회
       getMealById: createGetEntityById<Meal>(() => get().meals),
 
+      fetchMealById: async (id) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealById(id);
+          if (response.success && response.data) {
+            const updatedMeal = normalizeMeal(response.data as BackendMeal);
+            const nextMeals = mergeMeals(get().meals, [updatedMeal]);
+            set({
+              meals: nextMeals,
+              lastSyncedAt: Date.now(),
+            });
+            return updatedMeal;
+          }
+          set({
+            error: response.message ?? "식단 정보를 불러오지 못했습니다.",
+          });
+          return null;
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식단 정보를 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       // 날짜별 조회
-      getMealsByDate: (date) => {
-        return get().meals.filter((meal) => meal.consumedAt === date);
+      getMealsByDate: async (date) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealsByDate(date);
+          if (response.success && response.data) {
+            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            set({
+              meals: mergeMeals(get().meals, normalized),
+              lastSyncedAt: Date.now(),
+            });
+            return normalized;
+          }
+          set({
+            error:
+              response.message ?? "해당 날짜의 식단을 불러오지 못했습니다.",
+          });
+          return [];
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "해당 날짜의 식단을 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      getMealsByDateRange: async (startDate, endDate) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealsByDateRange(
+            startDate,
+            endDate
+          );
+          if (response.success && response.data) {
+            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            set({
+              meals: mergeMeals(get().meals, normalized),
+              lastSyncedAt: Date.now(),
+            });
+            return normalized;
+          }
+          set({
+            error: response.message ?? "기간별 식단을 불러오지 못했습니다.",
+          });
+          return [];
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "기간별 식단을 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       // 레시피별 조회
-      getMealsByRecipe: (recipeId) => {
-        return get().meals.filter((meal) => meal.recipe?.id === recipeId);
+      getMealsByRecipe: async (recipeId) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealsByRecipe(recipeId);
+          if (response.success && response.data) {
+            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            set({
+              meals: mergeMeals(get().meals, normalized),
+              lastSyncedAt: Date.now(),
+            });
+            return normalized;
+          }
+          set({
+            error: response.message ?? "레시피별 식단을 불러오지 못했습니다.",
+          });
+          return [];
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "레시피별 식단을 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       // 식사 유형별 조회
-      getMealsByMealType: (mealType) => {
-        return get().meals.filter((meal) => meal.mealType === mealType);
+      getMealsByMealType: async (mealType) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealsByType(mealType);
+          if (response.success && response.data) {
+            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            set({
+              meals: mergeMeals(get().meals, normalized),
+              lastSyncedAt: Date.now(),
+            });
+            return normalized;
+          }
+          set({
+            error:
+              response.message ?? "식사 유형별 식단을 불러오지 못했습니다.",
+          });
+          return [];
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식사 유형별 식단을 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      getMealStatistics: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await mealService.getMealStatistics();
+          if (response.success && response.data) {
+            return response.data;
+          }
+          set({
+            error: response.message ?? "식단 통계를 불러오지 못했습니다.",
+          });
+          return null;
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "식단 통계를 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       // Service를 통해 데이터 로드
@@ -180,16 +371,9 @@ export const useMealStore = create<MealState>()(
           set({ isLoading: true, error: null });
           const response = await mealService.getAllMeals();
           if (response.success && response.data) {
-            // 백엔드 응답을 프론트엔드 타입으로 변환
-            // 백엔드: { recipe, ingredients } -> 프론트엔드: { recipe, foods }
-            const transformedMeals: Meal[] = response.data.map((meal: any) => ({
-              ...meal,
-              // ingredients 필드가 있으면 foods로 변환
-              foods: meal.ingredients || meal.foods || [],
-              // ingredients 필드 제거 (타입 안전성)
-              ingredients: undefined,
-            }));
-
+            const transformedMeals = normalizeMeals(
+              response.data as BackendMeal[]
+            );
             set({
               meals: transformedMeals,
               error: null,

@@ -27,7 +27,7 @@ import {
 import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useToggleArray } from "../../src/hooks/useToggleArray";
-import { useFridgeStore } from "../../src/stores/useFridgeStore";
+import { useFridgeStore } from "../../src/stores/useFoodStore";
 import { Colors, FontSizes, commonStyles } from "../../src/styles/common";
 import { isExpiringSoon } from "../../src/utils/expiryUtils";
 
@@ -36,6 +36,7 @@ export default function FridgeScreen() {
   const loadFoods = useFridgeStore((s) => s.loadFoods);
   const isLoading = useFridgeStore((s) => s.isLoading);
   const lastSyncedAt = useFridgeStore((s) => s.lastSyncedAt);
+  const removeFood = useFridgeStore((s) => s.removeFood);
 
   useStoreWithError(useFridgeStore);
   // GET /foods API를 통해 현재 사용자의 음식 데이터 자동 로드
@@ -114,10 +115,9 @@ export default function FridgeScreen() {
   };
 
   // 재료 삭제 처리
-  const handleDeleteIngredient = (ingredientId: string) => {
+  const handleDeleteIngredient = async (ingredientId: string) => {
     setActionModalVisible(false);
-    const removeFood = useFridgeStore.getState().removeFood;
-    removeFood(ingredientId);
+    await removeFood(ingredientId);
   };
 
   // 길게 누르기 핸들러

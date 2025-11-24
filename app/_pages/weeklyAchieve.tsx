@@ -1,5 +1,5 @@
 import { Stack, router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -11,8 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import GoalCard from "../../src/components/weeklyAchieve/GoalCard";
 import HealthSummaryCard from "../../src/components/weeklyAchieve/HealthSummaryCard";
 import SectionHeader from "../../src/components/weeklyAchieve/SectionHeader";
-import dashboardService from "../../src/services/dashboardService";
 import { useAuthStore } from "../../src/stores/useAuthStore";
+import { useDashboardStore } from "../../src/stores/useDashboardStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 
 // BE에서 받아올 건강 목표 계획 타입 (임시 - BE API 연동 시 실제 타입으로 교체)
@@ -33,45 +33,18 @@ export interface HealthGoalPlan {
 }
 
 export default function WeeklyAchieveScreen() {
-  // 사용자 정보 가져오기
   const user = useAuthStore((state) => state.user);
-  const [bmr, setBmr] = useState<number>(0);
-  const [tdee, setTdee] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const bmr = useDashboardStore((state) => state.bmr);
+  const tdee = useDashboardStore((state) => state.tdee);
+  const fetchMyBMR = useDashboardStore((state) => state.fetchMyBMR);
+  const fetchMyTDEE = useDashboardStore((state) => state.fetchMyTDEE);
+  const dashboardLoading = useDashboardStore((state) => state.isLoading);
+  const dashboardError = useDashboardStore((state) => state.error);
 
-  // BMR과 TDEE 조회
   useEffect(() => {
-    const fetchBMRAndTDEE = async () => {
-      if (!user) {
-        setBmr(0);
-        setTdee(0);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        // 내 BMR 조회
-        const bmrResponse = await dashboardService.getMyBMR();
-        if (bmrResponse.success && bmrResponse.data) {
-          setBmr(bmrResponse.data.bmr);
-        }
-
-        // 내 TDEE 조회
-        const tdeeResponse = await dashboardService.getMyTDEE();
-        if (tdeeResponse.success && tdeeResponse.data) {
-          setTdee(tdeeResponse.data.tdee);
-        }
-      } catch (error) {
-        console.error("BMR/TDEE 조회 실패:", error);
-        setBmr(0);
-        setTdee(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBMRAndTDEE();
-  }, [user]);
+    fetchMyBMR();
+    fetchMyTDEE();
+  }, [fetchMyBMR, fetchMyTDEE]);
 
   // TODO: BE에서 건강 목표 계획 데이터를 받아옴
   // const { data: plans, isLoading } = useHealthGoalPlans(selectedGoals);
@@ -105,13 +78,22 @@ export default function WeeklyAchieveScreen() {
             contentContainerStyle={styles.scrollContent}
           >
             <HealthSummaryCard
-              bmr={bmr}
-              tdee={tdee}
+              bmr={bmr ?? 0}
+              tdee={tdee ?? 0}
               sex={user?.sex}
               age={user?.age}
               weight={user?.weight}
               activityLevel={user?.activityLevel}
             />
+
+            {dashboardLoading && (
+              <Text style={styles.loadingText}>
+                대시보드 정보를 불러오는 중...
+              </Text>
+            )}
+            {dashboardError && (
+              <Text style={styles.errorText}>{dashboardError}</Text>
+            )}
 
             <SectionHeader
               title="선택한 건강 목표"
@@ -185,5 +167,15 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     color: Colors.textSecondary,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.error,
+    marginBottom: 12,
   },
 });

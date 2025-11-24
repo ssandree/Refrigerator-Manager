@@ -126,7 +126,7 @@ export const useRecipeStore = create<RecipeState>()(
             }
 
             // 냉장고 재료 목록 가져오기 (다른 스토어에서)
-            const { useFridgeStore } = await import("./useFridgeStore");
+            const { useFridgeStore } = await import("./useFoodStore");
             const fridgeState = useFridgeStore.getState();
             const userFoods = fridgeState.foods;
             const userFoodNames = new Set(

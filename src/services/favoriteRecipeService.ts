@@ -1,6 +1,6 @@
 // Favorite recipe service for managing user's favorite recipes
 import { Recipe } from "../types/recipe";
-import apiClient, { ApiResponse } from "./apiClient";
+import apiClientInstance, { ApiResponse } from "./apiClient";
 
 class FavoriteRecipeService {
   private readonly basePath = "/favorite-recipes";
@@ -9,21 +9,24 @@ class FavoriteRecipeService {
    * Get all favorite recipes for the current user
    */
   async getAllFavorites(): Promise<ApiResponse<Recipe[]>> {
-    return await apiClient.get<Recipe[]>(this.basePath);
+    return await apiClientInstance.get<Recipe[]>(this.basePath);
   }
 
   /**
    * Add a recipe to favorites
    */
   async addToFavorites(recipeId: string) {
-    return await apiClient.post<Recipe>(`${this.basePath}/${recipeId}`, {});
+    return await apiClientInstance.post<Recipe>(
+      `${this.basePath}/${recipeId}`,
+      {}
+    );
   }
 
   /**
    * Remove a recipe from favorites
    */
   async removeFromFavorites(recipeId: string) {
-    return await apiClient.delete<{ message: string }>(
+    return await apiClientInstance.delete<{ message: string }>(
       `${this.basePath}/${recipeId}`
     );
   }
@@ -32,7 +35,7 @@ class FavoriteRecipeService {
    * Check if a recipe is in favorites
    */
   async checkIfFavorite(recipeId: string) {
-    return await apiClient.get<{ isFavorite: boolean }>(
+    return await apiClientInstance.get<{ isFavorite: boolean }>(
       `${this.basePath}/${recipeId}/check`
     );
   }
@@ -61,7 +64,7 @@ class FavoriteRecipeService {
     const queryParams = tags
       .map((tag) => `tags=${encodeURIComponent(tag)}`)
       .join("&");
-    return await apiClient.get<Recipe[]>(
+    return await apiClientInstance.get<Recipe[]>(
       `${this.basePath}/filter-by-tags?${queryParams}`
     );
   }

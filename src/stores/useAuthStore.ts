@@ -44,7 +44,7 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>(
+export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
@@ -69,12 +69,12 @@ export const useAuthStore = create<AuthState>(
               id: apiUser.id,
               name: apiUser.name,
               email: apiUser.email,
-              age: apiUser.age,
-              sex: apiUser.sex,
+              age: apiUser.age ?? undefined,
+              sex: apiUser.sex ?? undefined,
               height: apiUser.height ?? undefined,
-              bmi: apiUser.bmi,
-              weight: apiUser.weight,
-              activityLevel: apiUser.activityLevel,
+              bmi: apiUser.bmi ?? undefined,
+              weight: apiUser.weight ?? undefined,
+              activityLevel: apiUser.activityLevel ?? undefined,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });
@@ -134,12 +134,12 @@ export const useAuthStore = create<AuthState>(
               id: apiUser.id,
               name: apiUser.name,
               email: apiUser.email,
-              age: apiUser.age,
-              sex: apiUser.sex,
+              age: apiUser.age ?? undefined,
+              sex: apiUser.sex ?? undefined,
               height: apiUser.height ?? undefined,
-              bmi: apiUser.bmi,
-              weight: apiUser.weight,
-              activityLevel: apiUser.activityLevel,
+              bmi: apiUser.bmi ?? undefined,
+              weight: apiUser.weight ?? undefined,
+              activityLevel: apiUser.activityLevel ?? undefined,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });

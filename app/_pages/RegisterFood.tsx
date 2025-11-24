@@ -21,8 +21,7 @@ import {
   StorageLocationLabel,
 } from "../../src/enums/storageLocation";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
-import { foodService } from "../../src/services/foodService";
-import { useFridgeStore } from "../../src/stores/useFridgeStore";
+import { useFridgeStore } from "../../src/stores/useFoodStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { logger } from "../../src/utils/logger";
 
@@ -173,12 +172,7 @@ export default function EditFood() {
           alertBeforeDays: formData.alertBeforeDays ?? null,
         };
 
-        const response = await foodService.updateFood(food!.id, payload);
-        if (!response.success || !response.data) {
-          throw new Error(response.message ?? "재료 수정에 실패했습니다.");
-        }
-
-        const success = updateFood(food!.id, response.data);
+        const success = await updateFood(food!.id, payload);
         if (success) {
           Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
             {
@@ -202,12 +196,7 @@ export default function EditFood() {
           alertBeforeDays: formData.alertBeforeDays ?? 3,
         };
 
-        const response = await foodService.addFood(payload);
-        if (!response.success || !response.data) {
-          throw new Error(response.message ?? "재료 추가에 실패했습니다.");
-        }
-
-        const success = addFood(response.data);
+        const success = await addFood(payload);
         if (success) {
           Alert.alert("성공", "재료가 성공적으로 추가되었습니다!", [
             {
@@ -244,11 +233,7 @@ export default function EditFood() {
           setIsDeleting(true);
           try {
             clearError();
-            const response = await foodService.deleteFood(food.id);
-            if (!response.success) {
-              throw new Error(response.message ?? "재료 삭제에 실패했습니다.");
-            }
-            const success = removeFood(food.id);
+            const success = await removeFood(food.id);
             if (success) {
               Alert.alert("삭제 완료", "재료가 삭제되었습니다.", [
                 {

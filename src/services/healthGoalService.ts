@@ -69,20 +69,31 @@ class HealthGoalService {
   /**
    * Get weekly health statistics
    */
-  async getWeeklyStats(startDate: string) {
-    return await apiClient.get<Record<string, any>>(
-      `${this.basePath}/stats/weekly?startDate=${encodeURIComponent(startDate)}`
-    );
+  async getWeeklyStats(params?: { startDate?: string; endDate?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.startDate) {
+      searchParams.set("startDate", params.startDate);
+    }
+    if (params?.endDate) {
+      searchParams.set("endDate", params.endDate);
+    }
+    const queryString = searchParams.toString();
+    const endpoint = queryString
+      ? `${this.basePath}/stats/weekly?${queryString}`
+      : `${this.basePath}/stats/weekly`;
+    return await apiClient.get<Record<string, any>>(endpoint);
   }
 
   /**
    * Get nutrition statistics
    */
   async getNutritionStats(startDate: string, endDate: string) {
+    const searchParams = new URLSearchParams({
+      startDate,
+      endDate,
+    });
     return await apiClient.get<Record<string, any>>(
-      `${this.basePath}/stats/nutrition?startDate=${encodeURIComponent(
-        startDate
-      )}&endDate=${encodeURIComponent(endDate)}`
+      `${this.basePath}/stats/nutrition?${searchParams.toString()}`
     );
   }
 }

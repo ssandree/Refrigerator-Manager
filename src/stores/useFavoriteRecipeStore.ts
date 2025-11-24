@@ -1,7 +1,7 @@
 // 즐겨찾기 레시피 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import favoriteRecipeService from "../services/favoriteRecipeService";
+import favoriteRecipeServiceApi from "../services/favoriteRecipeService";
 import { Recipe } from "../types/recipe";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
@@ -49,7 +49,7 @@ export const useFavoriteRecipeStore = create<FavoriteRecipeState>(
 
         try {
           set({ isLoading: true, error: null });
-          const response = await favoriteRecipeService.addToFavorites(
+          const response = await favoriteRecipeServiceApi.addToFavorites(
             recipe.id
           );
 
@@ -85,7 +85,7 @@ export const useFavoriteRecipeStore = create<FavoriteRecipeState>(
       removeFromFavorites: async (recipeId) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await favoriteRecipeService.removeFromFavorites(
+          const response = await favoriteRecipeServiceApi.removeFromFavorites(
             recipeId
           );
 
@@ -155,7 +155,7 @@ export const useFavoriteRecipeStore = create<FavoriteRecipeState>(
 
         try {
           set({ isLoading: true, error: null });
-          const response = await favoriteRecipeService.getAllFavorites();
+          const response = await favoriteRecipeServiceApi.getAllFavorites();
 
           if (response.success && response.data) {
             set({

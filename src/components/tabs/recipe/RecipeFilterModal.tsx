@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useFridgeStore } from "../../../stores/useFridgeStore";
+import { useFridgeStore } from "../../../stores/useFoodStore";
 import { Colors } from "../../../styles/common";
 import { FilterChip } from "./FilterChip";
 

@@ -62,10 +62,7 @@ class RecipeService {
    * Get recommended recipes based on user's ingredients
    */
   async getRecommendedRecipes() {
-    return await apiClientInstance.post<Recipe[]>(
-      `${this.basePath}/recommend`,
-      {}
-    );
+    return await apiClientInstance.get<Recipe[]>(`${this.basePath}/recommend`);
   }
 
   /**

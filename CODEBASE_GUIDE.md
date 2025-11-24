@@ -107,7 +107,6 @@ refrigerator/
 │   │   ├── api.ts          # API 클라이언트
 │   │   ├── authService.ts
 │   │   ├── foodService.ts  # 재료 관리 서비스 (fridgeService에서 변경)
-│   │   ├── foodService.mock.ts  # Mock 서비스
 │   │   ├── mealService.ts  # 식사 관리 서비스
 │   │   ├── recipeService.ts
 │   │   ├── recipeService.mock.ts
@@ -444,18 +443,6 @@ npm run web
 - `useRecipeStore`: API 기반(이제 Mock Fallback 없음)
 - `useFridgeStore`: API 실패 시 `mockFoods` 사용
 - `useMealStore`: 사용자별 데이터이므로 빈 배열 반환
-
-**Mock 서비스 사용 (선택사항):**
-
-`src/services/index.ts` 파일 수정:
-
-```typescript
-// API 서비스 주석 처리
-// export { default as foodService } from "./foodService";
-
-// Mock 서비스 활성화
-export { default as foodService } from "./foodService.mock";
-```
 
 **참고:** `fridgeService` → `foodService`로 네이밍 변경됨
 

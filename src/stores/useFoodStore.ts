@@ -5,12 +5,7 @@ import { Food, mockFoods } from "../data/mockFood";
 import { foodService } from "../services/foodService";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
-import {
-  createAddEntity,
-  createGetEntityById,
-  createRemoveEntity,
-  createUpdateEntity,
-} from "./storeCrudHelpers";
+import { createGetEntityById } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
 
 // 초기값: 빈 배열 (서버에서 로드)
@@ -22,11 +17,10 @@ interface FridgeState {
   error: string | null;
   isLoading: boolean;
   lastSyncedAt: number | null;
-  // 재료 추가 (중복 ID 방지)
-  addFood: (food: Food) => boolean;
-  updateFood: (id: string, updatedFood: Partial<Food>) => boolean;
-  // 재료 삭제
-  removeFood: (id: string) => boolean;
+  // 재료 추가/수정/삭제 (API 연동)
+  addFood: (food: Omit<Food, "id">) => Promise<boolean>;
+  updateFood: (id: string, updatedFood: Partial<Food>) => Promise<boolean>;
+  removeFood: (id: string) => Promise<boolean>;
   // 단건 조회
   getFoodById: (id: string) => Food | undefined;
   // 카테고리별 조회
@@ -48,29 +42,88 @@ export const useFridgeStore = create<FridgeState>()(
       isLoading: false,
       lastSyncedAt: null,
 
-      // 재료 추가 (이미 존재하면 무시)
-      addFood: createAddEntity<Food>(
-        "재료",
-        () => get().foods,
-        (foods) => set({ foods, error: null }),
-        (error) => set({ error })
-      ),
+      // 재료 추가 (API 연동)
+      addFood: async (foodData) => {
+        try {
+          set({ error: null });
+          const response = await foodService.addFood(foodData);
+          if (response.success && response.data) {
+            set((state) => ({
+              foods: [...state.foods, response.data],
+              error: null,
+              lastSyncedAt: Date.now(),
+            }));
+            return true;
+          }
+          set({
+            error: response.message ?? "재료 추가에 실패했습니다.",
+          });
+          return false;
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "재료 추가 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
-      // 재료 정보 업데이트
-      updateFood: createUpdateEntity<Food>(
-        "재료",
-        () => get().foods,
-        (foods) => set({ foods, error: null }),
-        (error) => set({ error })
-      ),
+      // 재료 정보 업데이트 (API 연동)
+      updateFood: async (id, updatedFood) => {
+        try {
+          set({ error: null });
+          const response = await foodService.updateFood(id, updatedFood);
+          if (response.success && response.data) {
+            set((state) => ({
+              foods: state.foods.map((food) =>
+                food.id === id ? response.data : food
+              ),
+              error: null,
+              lastSyncedAt: Date.now(),
+            }));
+            return true;
+          }
+          set({
+            error: response.message ?? "재료 수정에 실패했습니다.",
+          });
+          return false;
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "재료 수정 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
-      // 재료 삭제
-      removeFood: createRemoveEntity<Food>(
-        "재료",
-        () => get().foods,
-        (foods) => set({ foods, error: null }),
-        (error) => set({ error })
-      ),
+      // 재료 삭제 (API 연동)
+      removeFood: async (id) => {
+        try {
+          set({ error: null });
+          const response = await foodService.deleteFood(id);
+          if (response.success) {
+            set((state) => ({
+              foods: state.foods.filter((food) => food.id !== id),
+              error: null,
+              lastSyncedAt: Date.now(),
+            }));
+            return true;
+          }
+          set({
+            error: response.message ?? "재료 삭제에 실패했습니다.",
+          });
+          return false;
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "재료 삭제 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return false;
+        }
+      },
 
       // ID로 단건 조회
       getFoodById: createGetEntityById<Food>(() => get().foods),

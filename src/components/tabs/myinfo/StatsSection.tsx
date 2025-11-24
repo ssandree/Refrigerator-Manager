@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react-native";
 import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
-import { useFridgeStore } from "../../../stores/useFridgeStore";
+import { useFridgeStore } from "../../../stores/useFoodStore";
 import { useMealStore } from "../../../stores/useMealStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";

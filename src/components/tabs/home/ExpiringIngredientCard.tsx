@@ -5,7 +5,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SecondaryButton } from "../../../components/Buttons";
 import { Food } from "../../../data/mockFood";
-import { useFridgeStore } from "../../../stores/useFridgeStore";
+import { useFridgeStore } from "../../../stores/useFoodStore";
 import { Colors, commonStyles, FontSizes } from "../../../styles/common";
 
 interface ExpiringIngredientCardProps {
@@ -89,13 +89,26 @@ export default function ExpiringIngredientSection() {
     const today = new Date();
     return foods
       .map((food) => {
-        const expiryDate = new Date(food.expiryDate);
+        const expiryDateStr = food.expiryDate;
+        if (!expiryDateStr) {
+          return null;
+        }
+        const expiryDate = new Date(expiryDateStr);
+        if (Number.isNaN(expiryDate.getTime())) {
+          return null;
+        }
         const daysLeft = Math.ceil(
           (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
         );
         return { ...food, daysLeft };
       })
-      .filter((food) => food.daysLeft <= 3 && food.daysLeft >= 0);
+      .filter(
+        (
+          food
+        ): food is Food & {
+          daysLeft: number;
+        } => !!food && food.daysLeft <= 3 && food.daysLeft >= 0
+      );
   };
 
   const expiringFoods = getExpiringFoods();

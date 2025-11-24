@@ -58,6 +58,13 @@ class DashboardService {
   private readonly basePath = "/dashboard";
 
   /**
+   * GET /dashboard/today
+   */
+  async getTodayDashboard(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>(`${this.basePath}/today`);
+  }
+
+  /**
    * BMI 계산
    * POST /dashboard/calculator/bmi
    */
