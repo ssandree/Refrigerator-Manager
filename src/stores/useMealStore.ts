@@ -1,48 +1,20 @@
 // 식단(Meal) 전역 상태를 관리하는 Zustand 스토어
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Food } from "../data/mockFood";
 import { mealService } from "../services/mealService";
-import { Recipe } from "../types/recipe";
+import {
+  Meal,
+  MealCreatePayload,
+  MealStatistics,
+  MealUpdatePayload,
+} from "../types/meal";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import { createGetEntityById } from "./storeCrudHelpers";
 import { validateArray, validateSyncTimestamp } from "./storeUtils";
 
-// 식단 도메인 모델 (레시피/재료, 섭취일/등록일, 메모/식사유형 포함)
-export interface Meal {
-  id: string;
-  recipe: Recipe | null;
-  foods: Food[];
-  quantity: string;
-  consumedAt: string;
-  registeredAt: string;
-  notes?: string;
-  mealType?: "breakfast" | "lunch" | "dinner" | "snack";
-}
-
 // 초기값: 빈 배열 (서버에서 로드)
 const initialMeals: Meal[] = [];
-
-// 백엔드 응답에서 ingredients 필드를 foods로 치환하기 위한 타입/헬퍼
-type BackendMeal = Meal & { ingredients?: Food[] };
-
-export interface MealStatistics {
-  totalCalories: number;
-  totalMeals: number;
-  averagePerMeal: number;
-}
-
-const normalizeMeal = (meal: BackendMeal): Meal => {
-  const { ingredients, foods, ...rest } = meal;
-  return {
-    ...rest,
-    foods: ingredients ?? foods ?? [],
-  };
-};
-
-const normalizeMeals = (meals: BackendMeal[] = []): Meal[] =>
-  meals.map((meal) => normalizeMeal(meal));
 
 const mergeMeals = (currentMeals: Meal[], incomingMeals: Meal[]): Meal[] => {
   const mealMap = new Map(currentMeals.map((meal) => [meal.id, meal]));
@@ -59,9 +31,9 @@ interface MealState {
   isLoading: boolean;
   lastSyncedAt: number | null; // 마지막 서버 동기화 시간
   // 식단 추가 (중복 ID 방지)
-  addMeal: (meal: Omit<Meal, "id">) => Promise<boolean>;
+  addMeal: (payload: MealCreatePayload) => Promise<boolean>;
   // 식단 일부 필드 업데이트 (API 호출)
-  updateMeal: (id: string, updatedMeal: Partial<Meal>) => Promise<boolean>;
+  updateMeal: (id: string, payload: MealUpdatePayload) => Promise<boolean>;
   // 식단 삭제 (API 호출)
   removeMeal: (id: string) => Promise<boolean>;
   // 단건 조회
@@ -92,12 +64,19 @@ export const useMealStore = create<MealState>()(
       lastSyncedAt: null,
 
       // 식단 추가 (API 호출)
-      addMeal: async (mealData: Omit<Meal, "id">) => {
+      addMeal: async (payload: MealCreatePayload) => {
         try {
           set({ error: null });
-          const response = await mealService.createMeal(mealData);
+          const response = await mealService.createMeal({
+            foodIds: payload.foodIds ?? [],
+            recipeId: payload.recipeId ?? null,
+            quantity: payload.quantity ?? null,
+            consumedAt: payload.consumedAt,
+            notes: payload.notes ?? null,
+            mealType: payload.mealType ?? null,
+          });
           if (response.success && response.data) {
-            const normalized = normalizeMeal(response.data as BackendMeal);
+            const normalized = response.data;
             set({
               meals: [...get().meals, normalized],
               error: null,
@@ -121,12 +100,16 @@ export const useMealStore = create<MealState>()(
       },
 
       // 식단 업데이트 (API 호출)
-      updateMeal: async (id: string, updatedMeal: Partial<Meal>) => {
+      updateMeal: async (id: string, payload: MealUpdatePayload) => {
         try {
           set({ error: null });
-          const response = await mealService.updateMeal(id, updatedMeal);
+          const response = await mealService.updateMeal(id, {
+            quantity: payload.quantity ?? null,
+            notes: payload.notes ?? null,
+            mealType: payload.mealType ?? null,
+          });
           if (response.success && response.data) {
-            const updated = normalizeMeal(response.data as BackendMeal);
+            const updated = response.data;
             const entities = get().meals;
             set({
               meals: entities.map((e) => (e.id === id ? updated : e)),
@@ -187,7 +170,7 @@ export const useMealStore = create<MealState>()(
           set({ isLoading: true, error: null });
           const response = await mealService.getMealById(id);
           if (response.success && response.data) {
-            const updatedMeal = normalizeMeal(response.data as BackendMeal);
+            const updatedMeal = response.data;
             const nextMeals = mergeMeals(get().meals, [updatedMeal]);
             set({
               meals: nextMeals,
@@ -215,9 +198,9 @@ export const useMealStore = create<MealState>()(
       getMealsByDate: async (date) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await mealService.getMealsByDate(date);
+          const response = await mealService.getMeals({ date });
           if (response.success && response.data) {
-            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            const normalized = response.data;
             set({
               meals: mergeMeals(get().meals, normalized),
               lastSyncedAt: Date.now(),
@@ -244,12 +227,12 @@ export const useMealStore = create<MealState>()(
       getMealsByDateRange: async (startDate, endDate) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await mealService.getMealsByDateRange(
+          const response = await mealService.getMeals({
             startDate,
-            endDate
-          );
+            endDate,
+          });
           if (response.success && response.data) {
-            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            const normalized = response.data;
             set({
               meals: mergeMeals(get().meals, normalized),
               lastSyncedAt: Date.now(),
@@ -276,9 +259,9 @@ export const useMealStore = create<MealState>()(
       getMealsByRecipe: async (recipeId) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await mealService.getMealsByRecipe(recipeId);
+          const response = await mealService.getMeals({ recipeId });
           if (response.success && response.data) {
-            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            const normalized = response.data;
             set({
               meals: mergeMeals(get().meals, normalized),
               lastSyncedAt: Date.now(),
@@ -305,9 +288,11 @@ export const useMealStore = create<MealState>()(
       getMealsByMealType: async (mealType) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await mealService.getMealsByType(mealType);
+          // FE에서는 mealType으로 넘기고,
+          // service에서 실제 쿼리 키 "type"으로 변환하여 호출
+          const response = await mealService.getMeals({ mealType });
           if (response.success && response.data) {
-            const normalized = normalizeMeals(response.data as BackendMeal[]);
+            const normalized = response.data;
             set({
               meals: mergeMeals(get().meals, normalized),
               lastSyncedAt: Date.now(),
@@ -369,11 +354,9 @@ export const useMealStore = create<MealState>()(
 
         try {
           set({ isLoading: true, error: null });
-          const response = await mealService.getAllMeals();
+          const response = await mealService.getMeals();
           if (response.success && response.data) {
-            const transformedMeals = normalizeMeals(
-              response.data as BackendMeal[]
-            );
+            const transformedMeals = response.data;
             set({
               meals: transformedMeals,
               error: null,
@@ -439,3 +422,5 @@ export const useMealStore = create<MealState>()(
     }
   )
 );
+
+export type { Meal } from "../types/meal";

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -19,31 +19,30 @@ import { useToggleArray } from "../../src/hooks/useToggleArray";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors } from "../../src/styles/common";
-import { filterRecipes } from "../../src/utils/recipeFilter";
+import { Recipe } from "../../src/types/recipe";
 
 export default function RecipeScreen() {
   const recipes = useRecipeStore((s) => s.recipes);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
+  const searchRecipes = useRecipeStore((s) => s.searchRecipes);
+  const filterRecipes = useRecipeStore((s) => s.filterRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
-  const lastSyncedAt = useRecipeStore((s) => s.lastSyncedAt);
   const favoriteRecipes = useFavoriteRecipeStore((s) => s.favoriteRecipes);
   const loadFavorites = useFavoriteRecipeStore((s) => s.loadFavorites);
   const isLoadingFavorites = useFavoriteRecipeStore((s) => s.isLoading);
   const lastSyncedAtFavorites = useFavoriteRecipeStore((s) => s.lastSyncedAt);
   const [refreshing, setRefreshing] = useState(false);
   const toggleFavorite = useFavoriteRecipeStore((s) => s.toggleFavorite);
+  const [displayedRecipes, setDisplayedRecipes] = useState<Recipe[]>([]);
 
   useStoreWithError(useRecipeStore);
   useStoreWithError(useFavoriteRecipeStore);
-  // GET /recipes API를 통해 모든 레시피 자동 로드
-  useAutoLoadData(
-    recipes,
-    isLoading,
-    useCallback(() => loadRecipes(true), [loadRecipes]),
-    {
-      checkLastSynced: false,
-    }
-  );
+
+  // 초기 마운트 시 무조건 GET /recipes 호출
+  useEffect(() => {
+    loadRecipes(true);
+  }, [loadRecipes]);
+
   useAutoLoadData(favoriteRecipes, isLoadingFavorites, loadFavorites, {
     checkLastSynced: true,
     lastSyncedAt: lastSyncedAtFavorites,
@@ -83,7 +82,9 @@ export default function RecipeScreen() {
   );
   const [includeExpiring, setIncludeExpiring] = useState<boolean>(false);
   // 초기 열량 범위를 넓게 설정하여 모든 레시피가 포함되도록 함
-  const [calorieRange, setCalorieRange] = useState<[number, number]>([0, 5000]);
+  const [calorieRange, setCalorieRange] = useState<[number, number]>([
+    0, 15000,
+  ]);
 
   // 토글 함수들
   const toggleIngredient = useToggleArray(setSelectedIngredients);
@@ -93,24 +94,81 @@ export default function RecipeScreen() {
     setSearchQuery("");
     setSelectedIngredients([]);
     setIncludeExpiring(false);
-    setCalorieRange([0, 5000]);
+    setCalorieRange([0, 15000]);
   };
 
-  // 필터 옵션 객체 (useMemo로 최적화)
-  const filterOptions = useMemo(
-    () => ({
-      searchQuery,
-      selectedIngredients,
-      includeExpiring,
-      calorieRange,
-    }),
-    [searchQuery, selectedIngredients, includeExpiring, calorieRange]
-  );
+  // 필터/검색 조건이 활성화되어 있는지 확인
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery.trim() !== "" ||
+      selectedIngredients.length > 0 ||
+      includeExpiring ||
+      calorieRange[0] > 0 ||
+      calorieRange[1] < 15000
+    );
+  }, [searchQuery, selectedIngredients, includeExpiring, calorieRange]);
 
-  // 필터링된 레시피 목록 (필터 옵션이 변경될 때만 재계산)
-  const filteredRecipes = useMemo(() => {
-    return filterRecipes(recipes, filterOptions);
-  }, [recipes, filterOptions]);
+  // 검색/필터 조건에 따라 적절한 API 호출
+  useEffect(() => {
+    const loadFilteredRecipes = async () => {
+      // 검색어만 있는 경우: 검색 API 호출
+      if (searchQuery.trim() !== "" && !hasActiveFilters) {
+        const results = await searchRecipes(searchQuery.trim());
+        setDisplayedRecipes(results);
+        return;
+      }
+
+      // 필터 조건이 있는 경우: 필터 API 호출
+      if (hasActiveFilters) {
+        const filterParams: {
+          ingredients?: string[];
+          expiringOnly?: boolean;
+          minCalories?: number;
+          maxCalories?: number;
+        } = {};
+
+        if (selectedIngredients.length > 0) {
+          filterParams.ingredients = selectedIngredients;
+        }
+        if (includeExpiring) {
+          filterParams.expiringOnly = true;
+        }
+        if (calorieRange[0] > 0) {
+          filterParams.minCalories = calorieRange[0];
+        }
+        if (calorieRange[1] < 15000) {
+          filterParams.maxCalories = calorieRange[1];
+        }
+
+        // 검색어도 함께 있는 경우: 필터 후 클라이언트에서 검색어 필터링
+        const results = await filterRecipes(filterParams);
+        if (searchQuery.trim() !== "") {
+          const lowerQuery = searchQuery.trim().toLowerCase();
+          const filtered = results.filter((recipe) =>
+            recipe.recipeName.toLowerCase().includes(lowerQuery)
+          );
+          setDisplayedRecipes(filtered);
+        } else {
+          setDisplayedRecipes(results);
+        }
+        return;
+      }
+
+      // 필터/검색 조건이 없으면 전체 레시피 표시
+      setDisplayedRecipes(recipes);
+    };
+
+    loadFilteredRecipes();
+  }, [
+    searchQuery,
+    selectedIngredients,
+    includeExpiring,
+    calorieRange,
+    hasActiveFilters,
+    recipes,
+    searchRecipes,
+    filterRecipes,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -146,7 +204,7 @@ export default function RecipeScreen() {
           )}
 
           {/* 열량 필터 칩 */}
-          {(calorieRange[0] > 0 || calorieRange[1] < 5000) && (
+          {(calorieRange[0] > 0 || calorieRange[1] < 15000) && (
             <TouchableOpacity style={styles.filterChip} onPress={showModal}>
               <Text style={styles.filterChipText}>
                 🔥 {calorieRange[0]}-{calorieRange[1]}kcal
@@ -169,9 +227,9 @@ export default function RecipeScreen() {
       </View>
 
       {/* 레시피 목록 */}
-      {isLoading && recipes.length === 0 ? (
+      {isLoading && recipes.length === 0 && !hasActiveFilters ? (
         <LoadingSpinner message="레시피를 불러오는 중..." fullScreen />
-      ) : filteredRecipes.length === 0 && !isLoading ? (
+      ) : displayedRecipes.length === 0 && !isLoading ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>
             선택한 조건에 맞는 레시피가 없습니다.
@@ -192,10 +250,10 @@ export default function RecipeScreen() {
           }
         >
           <Text style={styles.resultsCount}>
-            {filteredRecipes.length}개의 레시피를 찾았습니다
+            {displayedRecipes.length}개의 레시피를 찾았습니다
           </Text>
 
-          {filteredRecipes.map((recipe) => (
+          {displayedRecipes.map((recipe) => (
             <RecipeCard
               key={recipe.id}
               recipe={recipe}

@@ -1,17 +1,27 @@
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { mealService } from "../../../services/mealService";
+import { useFridgeStore } from "../../../stores/useFoodStore";
 import { Meal } from "../../../stores/useMealStore";
+import { useRecipeStore } from "../../../stores/useRecipeStore";
 import { tabsStyles } from "../../../styles/tabs";
-import { logger } from "../../../utils/logger";
+import { Food } from "../../../types/food";
+import { Recipe } from "../../../types/recipe";
 import LoadingSpinner from "../../LoadingSpinner";
 import DailyDietCard from "../meal/MealCard";
 
-export default function TodayMeals() {
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface TodayMealsProps {
+  meals: Meal[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export default function TodayMeals({
+  meals,
+  isLoading,
+  error,
+}: TodayMealsProps) {
+  const foods = useFridgeStore((s) => s.foods);
+  const recipes = useRecipeStore((s) => s.recipes);
 
   // 오늘 날짜 (YYYY-MM-DD 형식)
   const todayDate = useMemo(() => {
@@ -19,33 +29,13 @@ export default function TodayMeals() {
     return today.toISOString().split("T")[0];
   }, []);
 
-  const loadTodayMeals = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await mealService.getMealsByDate(todayDate);
-      if (response.success && response.data) {
-        setMeals(response.data);
-      } else {
-        setError(response.message || "식사 목록을 불러오는데 실패했습니다.");
-      }
-    } catch (err) {
-      setError("식사 목록을 불러오는 중 오류가 발생했습니다.");
-      logger.error("Failed to load today's meals:", err);
-    } finally {
-      setIsLoading(false);
+  const normalizeDate = useCallback((value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value.split("T")[0] ?? value;
     }
-  }, [todayDate]);
-
-  useEffect(() => {
-    loadTodayMeals();
-  }, [loadTodayMeals]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadTodayMeals();
-    }, [loadTodayMeals])
-  );
+    return date.toISOString().split("T")[0];
+  }, []);
 
   const sections = useMemo(
     () =>
@@ -58,6 +48,11 @@ export default function TodayMeals() {
     []
   );
 
+  const todaysMeals = useMemo(
+    () => meals.filter((meal) => normalizeDate(meal.consumedAt) === todayDate),
+    [meals, normalizeDate, todayDate]
+  );
+
   if (isLoading) {
     return (
       <View style={tabsStyles.section}>
@@ -66,6 +61,44 @@ export default function TodayMeals() {
       </View>
     );
   }
+
+  const getRecipeForMeal = useCallback(
+    (meal: Meal): Recipe | undefined => {
+      if (!meal.recipeId) return undefined;
+      return recipes.find((recipe) => recipe.id === meal.recipeId);
+    },
+    [recipes]
+  );
+
+  const getFoodsForMeal = useCallback(
+    (meal: Meal): Food[] => {
+      return meal.foodIds
+        .map((foodId) => foods.find((food) => food.id === foodId))
+        .filter((food): food is Food => Boolean(food));
+    },
+    [foods]
+  );
+
+  const sumFoodCalories = (items: Food[]) =>
+    items.reduce((sum, food) => {
+      const grams =
+        parseFloat(food.weight?.replace(/[^0-9.]/g, "") || "0") || 0;
+      return sum + (food.calories_per_gram || 0) * grams;
+    }, 0);
+
+  const sumMacro = (items: Food[], key: "protein" | "carbohydrates" | "fat") =>
+    items.reduce((sum, food) => sum + (food[key] || 0), 0);
+
+  const formatTime = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   if (error) {
     return (
@@ -77,7 +110,7 @@ export default function TodayMeals() {
   }
 
   const hasAnyMeals = sections.some((sec) =>
-    meals.some((m) => m.mealType === sec.key)
+    todaysMeals.some((m) => m.mealType === sec.key)
   );
 
   if (!hasAnyMeals) {
@@ -93,52 +126,29 @@ export default function TodayMeals() {
     <View style={tabsStyles.section}>
       <Text style={tabsStyles.sectionTitle}>📦 오늘의 식사</Text>
       {sections.map((sec) => {
-        const items = meals.filter((m) => m.mealType === sec.key);
+        const items = todaysMeals.filter((m) => m.mealType === sec.key);
         if (items.length === 0) return null;
         return (
           <View key={sec.key} style={styles.mealSection}>
             <Text style={styles.mealTitle}>{sec.title}</Text>
-            {items.map((meal) => (
-              <DailyDietCard
-                key={meal.id}
-                recipeName={meal.recipe?.recipeName || meal.notes || "자유식"}
-                calories={
-                  meal.recipe?.calories ||
-                  meal.foods.reduce(
-                    (sum, food) =>
-                      sum +
-                      (food.calories_per_gram || 0) *
-                        (parseFloat(
-                          food.weight?.replace(/[^0-9.]/g, "") || "0"
-                        ) || 0),
-                    0
-                  ) ||
-                  0
-                }
-                protein={
-                  meal.recipe?.protein ||
-                  meal.foods.reduce(
-                    (sum, food) => sum + (food.protein || 0),
-                    0
-                  ) ||
-                  0
-                }
-                carbs={
-                  meal.recipe?.carbohydrates ||
-                  meal.foods.reduce(
-                    (sum, food) => sum + (food.carbohydrates || 0),
-                    0
-                  ) ||
-                  0
-                }
-                fat={
-                  meal.recipe?.fat ||
-                  meal.foods.reduce((sum, food) => sum + (food.fat || 0), 0) ||
-                  0
-                }
-                time={meal.consumedAt}
-              />
-            ))}
+            {items.map((meal) => {
+              const recipe = getRecipeForMeal(meal);
+              const linkedFoods = getFoodsForMeal(meal);
+              return (
+                <DailyDietCard
+                  key={meal.id}
+                  recipeName={recipe?.recipeName || meal.notes || "자유식"}
+                  calories={recipe?.calories ?? sumFoodCalories(linkedFoods)}
+                  protein={recipe?.protein ?? sumMacro(linkedFoods, "protein")}
+                  carbs={
+                    recipe?.carbohydrates ??
+                    sumMacro(linkedFoods, "carbohydrates")
+                  }
+                  fat={recipe?.fat ?? sumMacro(linkedFoods, "fat")}
+                  time={formatTime(meal.consumedAt)}
+                />
+              );
+            })}
           </View>
         );
       })}

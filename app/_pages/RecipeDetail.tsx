@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
-import { recipeService } from "../../src/services/recipeService";
 import { useMealStore } from "../../src/stores/useMealStore";
+import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { Recipe } from "../../src/types/recipe";
 
@@ -21,43 +21,37 @@ export default function RecipeDetail() {
   const recipeId = params?.id;
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchRecipeById = useRecipeStore((s) => s.fetchRecipeById);
+  const getRecipeById = useRecipeStore((s) => s.getRecipeById);
+  const isLoading = useRecipeStore((s) => s.isLoading);
+  const error = useRecipeStore((s) => s.error);
 
   const addMeal = useMealStore((s) => s.addMeal);
   useStoreWithError(useMealStore);
+  useStoreWithError(useRecipeStore);
 
   useEffect(() => {
     const loadRecipe = async () => {
       if (!recipeId) {
-        setError("레시피 ID가 없습니다.");
-        setIsLoading(false);
         return;
       }
 
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await recipeService.getRecipeById(recipeId);
-        if (response.success && response.data) {
-          setRecipe(response.data);
-        } else {
-          setError(response.message || "레시피를 찾을 수 없습니다.");
-        }
-      } catch {
-        setError("레시피를 불러오는 중 오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
+      // 먼저 로컬 스토어에서 확인
+      const localRecipe = getRecipeById(recipeId);
+      if (localRecipe) {
+        setRecipe(localRecipe);
+        return;
+      }
+
+      // 로컬에 없으면 서버에서 가져오기
+      const fetchedRecipe = await fetchRecipeById(recipeId);
+      if (fetchedRecipe) {
+        setRecipe(fetchedRecipe);
       }
     };
 
     loadRecipe();
-  }, [recipeId]);
-
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    return d.toISOString().split("T")[0];
-  }, []);
+  }, [recipeId, fetchRecipeById, getRecipeById]);
 
   const handleRegisterMeal = async () => {
     if (!recipe) {
@@ -66,13 +60,12 @@ export default function RecipeDetail() {
     }
 
     const success = await addMeal({
-      recipe: recipe,
-      foods: [],
+      recipeId: recipe.id,
+      foodIds: [],
       quantity: "1인분",
-      consumedAt: todayStr,
-      registeredAt: todayStr,
-      notes: undefined,
-      mealType: undefined,
+      consumedAt: new Date().toISOString(),
+      notes: recipe.recipeName,
+      mealType: null,
     });
 
     if (success) {
@@ -94,21 +87,27 @@ export default function RecipeDetail() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Recipe");
+                }
+              }}
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>레시피 상세</Text>
-            <View style={styles.headerRightPlaceholder} />
+            <View style={styles.headerRight} />
           </View>
 
           <ScrollView
             style={styles.content}
             showsVerticalScrollIndicator={false}
           >
-            {isLoading ? (
+            {isLoading && !recipe ? (
               <LoadingSpinner message="레시피를 불러오는 중..." />
-            ) : error ? (
+            ) : error && !recipe ? (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{error}</Text>
               </View>
@@ -171,23 +170,19 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    marginLeft: -8,
   },
   backButtonText: {
-    fontSize: FontSizes.xl,
-    color: Colors.text,
-    fontWeight: "bold",
+    fontSize: FontSizes.lg,
+    color: Colors.primary,
+    fontWeight: "600",
   },
   headerTitle: {
     fontSize: FontSizes.xl,
     fontWeight: "bold",
-    color: Colors.text,
-    flex: 1,
-    textAlign: "center",
+    color: Colors.textPrimary,
   },
-  headerRightPlaceholder: {
-    width: 32,
-    height: 32,
+  headerRight: {
+    width: 60, // 뒤로 버튼과 균형을 맞추기 위한 공간
   },
   content: {
     flex: 1,

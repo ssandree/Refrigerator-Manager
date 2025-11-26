@@ -274,10 +274,13 @@ export const recipeCardStyles = StyleSheet.create({
     position: "relative",
     width: 110,
     height: 110,
+    alignItems: "center",
+    justifyContent: "center",
   },
   image: {
-    width: "100%",
-    height: "100%",
+    width: "90%",
+    height: "90%",
+    borderRadius: 10,
     backgroundColor: Colors.backgroundDark,
   },
   titleRow: {
@@ -326,6 +329,8 @@ export const recipeCardStyles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 6,
     paddingVertical: 4,
     backgroundColor: Colors.backgroundDark,
@@ -341,21 +346,6 @@ export const recipeCardStyles = StyleSheet.create({
     fontSize: 10,
     color: Colors.textSecondary,
     fontWeight: "500",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  ingredientInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    flex: 1,
-  },
-  ingredientText: {
-    fontSize: 10,
-    color: Colors.textSecondary,
   },
   difficultyTag: {
     paddingHorizontal: 6,

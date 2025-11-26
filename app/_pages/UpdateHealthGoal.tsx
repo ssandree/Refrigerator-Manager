@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSelector";
-import { mockHealthGoals } from "../../src/data/mockHealthGoals";
+import { mockHealthGoals } from "../../src/data/HealthGoalConstants";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useHealthGoalStore } from "../../src/stores/useHealthGoalStore";
 import { Colors, FontSizes } from "../../src/styles/common";

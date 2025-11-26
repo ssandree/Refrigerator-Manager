@@ -1,10 +1,4 @@
-import {
-  Clock,
-  Flame,
-  Heart,
-  Target,
-  UtensilsCrossed,
-} from "lucide-react-native";
+import { Flame, Heart, Target, UtensilsCrossed } from "lucide-react-native";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
@@ -83,10 +77,6 @@ export default function RecipeCard({
             </Text>
           </View>
           <View style={recipeCardStyles.statItem}>
-            <Clock size={14} color={Colors.primary} strokeWidth={2} />
-            <Text style={recipeCardStyles.statText}>{recipe.time}분</Text>
-          </View>
-          <View style={recipeCardStyles.statItem}>
             <Target
               size={14}
               color={getHealthColor(recipe.healthGoal)}
@@ -94,17 +84,13 @@ export default function RecipeCard({
             />
             <Text style={recipeCardStyles.statText}>{recipe.healthGoal}%</Text>
           </View>
-        </View>
-
-        {/* 하단 정보 */}
-        <View style={recipeCardStyles.footer}>
-          <View style={recipeCardStyles.ingredientInfo}>
+          <View style={recipeCardStyles.statItem}>
             <UtensilsCrossed
               size={14}
               color={Colors.textSecondary}
               strokeWidth={2}
             />
-            <Text style={recipeCardStyles.ingredientText}>
+            <Text style={recipeCardStyles.statText}>
               {recipe.ingredientsOwned}/{recipe.totalIngredients} 재료 보유
             </Text>
           </View>

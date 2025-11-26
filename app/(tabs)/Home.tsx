@@ -1,14 +1,24 @@
 import TodayHealthGoal from "@/components/tabs/home/TodayNutritionGoal";
 import { tabsStyles } from "@/styles/tabs";
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollView, View } from "react-native";
 import QuickFoodAdd from "../../src/components/QuickFoodAdd";
 import ExpiringIngredientSection from "../../src/components/tabs/home/ExpiringIngredientCard";
 import Greeting from "../../src/components/tabs/home/Greeting";
 import RecipeRecommand from "../../src/components/tabs/home/RecipeRecommand";
 import TodayMeals from "../../src/components/tabs/home/TodayMeals";
+import { useDashboardStore } from "../../src/stores/useDashboardStore";
 
 export default function HomeScreen() {
+  const loadToday = useDashboardStore((state) => state.loadToday);
+  const todayData = useDashboardStore((state) => state.todayData);
+  const isDashboardLoading = useDashboardStore((state) => state.isLoading);
+  const dashboardError = useDashboardStore((state) => state.error);
+
+  useEffect(() => {
+    loadToday();
+  }, [loadToday]);
+
   return (
     <View style={tabsStyles.container}>
       <ScrollView
@@ -21,14 +31,24 @@ export default function HomeScreen() {
           <Greeting />
         </View>
 
-        {/* 오늘의 식사 목록 */}
-        <TodayMeals />
+        {/* 오늘의 식사 목록 (Dashboard.todayMeals 사용) */}
+        <TodayMeals
+          meals={todayData?.todayMeals ?? []}
+          isLoading={isDashboardLoading}
+          error={dashboardError}
+        />
 
-        {/* 오늘의 레시피 추천 */}
-        <RecipeRecommand />
+        {/* 오늘의 레시피 추천 (Dashboard.recipeRecommendations 사용) */}
+        <RecipeRecommand
+          recipes={todayData?.recipeRecommendations ?? []}
+          isLoading={isDashboardLoading}
+          error={dashboardError}
+        />
 
-        {/* 임박 재료 알림 */}
-        <ExpiringIngredientSection />
+        {/* 임박 재료 알림 (Dashboard.expiringIngredients 사용) */}
+        <ExpiringIngredientSection
+          ingredients={todayData?.expiringIngredients ?? []}
+        />
 
         {/* 건강 목표 */}
         <TodayHealthGoal />

@@ -151,9 +151,15 @@ export default function Notifications() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Home");
+                }
+              }}
             >
-              <Text style={styles.backButtonText}>← 뒤로</Text>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>알림</Text>
             <View style={styles.headerRight} />

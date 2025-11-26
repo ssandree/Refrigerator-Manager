@@ -1,6 +1,6 @@
 // Recipe service for managing recipes
-import { Recipe } from "../types/recipe";
-import apiClientInstance, { ApiResponse } from "./apiClient";
+import { Recipe, type RecipeFilterParams } from "../types/recipe";
+import apiClient, { ApiResponse } from "./apiClient";
 
 class RecipeService {
   private readonly basePath = "/recipes";
@@ -9,67 +9,74 @@ class RecipeService {
    * Get all recipes
    */
   async getAllRecipes(): Promise<ApiResponse<Recipe[]>> {
-    return await apiClientInstance.get<Recipe[]>(this.basePath);
+    // GET /recipes
+    return await apiClient.get<Recipe[]>(this.basePath);
   }
 
   /**
    * Get recipe by ID
    */
   async getRecipeById(recipeId: string): Promise<ApiResponse<Recipe>> {
-    return await apiClientInstance.get<Recipe>(`${this.basePath}/${recipeId}`);
+    // GET /recipes/{recipe_id}
+    return await apiClient.get<Recipe>(`${this.basePath}/${recipeId}`);
   }
 
   /**
    * Search recipes by query
    */
-  async searchRecipes(query: string) {
-    return await apiClientInstance.get<Recipe[]>(
+  async searchRecipes(query: string): Promise<ApiResponse<Recipe[]>> {
+    // GET /recipes/search/?q={query}
+    return await apiClient.get<Recipe[]>(
       `${this.basePath}/search/?q=${encodeURIComponent(query)}`
     );
   }
 
   /**
-   * Get recipes by tags
+   * Filter recipes
+   * - ingredients: 이 재료들을 모두 포함하는 레시피만 조회
+   * - expiringOnly: 임박 재료(3일 이내 만료) 포함 레시피만 조회
+   * - minCalories / maxCalories: 칼로리 범위 필터
+   *
+   * GET /recipes/filter
    */
-  async getRecipesByTags(tags: string[]) {
-    const queryParams = tags
-      .map((tag) => `tags=${encodeURIComponent(tag)}`)
-      .join("&");
-    return await apiClientInstance.get<Recipe[]>(
-      `${this.basePath}/filter-by-tags?${queryParams}`
-    );
-  }
+  async filterRecipes(
+    params: RecipeFilterParams
+  ): Promise<ApiResponse<Recipe[]>> {
+    const searchParams = new URLSearchParams();
 
-  /**
-   * Get recipes by difficulty
-   */
-  async getRecipesByDifficulty(difficulty: Recipe["difficulty"]) {
-    return await apiClientInstance.get<Recipe[]>(
-      `${this.basePath}/difficulty/${difficulty}`
-    );
-  }
+    if (params.ingredients && params.ingredients.length > 0) {
+      params.ingredients.forEach((ingredient) =>
+        searchParams.append("ingredients", ingredient)
+      );
+    }
 
-  /**
-   * Get recipes by time category
-   */
-  async getRecipesByTimeCategory(timeCategory: string) {
-    return await apiClientInstance.get<Recipe[]>(
-      `${this.basePath}/time/${timeCategory}`
-    );
+    if (typeof params.expiringOnly === "boolean") {
+      searchParams.append("expiringOnly", String(params.expiringOnly));
+    }
+
+    if (typeof params.minCalories === "number") {
+      searchParams.append("minCalories", String(params.minCalories));
+    }
+
+    if (typeof params.maxCalories === "number") {
+      searchParams.append("maxCalories", String(params.maxCalories));
+    }
+
+    const queryString = searchParams.toString();
+    const endpoint = queryString
+      ? `${this.basePath}/filter?${queryString}`
+      : `${this.basePath}/filter`;
+
+    return await apiClient.get<Recipe[]>(endpoint);
   }
 
   /**
    * Get recommended recipes based on user's ingredients
    */
-  async getRecommendedRecipes() {
-    return await apiClientInstance.get<Recipe[]>(`${this.basePath}/recommend`);
-  }
-
-  /**
-   * Get dashboard recommendations (상위 추천 레시피)
-   */
   async getDashboardRecommendations(): Promise<ApiResponse<Recipe[]>> {
-    return await apiClientInstance.get<Recipe[]>("/dashboard/recommendations");
+    // BE: GET /recipes/recommend → { success, data: Recipe[] }
+    // 대시보드/추천 레시피 용도로 재사용
+    return await apiClient.get<Recipe[]>(`${this.basePath}/recommend`);
   }
 }
 

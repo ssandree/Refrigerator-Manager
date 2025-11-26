@@ -1,3 +1,8 @@
+/**
+ * 사용처: Onboarding.tsx
+ * 역할: 온보딩 필수 항목 확인
+ */
+
 interface OnboardingProfile {
   sex?: string | null;
   age?: number | null;

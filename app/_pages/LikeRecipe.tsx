@@ -12,17 +12,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import RecipeCard from "../../src/components/tabs/recipe/RecipeCard";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
-import favoriteRecipeServiceApi from "../../src/services/favoriteRecipeService";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { Recipe } from "../../src/types/recipe";
-import { logger } from "../../src/utils/logger";
 
 export default function LikeRecipe() {
   const favoriteRecipes = useFavoriteRecipeStore(
     (state) => state.favoriteRecipes
   );
   const isLoading = useFavoriteRecipeStore((state) => state.isLoading);
+  const loadFavorites = useFavoriteRecipeStore((state) => state.loadFavorites);
   const toggleFavorite = useFavoriteRecipeStore(
     (state) => state.toggleFavorite
   );
@@ -30,58 +29,18 @@ export default function LikeRecipe() {
 
   useStoreWithError(useFavoriteRecipeStore);
 
-  const fetchFavorites = useCallback(async (withSpinner: boolean = true) => {
-    if (withSpinner) {
-      useFavoriteRecipeStore.setState((state) => ({
-        ...state,
-        isLoading: true,
-      }));
-    }
-    try {
-      const response = await favoriteRecipeServiceApi.getAllFavorites();
-      if (response.success && response.data) {
-        useFavoriteRecipeStore.setState((state) => ({
-          ...state,
-          favoriteRecipes: response.data,
-          error: null,
-          lastSyncedAt: Date.now(),
-        }));
-      } else {
-        const message =
-          response.message ?? "즐겨찾기 레시피를 불러오지 못했습니다.";
-        useFavoriteRecipeStore.setState((state) => ({
-          ...state,
-          error: message,
-        }));
-      }
-    } catch (error) {
-      logger.error("Failed to load favorite recipes:", error);
-      useFavoriteRecipeStore.setState((state) => ({
-        ...state,
-        error: "즐겨찾기 목록을 불러오는 중 오류가 발생했습니다.",
-      }));
-    } finally {
-      if (withSpinner) {
-        useFavoriteRecipeStore.setState((state) => ({
-          ...state,
-          isLoading: false,
-        }));
-      }
-    }
-  }, []);
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await fetchFavorites(false);
+      await loadFavorites(true);
     } finally {
       setRefreshing(false);
     }
-  }, [fetchFavorites]);
+  }, [loadFavorites]);
 
   useEffect(() => {
-    fetchFavorites(true);
-  }, [fetchFavorites]);
+    loadFavorites(true);
+  }, [loadFavorites]);
 
   const renderRecipeCard = ({ item }: { item: Recipe }) => (
     <RecipeCard
@@ -94,7 +53,7 @@ export default function LikeRecipe() {
       }}
       onFavoriteToggle={async () => {
         await toggleFavorite(item);
-        await fetchFavorites(false);
+        await loadFavorites(true);
       }}
     />
   );
@@ -108,9 +67,15 @@ export default function LikeRecipe() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/MyInfo");
+                }
+              }}
             >
-              <Text style={styles.backButtonText}>← 뒤로</Text>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>좋아요한 레시피</Text>
             <View style={styles.headerRight} />

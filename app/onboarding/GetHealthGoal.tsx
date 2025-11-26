@@ -8,7 +8,7 @@ import { HealthGoalSelector } from "../../src/components/onboarding/HealthGoalSe
 import { OnboardingFooterButton } from "../../src/components/onboarding/OnboardingFooterButton";
 import { OnboardingProgress } from "../../src/components/onboarding/OnboardingProgress";
 import { OnboardingTitle } from "../../src/components/onboarding/OnboardingTitle";
-import { mockHealthGoals } from "../../src/data/mockHealthGoals";
+import { mockHealthGoals } from "../../src/data/HealthGoalConstants";
 import { useAuthStore } from "../../src/stores/useAuthStore";
 import {
   Colors,

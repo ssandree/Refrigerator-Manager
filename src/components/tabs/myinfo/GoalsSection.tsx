@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { mockHealthGoals } from "../../../data/mockHealthGoals";
+import { mockHealthGoals } from "../../../data/HealthGoalConstants";
 import { useHealthGoalStore } from "../../../stores/useHealthGoalStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";

@@ -1,4 +1,7 @@
-// 온보딩 데이터 임시 저장 유틸리티
+/**
+ * 사용처: GetSexAge.tsx, GetBmiActing.tsx, GetHealthGoal.tsx
+ * 역할: 온보딩 데이터 임시 저장
+ */
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 

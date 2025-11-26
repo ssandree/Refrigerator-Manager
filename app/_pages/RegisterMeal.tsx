@@ -20,6 +20,7 @@ export default function RegisterMeal() {
   const addMeal = useMealStore((s) => s.addMeal);
   const updateMeal = useMealStore((s) => s.updateMeal);
   const getMealById = useMealStore((s) => s.getMealById);
+  const fetchMealById = useMealStore((s) => s.fetchMealById);
   const meals = useMealStore((s) => s.meals);
   const { clearError } = useStoreWithError(useMealStore);
 
@@ -39,31 +40,85 @@ export default function RegisterMeal() {
   const [notes, setNotes] = useState<string>("");
 
   // mealId가 있으면 수정 모드로 동작
-  useEffect(() => {
-    if (mealId) {
-      const foundMeal = getMealById(mealId);
-      if (foundMeal) {
-        setMeal(foundMeal);
-        setMealType(foundMeal.mealType);
-        setQuantity(foundMeal.quantity);
-        setConsumedAt(foundMeal.consumedAt);
-        // notes에서 음식명과 메모 분리 (간단한 파싱)
-        const notesStr = foundMeal.notes || "";
-        if (notesStr.includes(" - ")) {
-          const [name, ...rest] = notesStr.split(" - ");
-          setFoodName(name);
-          setNotes(rest.join(" - "));
-        } else {
-          setFoodName(notesStr);
-          setNotes("");
-        }
-      } else {
-        Alert.alert("오류", "식사를 찾을 수 없습니다.", [
-          { text: "확인", onPress: () => router.back() },
-        ]);
-      }
+  const formatDateInputValue = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value.split("T")[0] ?? value;
     }
-  }, [mealId, meals, getMealById]);
+    return date.toISOString().split("T")[0];
+  };
+
+  useEffect(() => {
+    if (!mealId) return;
+
+    // 1차: 스토어에서 이미 로드된 식단을 찾기
+    const foundMeal = getMealById(mealId);
+    if (foundMeal) {
+      setMeal(foundMeal);
+      setMealType(foundMeal.mealType ?? undefined);
+      setQuantity(foundMeal.quantity ?? "1인분");
+      setConsumedAt(formatDateInputValue(foundMeal.consumedAt));
+      // notes에서 음식명과 메모 분리 (간단한 파싱)
+      const notesStr = foundMeal.notes || "";
+      if (notesStr.includes(" - ")) {
+        const [name, ...rest] = notesStr.split(" - ");
+        setFoodName(name);
+        setNotes(rest.join(" - "));
+      } else {
+        setFoodName(notesStr);
+        setNotes("");
+      }
+      return;
+    }
+
+    // 2차: 스토어에 없으면 서버에서 단건 조회
+    (async () => {
+      const remoteMeal = await fetchMealById(mealId);
+      if (!remoteMeal) {
+        Alert.alert("오류", "식사를 찾을 수 없습니다.", [
+          {
+            text: "확인",
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/Meal");
+              }
+            },
+          },
+        ]);
+        return;
+      }
+
+      setMeal(remoteMeal);
+      setMealType(remoteMeal.mealType ?? undefined);
+      setQuantity(remoteMeal.quantity ?? "1인분");
+      setConsumedAt(formatDateInputValue(remoteMeal.consumedAt));
+      const notesStr = remoteMeal.notes || "";
+      if (notesStr.includes(" - ")) {
+        const [name, ...rest] = notesStr.split(" - ");
+        setFoodName(name);
+        setNotes(rest.join(" - "));
+      } else {
+        setFoodName(notesStr);
+        setNotes("");
+      }
+    })();
+  }, [mealId, getMealById, fetchMealById]);
+
+  const toISODateTime = (value: string) => {
+    if (!value) {
+      return new Date().toISOString();
+    }
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      const fallback = new Date(value);
+      return Number.isNaN(fallback.getTime())
+        ? new Date().toISOString()
+        : fallback.toISOString();
+    }
+    return parsed.toISOString();
+  };
 
   const onSave = async () => {
     if (!quantity || !consumedAt) {
@@ -71,7 +126,6 @@ export default function RegisterMeal() {
       return;
     }
 
-    const nowStr = new Date().toISOString().split("T")[0];
     // 표시용: 리스트에서 음식명을 우선 보여주기 위해 notes에 음식명과 메모를 합쳐 저장
     const combinedNotes = foodName
       ? notes
@@ -84,33 +138,39 @@ export default function RegisterMeal() {
 
     const isEditMode = !!mealId && !!meal;
 
+    const consumedAtISO = toISODateTime(consumedAt);
+
     if (isEditMode) {
       // 수정 모드: PUT API 호출
       const success = await updateMeal(meal!.id, {
-        quantity,
-        consumedAt,
-        notes: combinedNotes,
-        mealType,
+        quantity: quantity || null,
+        notes: combinedNotes || null,
+        mealType: mealType ?? null,
       });
 
       if (success) {
         Alert.alert("성공", "식사 정보가 성공적으로 수정되었습니다!", [
           {
             text: "확인",
-            onPress: () => router.back(),
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/Meal");
+              }
+            },
           },
         ]);
       }
     } else {
       // 추가 모드: POST API 호출
       const success = await addMeal({
-        recipe: null,
-        foods: [],
-        quantity,
-        consumedAt,
-        registeredAt: nowStr,
-        notes: combinedNotes,
-        mealType,
+        recipeId: null,
+        foodIds: [],
+        quantity: quantity || null,
+        consumedAt: consumedAtISO,
+        notes: combinedNotes || null,
+        mealType: mealType ?? null,
       });
 
       // 성공 시 화면 이동 (에러는 store에서 처리되고 useStoreError 훅이 토스트로 표시함)
@@ -144,7 +204,13 @@ export default function RegisterMeal() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Meal");
+                }
+              }}
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>

@@ -1,7 +1,7 @@
 import { tabsStyles } from "@/styles/tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -11,10 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import recipeService from "../../../services/recipeService";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { Recipe } from "../../../types/recipe";
-import { logger } from "../../../utils/logger";
 import LoadingSpinner from "../../LoadingSpinner";
 
 interface RecipeCardData {
@@ -27,49 +25,31 @@ interface RecipeCardData {
   imageUrl: string;
 }
 
-export default function RecipeRecommand() {
-  const [recommendations, setRecommendations] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface RecipeRecommandProps {
+  recipes: Recipe[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export default function RecipeRecommand({
+  recipes,
+  isLoading,
+  error,
+}: RecipeRecommandProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // /dashboard/recommendations API 호출
-  useEffect(() => {
-    const loadRecommendations = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await recipeService.getDashboardRecommendations();
-        if (response.success && response.data) {
-          setRecommendations(response.data.slice(0, 8));
-        } else {
-          setError(
-            response.message || "레시피 추천을 불러오는데 실패했습니다."
-          );
-        }
-      } catch (err) {
-        logger.error("레시피 추천 로드 실패:", err);
-        setError("레시피 추천을 불러오는 중 오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadRecommendations();
-  }, []);
 
   // 상위 8개 레시피 데이터 변환
   const data = useMemo<RecipeCardData[]>(() => {
-    return recommendations.map((recipe: Recipe) => ({
+    return recipes.slice(0, 8).map((recipe: Recipe) => ({
       id: recipe.id,
       name: recipe.recipeName,
       desc: recipe.description || "",
       calories: recipe.calories,
-      time: recipe.time,
+      time: recipe.time ?? 0,
       owned: `${recipe.totalIngredients || 0} 재료`,
       imageUrl: recipe.imageUrl || "",
     }));
-  }, [recommendations]);
+  }, [recipes]);
 
   const screenWidth = Dimensions.get("window").width;
   const cardHorizontalMargin = 12;
@@ -77,7 +57,7 @@ export default function RecipeRecommand() {
   const cardWidth = (screenWidth - sidePadding * 2) * 0.85; // 카드 가로 길이를 줄임 (85%)
   const cardHeight = 280; // 카드 높이 증가
 
-  if (isLoading) {
+  if (isLoading && data.length === 0) {
     return (
       <View style={tabsStyles.section}>
         <Text style={tabsStyles.sectionTitle}>🍽️ 오늘의 레시피</Text>

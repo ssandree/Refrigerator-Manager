@@ -1,5 +1,5 @@
 import { Stack, router } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -11,9 +11,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import GoalCard from "../../src/components/weeklyAchieve/GoalCard";
 import HealthSummaryCard from "../../src/components/weeklyAchieve/HealthSummaryCard";
 import SectionHeader from "../../src/components/weeklyAchieve/SectionHeader";
+import { mockHealthGoals } from "../../src/data/HealthGoalConstants";
+import { convertActivityLevelToNumber } from "../../src/services/dashboardService";
 import { useAuthStore } from "../../src/stores/useAuthStore";
 import { useDashboardStore } from "../../src/stores/useDashboardStore";
+import { useStatisticsStore } from "../../src/stores/useStatisticsStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+
+// BMR 계산 (Mifflin-St Jeor Equation)
+function calculateBMR(
+  age: number | null | undefined,
+  sex: string | null | undefined,
+  weight: number | null | undefined,
+  height: number | null | undefined
+): number {
+  if (!age || !sex || !weight || !height) return 0;
+
+  // 남성: BMR = 10 × weight(kg) + 6.25 × height(cm) - 5 × age(years) + 5
+  // 여성: BMR = 10 × weight(kg) + 6.25 × height(cm) - 5 × age(years) - 161
+  const isMale = sex === "male" || sex === "남성";
+  const baseBMR = 10 * weight + 6.25 * height - 5 * age + (isMale ? 5 : -161);
+  return baseBMR;
+}
+
+// TDEE 계산 (BMR × Activity Level)
+function calculateTDEE(
+  bmr: number,
+  activityLevel: string | null | undefined
+): number {
+  if (bmr === 0) return 0;
+  const activityMultiplier = convertActivityLevelToNumber(activityLevel);
+  return bmr * activityMultiplier;
+}
 
 // BE에서 받아올 건강 목표 계획 타입 (임시 - BE API 연동 시 실제 타입으로 교체)
 export interface HealthGoalPlan {
@@ -34,27 +63,93 @@ export interface HealthGoalPlan {
 
 export default function WeeklyAchieveScreen() {
   const user = useAuthStore((state) => state.user);
-  const bmr = useDashboardStore((state) => state.bmr);
-  const tdee = useDashboardStore((state) => state.tdee);
-  const fetchMyBMR = useDashboardStore((state) => state.fetchMyBMR);
-  const fetchMyTDEE = useDashboardStore((state) => state.fetchMyTDEE);
   const dashboardLoading = useDashboardStore((state) => state.isLoading);
   const dashboardError = useDashboardStore((state) => state.error);
 
+  // 통계 스토어 바인딩
+  const weeklyStats = useStatisticsStore((state) => state.weeklyStats);
+  const statisticsLoading = useStatisticsStore((state) => state.isLoading);
+  const statisticsError = useStatisticsStore((state) => state.error);
+  const fetchWeeklyStats = useStatisticsStore(
+    (state) => state.fetchWeeklyStats
+  );
+
+  // 클라이언트 사이드에서 BMR/TDEE 계산
+  const bmr = useMemo(
+    () => calculateBMR(user?.age, user?.sex, user?.weight, user?.height),
+    [user?.age, user?.sex, user?.weight, user?.height]
+  );
+
+  const tdee = useMemo(
+    () => calculateTDEE(bmr, user?.activityLevel),
+    [bmr, user?.activityLevel]
+  );
+
   useEffect(() => {
-    fetchMyBMR();
-    fetchMyTDEE();
-  }, [fetchMyBMR, fetchMyTDEE]);
+    // 주간 통계: 기본으로 최근 7일을 조회
+    const today = new Date();
+    const start = new Date(today);
+    // 오늘 포함 지난 7일 (오늘 - 6일)
+    start.setDate(today.getDate() - 6);
+    const startDateISO = start.toISOString().split("T")[0];
+    fetchWeeklyStats(startDateISO);
+  }, [fetchWeeklyStats]);
 
-  // TODO: BE에서 건강 목표 계획 데이터를 받아옴
-  // const { data: plans, isLoading } = useHealthGoalPlans(selectedGoals);
-
-  // 임시: 빈 배열 (BE 연동 시 제거)
+  // HealthGoalConstants.ts + 통계 데이터를 기반으로 카드 구성
   const plans: (HealthGoalPlan & {
     goalTitle: string;
     color: string;
     id: number;
-  })[] = [];
+  })[] = useMemo(() => {
+    return mockHealthGoals.map((goal) => {
+      // 주간 평균 칼로리/영양소를 이용해 달성률 계산
+      const avgCalories = weeklyStats?.averageDailyCalories ?? 0;
+      const avgProtein = weeklyStats?.averageDailyProtein ?? 0;
+      const avgFat = weeklyStats?.averageDailyFat ?? 0;
+
+      const targetCalories = tdee ?? 0;
+      const calorieProgress =
+        targetCalories > 0 ? Math.min(1, avgCalories / targetCalories) : 0;
+
+      const overallProgress = calorieProgress;
+
+      const metrics =
+        weeklyStats && targetCalories > 0
+          ? [
+              {
+                label: "평균 일일 칼로리",
+                target: `${Math.round(targetCalories)} kcal`,
+                current: `${Math.round(avgCalories)} kcal`,
+                progress: calorieProgress,
+                note: "유지 칼로리 대비 섭취량",
+              },
+              {
+                label: "평균 일일 단백질",
+                target: "권장 섭취량은 개인에 따라 다릅니다",
+                current: `${Math.round(avgProtein)} g`,
+              },
+              {
+                label: "평균 일일 지방",
+                target: "권장 섭취량은 개인에 따라 다릅니다",
+                current: `${Math.round(avgFat)} g`,
+              },
+            ]
+          : [];
+
+      return {
+        goalType: goal.title,
+        title: goal.title,
+        summary: "",
+        overallProgress,
+        metrics,
+        recommendedFoods: [],
+        notes: [],
+        goalTitle: goal.title,
+        color: Colors.primary,
+        id: goal.id,
+      };
+    });
+  }, [weeklyStats, tdee]);
 
   return (
     <>
@@ -65,9 +160,15 @@ export default function WeeklyAchieveScreen() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/MyInfo");
+                }
+              }}
             >
-              <Text style={styles.backButtonText}>← 뒤로</Text>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>주간 목표 달성 현황</Text>
             <View style={styles.headerRight} />
@@ -78,11 +179,12 @@ export default function WeeklyAchieveScreen() {
             contentContainerStyle={styles.scrollContent}
           >
             <HealthSummaryCard
-              bmr={bmr ?? 0}
-              tdee={tdee ?? 0}
+              bmr={bmr}
+              tdee={tdee}
               sex={user?.sex}
               age={user?.age}
               weight={user?.weight}
+              height={user?.height}
               activityLevel={user?.activityLevel}
             />
 
@@ -93,6 +195,13 @@ export default function WeeklyAchieveScreen() {
             )}
             {dashboardError && (
               <Text style={styles.errorText}>{dashboardError}</Text>
+            )}
+
+            {statisticsLoading && (
+              <Text style={styles.loadingText}>주간 통계를 불러오는 중...</Text>
+            )}
+            {statisticsError && (
+              <Text style={styles.errorText}>{statisticsError}</Text>
             )}
 
             <SectionHeader

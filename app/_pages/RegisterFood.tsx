@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import { Food } from "../../src/data/mockFood";
 import {
   FoodCategory,
   FoodCategoryLabel,
@@ -23,6 +22,7 @@ import {
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useFridgeStore } from "../../src/stores/useFoodStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { Food } from "../../src/types/food";
 import { logger } from "../../src/utils/logger";
 
 export default function EditFood() {
@@ -46,7 +46,16 @@ export default function EditFood() {
         setFood(foundFood);
       } else {
         Alert.alert("오류", "재료를 찾을 수 없습니다.", [
-          { text: "확인", onPress: () => router.back() },
+          {
+            text: "확인",
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/Fridge");
+              }
+            },
+          },
         ]);
       }
     }
@@ -67,6 +76,13 @@ export default function EditFood() {
         storageLocation: food.storageLocation,
         alertBeforeDays: food.alertBeforeDays,
       });
+    } else {
+      // 새로 추가하는 경우 구매일을 오늘 날짜로 기본 설정
+      const today = new Date().toISOString().split("T")[0];
+      setFormData((prev) => ({
+        ...prev,
+        purchaseDate: prev.purchaseDate || today,
+      }));
     }
   }, [food]);
 
@@ -177,7 +193,13 @@ export default function EditFood() {
           Alert.alert("성공", "재료 정보가 성공적으로 수정되었습니다!", [
             {
               text: "확인",
-              onPress: () => router.back(),
+              onPress: () => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Fridge");
+                }
+              },
             },
           ]);
         }
@@ -201,7 +223,13 @@ export default function EditFood() {
           Alert.alert("성공", "재료가 성공적으로 추가되었습니다!", [
             {
               text: "확인",
-              onPress: () => router.back(),
+              onPress: () => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Fridge");
+                }
+              },
             },
           ]);
         }
@@ -238,7 +266,13 @@ export default function EditFood() {
               Alert.alert("삭제 완료", "재료가 삭제되었습니다.", [
                 {
                   text: "확인",
-                  onPress: () => router.back(),
+                  onPress: () => {
+                    if (router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace("/(tabs)/Fridge");
+                    }
+                  },
                 },
               ]);
             }
@@ -282,7 +316,13 @@ export default function EditFood() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/Fridge");
+                }
+              }}
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>

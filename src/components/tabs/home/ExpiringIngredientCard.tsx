@@ -4,9 +4,8 @@ import { AlertTriangle, Bell, CheckCircle, ChefHat } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SecondaryButton } from "../../../components/Buttons";
-import { Food } from "../../../data/mockFood";
-import { useFridgeStore } from "../../../stores/useFoodStore";
 import { Colors, commonStyles, FontSizes } from "../../../styles/common";
+import { Food } from "../../../types/food";
 
 interface ExpiringIngredientCardProps {
   name: string;
@@ -81,13 +80,17 @@ function ExpiringIngredientCard({
   );
 }
 
-export default function ExpiringIngredientSection() {
-  const foods = useFridgeStore((s) => s.foods);
+interface ExpiringIngredientSectionProps {
+  ingredients: Food[];
+}
 
+export default function ExpiringIngredientSection({
+  ingredients,
+}: ExpiringIngredientSectionProps) {
   // 3일 이하 임박 재료 필터링
   const getExpiringFoods = (): (Food & { daysLeft: number })[] => {
     const today = new Date();
-    return foods
+    return ingredients
       .map((food) => {
         const expiryDateStr = food.expiryDate;
         if (!expiryDateStr) {

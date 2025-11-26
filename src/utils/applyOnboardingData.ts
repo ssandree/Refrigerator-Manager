@@ -1,12 +1,15 @@
 // 온보딩 데이터를 사용자 정보에 적용하는 유틸리티
-import { mockHealthGoals } from "../data/mockHealthGoals";
+import { mockHealthGoals } from "../data/HealthGoalConstants";
 import { authService } from "../services/authService";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useHealthGoalStore } from "../stores/useHealthGoalStore";
 import { clearOnboardingData, getOnboardingData } from "./onboardingStorage";
 
 /**
- * 온보딩 데이터를 사용자 정보에 적용
+ * 사용처: GetHealthGoal.tsx, Signup.tsx
+ * 역할: 온보딩 데이터를 서버에 저장하고 사용자 정보 업데이트
+ */
+/**
  * @param userId - 사용자 ID
  * @returns 성공 여부
  */

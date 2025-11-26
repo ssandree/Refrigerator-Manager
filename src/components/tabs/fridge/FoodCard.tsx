@@ -1,10 +1,10 @@
 import { CheckCircle2, Circle } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Food } from "../../../data/mockFood";
 import { FoodCategoryColor } from "../../../enums/ingredientCategory";
 import { StorageLocation } from "../../../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from "../../../styles/common";
+import { Food } from "../../../types/food";
 
 interface FoodCardProps {
   food: Food;

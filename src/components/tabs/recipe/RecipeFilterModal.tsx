@@ -113,7 +113,7 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
             <Text style={styles.sectionTitle}>열량(kcal)</Text>
             <DualRangeSlider
               min={0}
-              max={5000}
+              max={15000}
               step={10}
               values={calorieRange}
               onChange={onSetCalorieRange}
@@ -153,54 +153,76 @@ function DualRangeSlider({
     setRightVal(values[1]);
   }, [values]);
 
-  const clamp = (v: number, lo: number, hi: number) =>
-    Math.max(lo, Math.min(hi, v));
-  const snap = (v: number) => Math.round(v / step) * step;
-  const valueToX = (v: number) => {
-    if (width <= 0) return 0;
-    return ((v - min) / (max - min)) * width;
-  };
-  const xToValue = (x: number) => {
-    if (width <= 0) return min;
-    const raw = min + (clamp(x, 0, width) / width) * (max - min);
-    return clamp(snap(raw), min, max);
-  };
+  const clampValue = React.useCallback(
+    (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v)),
+    []
+  );
 
-  const leftResponder = React.useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        // 터치 시작 시점의 초기 X 위치 저장
-        leftStartX.current = valueToX(leftVal);
-      },
-      onPanResponderMove: (_, g) => {
-        if (width <= 0) return;
-        // 초기 위치 + 이동 거리로 새로운 위치 계산
-        const newX = leftStartX.current + g.dx;
-        const newLeft = clamp(xToValue(newX), min, rightVal);
-        setLeftVal(newLeft);
-        onChange([newLeft, rightVal]);
-      },
-    })
-  ).current;
+  const snapToStep = React.useCallback(
+    (v: number) => Math.round(v / step) * step,
+    [step]
+  );
 
-  const rightResponder = React.useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        // 터치 시작 시점의 초기 X 위치 저장
-        rightStartX.current = valueToX(rightVal);
-      },
-      onPanResponderMove: (_, g) => {
-        if (width <= 0) return;
-        // 초기 위치 + 이동 거리로 새로운 위치 계산
-        const newX = rightStartX.current + g.dx;
-        const newRight = clamp(xToValue(newX), leftVal, max);
-        setRightVal(newRight);
-        onChange([leftVal, newRight]);
-      },
-    })
-  ).current;
+  const valueToX = React.useCallback(
+    (v: number) => {
+      if (width <= 0) return 0;
+      return ((v - min) / (max - min || 1)) * width;
+    },
+    [min, max, width]
+  );
+
+  const xToValue = React.useCallback(
+    (x: number) => {
+      if (width <= 0) return min;
+      const clampedX = clampValue(x, 0, width);
+      const raw = min + (clampedX / width) * (max - min);
+      const snapped = snapToStep(raw);
+      return clampValue(snapped, min, max);
+    },
+    [clampValue, snapToStep, width, min, max]
+  );
+
+  const leftResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderGrant: () => {
+          leftStartX.current = valueToX(leftVal);
+        },
+        onPanResponderMove: (_, gesture) => {
+          if (width <= 0) return;
+          const newX = leftStartX.current + gesture.dx;
+          const newLeft = clampValue(xToValue(newX), min, rightVal);
+          setLeftVal(newLeft);
+          onChange([newLeft, rightVal]);
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [clampValue, valueToX, xToValue, leftVal, rightVal, min, width, onChange]
+  );
+
+  const rightResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderGrant: () => {
+          rightStartX.current = valueToX(rightVal);
+        },
+        onPanResponderMove: (_, gesture) => {
+          if (width <= 0) return;
+          const newX = rightStartX.current + gesture.dx;
+          const newRight = clampValue(xToValue(newX), leftVal, max);
+          setRightVal(newRight);
+          onChange([leftVal, newRight]);
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [clampValue, valueToX, xToValue, leftVal, rightVal, max, width, onChange]
+  );
 
   const leftX = valueToX(leftVal);
   const rightX = valueToX(rightVal);

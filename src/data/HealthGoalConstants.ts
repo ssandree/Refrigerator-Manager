@@ -13,7 +13,6 @@ export const mockHealthGoals: HealthGoal[] = [
     title: "체지방 감량",
     description: "건강한 체지방 감소",
     icon: "trending-down-outline",
-    color: "#FF9800",
   },
   {
     id: 1003,

@@ -1,4 +1,7 @@
 // Dashboard 관련 API 서비스
+import type { Food } from "../types/food";
+import type { Meal } from "../types/meal";
+import type { Recipe } from "../types/recipe";
 import apiClient, { ApiResponse } from "./apiClient";
 
 /**
@@ -21,100 +24,35 @@ export function convertActivityLevelToNumber(
   return 1.2; // 기본값
 }
 
-// BMI 계산 요청/응답
-export interface BMIRequest {
-  weight: number; // kg
-  height: number; // cm
+// -----------------------------
+// Home Dashboard (FE 타입)
+// -----------------------------
+export interface TodayNutrition {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
-export interface BMIResponse {
-  bmi: number;
-  category: string;
-}
-
-// BMR 계산 요청/응답
-export interface BMRRequest {
-  age: number;
-  sex: string; // "male" or "female"
-  weight: number; // kg
-  height: number; // cm
-}
-
-export interface BMRResponse {
-  bmr: number;
-}
-
-// TDEE 계산 요청/응답
-export interface TDEERequest {
-  bmr: number;
-  activity_level: number; // 1.2, 1.375, 1.55, 1.725, 1.9
-}
-
-export interface TDEEResponse {
-  tdee: number;
+export interface HomeDashboard {
+  // 유통기한 임박 재료 목록
+  expiringIngredients: Food[];
+  // 추천 레시피 목록
+  recipeRecommendations: Recipe[];
+  // 오늘 등록된 식단 목록
+  todayMeals: Meal[];
+  todayNutrition: TodayNutrition;
 }
 
 class DashboardService {
   private readonly basePath = "/dashboard";
 
   /**
-   * GET /dashboard/today
+   * 홈 화면 대시보드 조회
+   * GET /dashboard/home
    */
-  async getTodayDashboard(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>(`${this.basePath}/today`);
-  }
-
-  /**
-   * BMI 계산
-   * POST /dashboard/calculator/bmi
-   */
-  async calculateBMI(data: BMIRequest): Promise<ApiResponse<BMIResponse>> {
-    return await apiClient.post<BMIResponse>(
-      `${this.basePath}/calculator/bmi`,
-      data
-    );
-  }
-
-  /**
-   * BMR 계산 (파라미터로)
-   * POST /dashboard/calculator/bmr
-   */
-  async calculateBMR(data: BMRRequest): Promise<ApiResponse<BMRResponse>> {
-    return await apiClient.post<BMRResponse>(
-      `${this.basePath}/calculator/bmr`,
-      data
-    );
-  }
-
-  /**
-   * 내 BMR 조회
-   * GET /dashboard/calculator/bmr/my
-   */
-  async getMyBMR(): Promise<ApiResponse<BMRResponse>> {
-    return await apiClient.get<BMRResponse>(
-      `${this.basePath}/calculator/bmr/my`
-    );
-  }
-
-  /**
-   * TDEE 계산 (파라미터로)
-   * POST /dashboard/calculator/tdee
-   */
-  async calculateTDEE(data: TDEERequest): Promise<ApiResponse<TDEEResponse>> {
-    return await apiClient.post<TDEEResponse>(
-      `${this.basePath}/calculator/tdee`,
-      data
-    );
-  }
-
-  /**
-   * 내 TDEE 조회
-   * GET /dashboard/calculator/tdee/my
-   */
-  async getMyTDEE(): Promise<ApiResponse<TDEEResponse>> {
-    return await apiClient.get<TDEEResponse>(
-      `${this.basePath}/calculator/tdee/my`
-    );
+  async getTodayDashboard(): Promise<ApiResponse<HomeDashboard>> {
+    return await apiClient.get<HomeDashboard>(`${this.basePath}/home`);
   }
 }
 

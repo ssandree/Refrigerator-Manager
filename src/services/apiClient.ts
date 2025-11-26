@@ -183,6 +183,13 @@ class ApiClient {
             message: backendResponse.message,
           };
         }
+
+        // success 필드는 있지만 data 필드가 없는 응답 (예: 삭제 성공 메시지)
+        return {
+          success: true,
+          data: undefined as T,
+          message: backendResponse.message,
+        };
       }
 
       // 백엔드 응답이 { success: true, data: T } 형식이지만 success 필드가 없는 경우 (호환성)

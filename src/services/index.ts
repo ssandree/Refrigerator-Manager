@@ -7,12 +7,14 @@ export {
   type User,
 } from "./authService";
 
+export { default as dashboardService } from "./dashboardService";
 export { favoriteRecipeService } from "./favoriteRecipeService";
 export { default as foodService } from "./foodService";
 export { healthGoalService } from "./healthGoalService";
 export { default as mealService } from "./mealService";
 export { default as notificationService } from "./notificationService";
 export { default as recipeService } from "./recipeService";
+export { default as statisticsService } from "./statisticsService";
 
 // Re-export types
 export type { ApiError, ApiResponse } from "./apiClient";

@@ -142,11 +142,11 @@ refrigerator/
 │   │   # (백엔드에서 계산 처리)
 │   │
 │   ├── data/               # Mock 데이터 (개발용)
-│   │   ├── mockFood.ts
 │   │   ├── mockHealthGoals.ts
 │   │   └── mockHealthMetrics.ts
 │   │
 │   ├── types/              # 전역 타입 정의
+│   │   ├── food.ts
 │   │   └── recipe.ts
 │   │
 │   ├── styles/             # 스타일 정의
@@ -441,7 +441,7 @@ npm run web
 **스토어별 Mock Fallback:**
 
 - `useRecipeStore`: API 기반(이제 Mock Fallback 없음)
-- `useFridgeStore`: API 실패 시 `mockFoods` 사용
+- `useFridgeStore`: 실시간 API 데이터 사용 (Mock Fallback 없음)
 - `useMealStore`: 사용자별 데이터이므로 빈 배열 반환
 
 **참고:** `fridgeService` → `foodService`로 네이밍 변경됨

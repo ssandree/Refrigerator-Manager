@@ -30,9 +30,15 @@ export default function NotiSettings() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/MyInfo");
+                }
+              }}
             >
-              <Text style={styles.backButtonText}>← 뒤로</Text>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>알림 설정</Text>
             <View style={styles.headerRight} />
@@ -220,7 +226,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 12,
   },
   settingItemContent: {

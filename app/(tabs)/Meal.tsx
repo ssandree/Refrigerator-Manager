@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import MealCardList from "../../src/components/tabs/meal/MealCardList";
 import TodayTotal from "../../src/components/tabs/meal/todaytotal";
+import { useMealStore } from "../../src/stores/useMealStore";
 import { Colors, createShadowStyle } from "../../src/styles/common";
 
 const summaryCardShadow = createShadowStyle({
@@ -48,6 +49,16 @@ export default function Meal() {
   const isTodayOrAfter = useMemo(() => {
     return selectedDateISO >= todayISO;
   }, [selectedDateISO, todayISO]);
+
+  // MealStore와 연결: 선택된 날짜의 식단을 서버에서 로드
+  const loadMealsByDate = useMealStore((s) => s.getMealsByDate);
+  const mealsLoading = useMealStore((s) => s.isLoading);
+  const mealsError = useMealStore((s) => s.error);
+
+  useEffect(() => {
+    // 화면이 열리거나 날짜가 바뀔 때마다 해당 날짜의 식단을 로드
+    loadMealsByDate(selectedDateISO);
+  }, [selectedDateISO, loadMealsByDate]);
 
   const goPrevDay = () => {
     if (isOneWeekAgo) return; // 일주일 전이면 더 이상 이전으로 이동 불가
@@ -122,10 +133,16 @@ export default function Meal() {
           <Text style={styles.addMealButtonText}>+ 식사 추가</Text>
         </TouchableOpacity>
 
+        {/* 식단 로딩/에러 상태 표시 */}
+        {mealsLoading && (
+          <Text style={styles.statusText}>식단 정보를 불러오는 중...</Text>
+        )}
+        {mealsError && <Text style={styles.errorText}>{mealsError}</Text>}
+
         {/* 리스트 분리 컴포넌트 */}
         <MealCardList dateISO={selectedDateISO} />
-        {/* 오늘의 총계 */}
-        <TodayTotal />
+        {/* 선택된 날짜의 총계 */}
+        <TodayTotal dateISO={selectedDateISO} />
       </ScrollView>
     </View>
   );
@@ -186,6 +203,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     ...summaryCardShadow,
+  },
+  statusText: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.error,
+    marginTop: 4,
+    marginBottom: 4,
   },
   summaryItem: {
     flexDirection: "row",

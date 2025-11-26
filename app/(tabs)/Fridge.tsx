@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Edit3, Trash2 } from "lucide-react-native";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -24,7 +24,6 @@ import {
   StorageLocation,
   StorageLocationLabel,
 } from "../../src/enums/storageLocation";
-import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useToggleArray } from "../../src/hooks/useToggleArray";
 import { useFridgeStore } from "../../src/stores/useFoodStore";
@@ -39,11 +38,11 @@ export default function FridgeScreen() {
   const removeFood = useFridgeStore((s) => s.removeFood);
 
   useStoreWithError(useFridgeStore);
-  // GET /foods API를 통해 현재 사용자의 음식 데이터 자동 로드
-  useAutoLoadData(foods, isLoading, loadFoods, {
-    checkLastSynced: true,
-    lastSyncedAt: lastSyncedAt,
-  });
+
+  // 초기 마운트 시 무조건 GET /foods 호출
+  useEffect(() => {
+    loadFoods({ force: true });
+  }, [loadFoods]);
 
   const [selectedCategories, setSelectedCategories] = useState<FoodCategory[]>(
     []

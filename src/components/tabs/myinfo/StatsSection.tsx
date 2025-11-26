@@ -1,9 +1,9 @@
 import { ChevronRight } from "lucide-react-native";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
 import { useFridgeStore } from "../../../stores/useFoodStore";
-import { useMealStore } from "../../../stores/useMealStore";
+import { useStatisticsStore } from "../../../stores/useStatisticsStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";
 
@@ -24,7 +24,9 @@ export default function StatsSection({
   const favoriteRecipes = useFavoriteRecipeStore(
     (state) => state.favoriteRecipes
   );
-  const meals = useMealStore((state) => state.meals);
+  const mealStats = useStatisticsStore((state) => state.mealStats);
+  const fetchMealStats = useStatisticsStore((state) => state.fetchMealStats);
+  const statisticsLoading = useStatisticsStore((state) => state.isLoading);
 
   // 등록된 재료 개수
   const registeredFoodsCount = foods.length;
@@ -32,17 +34,20 @@ export default function StatsSection({
   // 즐겨찾기 레시피 개수
   const favoriteRecipesCount = favoriteRecipes.length;
 
-  // 이번 주 식사 개수 계산
-  const weeklyMealCount = useMemo(() => {
-    const today = new Date();
-    const weekAgo = new Date(today);
-    weekAgo.setDate(today.getDate() - 7);
+  // 식사 통계 로드
+  useEffect(() => {
+    fetchMealStats();
+  }, [fetchMealStats]);
 
-    return meals.filter((meal) => {
-      const mealDate = new Date(meal.consumedAt);
-      return mealDate >= weekAgo && mealDate <= today;
-    }).length;
-  }, [meals]);
+  // 전체 식사 개수: 통계 API에서 가져오기
+  const totalMealCount = useMemo(() => {
+    // 통계 API에서 전체 식사 개수를 가져올 수 있으면 사용
+    if (mealStats?.totalMeals !== undefined) {
+      return mealStats.totalMeals;
+    }
+    // 로딩 중이거나 데이터가 없으면 0 표시
+    return 0;
+  }, [mealStats]);
 
   return (
     <View style={tabsStyles.section}>
@@ -68,8 +73,10 @@ export default function StatsSection({
           <Text style={styles.statLabel}>즐겨찾기 레시피</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{weeklyMealCount}</Text>
-          <Text style={styles.statLabel}>이번 주 식사</Text>
+          <Text style={styles.statNumber}>
+            {statisticsLoading ? "-" : totalMealCount}
+          </Text>
+          <Text style={styles.statLabel}>전체 식사</Text>
         </View>
       </View>
     </View>

@@ -66,6 +66,6 @@ export function hasActiveFilters(options: RecipeFilterOptions): boolean {
     selectedIngredients.length > 0 ||
     includeExpiring ||
     calorieRange[0] > 0 ||
-    calorieRange[1] < 5000 // 초기값이 [0, 5000]이므로 5000보다 작을 때만 활성화된 것으로 간주
+    calorieRange[1] < 15000 // 초기값이 [0, 15000]이므로 15000보다 작을 때만 활성화된 것으로 간주
   );
 }

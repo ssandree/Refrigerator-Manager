@@ -17,6 +17,20 @@ import { validateArray, validateSyncTimestamp } from "./storeUtils";
 // 초기값: 빈 배열 (서버에서 로드)
 const initialRecipes: Recipe[] = [];
 
+// 레시피 병합 헬퍼 함수
+const mergeRecipes = (
+  currentRecipes: Recipe[],
+  incomingRecipes: Recipe[]
+): Recipe[] => {
+  const recipeMap = new Map(
+    currentRecipes.map((recipe) => [recipe.id, recipe])
+  );
+  incomingRecipes.forEach((recipe) => {
+    recipeMap.set(recipe.id, recipe);
+  });
+  return Array.from(recipeMap.values());
+};
+
 // 스토어 상태와 액션 정의
 interface RecipeState {
   recipes: Recipe[];
@@ -31,8 +45,19 @@ interface RecipeState {
   removeRecipe: (id: string) => boolean;
   // 단건 조회
   getRecipeById: (id: string) => Recipe | undefined;
-  // 검색어로 조회
-  searchRecipes: (query: string) => Recipe[];
+  // 서버에서 단건 조회 (API 호출)
+  fetchRecipeById: (id: string) => Promise<Recipe | null>;
+  // 검색어로 조회 (서버 API 호출)
+  searchRecipes: (query: string) => Promise<Recipe[]>;
+  // 필터 조건으로 조회 (서버 API 호출)
+  filterRecipes: (params: {
+    ingredients?: string[];
+    expiringOnly?: boolean;
+    minCalories?: number;
+    maxCalories?: number;
+  }) => Promise<Recipe[]>;
+  // 대시보드 추천 레시피 조회
+  loadDashboardRecommendations: () => Promise<Recipe[]>;
   // 전체 초기화
   clearAllRecipes: () => void;
   clearError: () => void;
@@ -72,15 +97,151 @@ export const useRecipeStore = create<RecipeState>()(
         (error) => set({ error })
       ),
 
-      // ID로 단건 조회
+      // ID로 단건 조회 (로컬)
       getRecipeById: createGetEntityById<Recipe>(() => get().recipes),
 
-      // 검색어로 조회
-      searchRecipes: (query) => {
-        const lowerQuery = query.toLowerCase();
-        return get().recipes.filter((recipe) =>
-          recipe.recipeName.toLowerCase().includes(lowerQuery)
-        );
+      // 서버에서 단건 조회 (API 호출)
+      fetchRecipeById: async (id: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await recipeServiceApi.getRecipeById(id);
+          if (response.success && response.data) {
+            const recipe = response.data;
+            // 기존 레시피 목록에 추가/업데이트
+            const currentRecipes = get().recipes;
+            const existingIndex = currentRecipes.findIndex((r) => r.id === id);
+            const updatedRecipes =
+              existingIndex >= 0
+                ? currentRecipes.map((r) => (r.id === id ? recipe : r))
+                : [...currentRecipes, recipe];
+            set({
+              recipes: updatedRecipes,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return recipe;
+          } else {
+            const errorMessage =
+              response.message ?? "레시피를 찾을 수 없습니다.";
+            set({ error: errorMessage });
+            return null;
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "레시피를 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      // 검색어로 조회 (서버 API 호출)
+      searchRecipes: async (query: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await recipeServiceApi.searchRecipes(query);
+          if (response.success && response.data) {
+            const searchedRecipes = response.data;
+            // 검색 결과를 기존 레시피 목록에 병합
+            const currentRecipes = get().recipes;
+            const mergedRecipes = mergeRecipes(currentRecipes, searchedRecipes);
+            set({
+              recipes: mergedRecipes,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return searchedRecipes;
+          } else {
+            const errorMessage =
+              response.message ?? "레시피 검색에 실패했습니다.";
+            set({ error: errorMessage });
+            return [];
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "레시피 검색 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      // 필터 조건으로 조회 (서버 API 호출)
+      filterRecipes: async (params) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await recipeServiceApi.filterRecipes({
+            ingredients: params.ingredients,
+            expiringOnly: params.expiringOnly,
+            minCalories: params.minCalories,
+            maxCalories: params.maxCalories,
+          });
+          if (response.success && response.data) {
+            const filteredRecipes = response.data;
+            // 필터 결과를 기존 레시피 목록에 병합
+            const currentRecipes = get().recipes;
+            const mergedRecipes = mergeRecipes(currentRecipes, filteredRecipes);
+            set({
+              recipes: mergedRecipes,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return filteredRecipes;
+          } else {
+            const errorMessage =
+              response.message ?? "레시피 필터링에 실패했습니다.";
+            set({ error: errorMessage });
+            return [];
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "레시피 필터링 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      // 대시보드 추천 레시피 조회
+      loadDashboardRecommendations: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await recipeServiceApi.getDashboardRecommendations();
+          if (response.success && response.data) {
+            // 추천 레시피를 기존 레시피 목록에 병합
+            const currentRecipes = get().recipes;
+            const mergedRecipes = mergeRecipes(currentRecipes, response.data);
+            set({
+              recipes: mergedRecipes,
+              error: null,
+              lastSyncedAt: Date.now(),
+            });
+            return response.data;
+          } else {
+            const errorMessage =
+              response.message ?? "추천 레시피를 불러오는데 실패했습니다.";
+            set({ error: errorMessage });
+            return [];
+          }
+        } catch (error: unknown) {
+          const errorMessage = getErrorMessage(
+            error,
+            "추천 레시피를 불러오는 중 오류가 발생했습니다."
+          );
+          set({ error: errorMessage });
+          return [];
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       // 전체 초기화

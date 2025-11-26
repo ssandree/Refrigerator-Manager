@@ -1,6 +1,6 @@
 import { tabsStyles } from "@/styles/tabs";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { DimensionValue, StyleSheet, Text, View } from "react-native";
 import { useHealthGoalStore } from "../../../stores/useHealthGoalStore";
 import { useMealStore } from "../../../stores/useMealStore";
@@ -18,6 +18,12 @@ export default function HealthGoalStats() {
   const targets = useNutritionStore((s) => s.targets);
   const selectedGoals = useHealthGoalStore((s) => s.selectedGoals);
   const meals = useMealStore((s) => s.meals);
+  const loadMeals = useMealStore((s) => s.loadMeals);
+
+  // 컴포넌트 마운트 시 식사 데이터 로드
+  useEffect(() => {
+    loadMeals();
+  }, [loadMeals]);
 
   // 이번 주 식사 횟수 계산
   const weeklyMealCount = useMemo(() => {

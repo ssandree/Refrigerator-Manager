@@ -1,5 +1,11 @@
 // Meal service for managing meals/meals consumed by users
-import { Meal, MealStatistics } from "../stores/useMealStore";
+import {
+  Meal,
+  MealCreatePayload,
+  MealQueryParams,
+  MealStatistics,
+  MealUpdatePayload,
+} from "../types/meal";
 import apiClient, { ApiResponse } from "./apiClient";
 
 class MealService {
@@ -8,22 +14,36 @@ class MealService {
   /**
    * Get all meals for the current user
    */
-  async getAllMeals(): Promise<ApiResponse<Meal[]>> {
-    return await apiClient.get<Meal[]>(this.basePath);
-  }
+  async getMeals(params?: MealQueryParams): Promise<ApiResponse<Meal[]>> {
+    let endpoint = this.basePath;
+    if (params) {
+      const searchParams = new URLSearchParams();
+      if (params.date) {
+        searchParams.append("date", params.date);
+      }
+      if (params.startDate) {
+        searchParams.append("startDate", params.startDate);
+      }
+      if (params.endDate) {
+        searchParams.append("endDate", params.endDate);
+      }
+      // FE 타입은 mealType 이지만,
+      // BE FastAPI에서는 Query(alias="type") 로 정의되어 있어
+      // 실제 쿼리 키는 "type" 이어야 함
+      if (params.mealType) {
+        searchParams.append("type", params.mealType);
+      }
+      if (params.recipeId) {
+        searchParams.append("recipeId", params.recipeId);
+      }
 
-  /**
-   * Get meals by date range
-   */
-  async getMealsByDateRange(
-    startDate: string,
-    endDate: string
-  ): Promise<ApiResponse<Meal[]>> {
-    const params = new URLSearchParams({
-      startDate,
-      endDate,
-    });
-    return await apiClient.get<Meal[]>(`${this.basePath}/range?${params}`);
+      const queryString = searchParams.toString();
+      if (queryString) {
+        endpoint = `${endpoint}?${queryString}`;
+      }
+    }
+
+    return await apiClient.get<Meal[]>(endpoint);
   }
 
   /**
@@ -36,8 +56,8 @@ class MealService {
   /**
    * Create a new meal entry
    */
-  async createMeal(meal: Omit<Meal, "id">): Promise<ApiResponse<Meal>> {
-    return await apiClient.post<Meal>(this.basePath, meal);
+  async createMeal(payload: MealCreatePayload): Promise<ApiResponse<Meal>> {
+    return await apiClient.post<Meal>(this.basePath, payload);
   }
 
   /**
@@ -45,9 +65,9 @@ class MealService {
    */
   async updateMeal(
     mealId: string,
-    updatedMeal: Partial<Meal>
+    payload: MealUpdatePayload
   ): Promise<ApiResponse<Meal>> {
-    return await apiClient.put<Meal>(`${this.basePath}/${mealId}`, updatedMeal);
+    return await apiClient.put<Meal>(`${this.basePath}/${mealId}`, payload);
   }
 
   /**
@@ -57,29 +77,6 @@ class MealService {
     return await apiClient.delete<{ message: string }>(
       `${this.basePath}/${mealId}`
     );
-  }
-
-  /**
-   * Get meals filtered by meal type
-   */
-  async getMealsByType(
-    mealType: Meal["mealType"]
-  ): Promise<ApiResponse<Meal[]>> {
-    return await apiClient.get<Meal[]>(`${this.basePath}/type/${mealType}`);
-  }
-
-  /**
-   * Get meals by recipe ID
-   */
-  async getMealsByRecipe(recipeId: string): Promise<ApiResponse<Meal[]>> {
-    return await apiClient.get<Meal[]>(`${this.basePath}/recipe/${recipeId}`);
-  }
-
-  /**
-   * Get meals for a specific date
-   */
-  async getMealsByDate(date: string): Promise<ApiResponse<Meal[]>> {
-    return await apiClient.get<Meal[]>(`${this.basePath}/date/${date}`);
   }
 
   /**
