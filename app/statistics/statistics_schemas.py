@@ -1,12 +1,10 @@
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-# -----------------------------
-# Standard API Response Formats
-# -----------------------------
 
 class BaseResponse(BaseModel):
     success: bool = True
+    data: Optional[Any] = None
     message: Optional[str] = None
 
 

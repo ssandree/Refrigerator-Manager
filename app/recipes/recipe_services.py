@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta
+from typing import Iterable, Optional
+
 from sqlalchemy.orm import Session
+
+from app.food.food_models import Food
 from app.recipes.recipe_models import Recipe
 
 def get_all_recipes(db: Session):
@@ -19,19 +24,49 @@ def search_recipes(db: Session, query: str):
     ).all()
 
 
-def filter_by_tags(db: Session, tags: list):
-    from sqlalchemy import or_
-    # tags 리스트의 모든 태그가 포함된 레시피를 찾기 위해 각 태그별로 필터링
+def filter_recipes(
+    db: Session,
+    userId: str,
+    ingredients: Optional[Iterable[str]] = None,
+    expiring_only: bool = False,
+    min_calories: Optional[int] = None,
+    max_calories: Optional[int] = None,
+):
     query = db.query(Recipe)
-    for tag in tags:
-        query = query.filter(Recipe.tags.contains([tag]))
-    return query.all()
 
+    if min_calories is not None:
+        query = query.filter(Recipe.calories >= min_calories)
+    if max_calories is not None:
+        query = query.filter(Recipe.calories <= max_calories)
 
-def filter_by_difficulty(db: Session, difficulty: str):
-    return db.query(Recipe).filter(Recipe.difficulty == difficulty).all()
+    recipes = query.all()
 
+    if ingredients:
+        normalized = {item.strip() for item in ingredients if item and item.strip()}
+        if normalized:
+            recipes = [
+                recipe for recipe in recipes
+                if normalized.issubset(set(recipe.requiredfoods or []))
+            ]
 
-def filter_by_time_category(db: Session, time_category: str):
-    return db.query(Recipe).filter(Recipe.timeCategory == time_category).all()
+    if expiring_only:
+        today = datetime.utcnow().date()
+        threshold = today + timedelta(days=3)
+        expiring_foods = db.query(Food).filter(
+            Food.userId == userId,
+            Food.expiryDate.isnot(None),
+            Food.expiryDate >= today,
+            Food.expiryDate <= threshold
+        ).all()
+        expiring_names = {food.name for food in expiring_foods}
+
+        if not expiring_names:
+            recipes = []
+        else:
+            recipes = [
+                recipe for recipe in recipes
+                if expiring_names.intersection(set(recipe.requiredfoods or []))
+            ]
+
+    return recipes
 

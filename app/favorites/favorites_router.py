@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user
@@ -12,7 +12,6 @@ from app.favorites.favorites_services import (
     add_favorite,
     remove_favorite,
     is_favorite,
-    filter_favorites_by_tags,
     validate_recipe_exists
 )
 from app.favorites.favorites_schemas import (
@@ -73,18 +72,3 @@ def delete(recipeId: str, userId=Depends(get_current_user), db: Session = Depend
     if not removed:
         raise HTTPException(status_code=404, detail="NOT_FAVORITED")
     return DeleteFavoriteResponse(message="즐겨찾기에서 제거되었습니다")
-
-
-# -----------------------------
-# Filter by Tags
-# -----------------------------
-@router.get("/filter-by-tags", response_model=RecipeListResponse)
-def filter_by_tags(
-    tags: list[str] = Query(..., description="tags"),
-    userId=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    recipes = filter_favorites_by_tags(db, userId, tags)
-    return RecipeListResponse(
-        data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
-    )

@@ -1,45 +1,30 @@
-from pydantic import BaseModel
-from typing import Optional, List
+# app/health_goals/health_schemas.py
 
+from pydantic import BaseModel
+from typing import List, Optional
+
+# -----------------------------
+# Basic Goal Response
+# -----------------------------
 class HealthGoalResponse(BaseModel):
     id: int
     title: str
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    color: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
-
-class HealthGoalCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    color: Optional[str] = None
-
-
-class SetUserGoalsRequest(BaseModel):
-    goalIds: list[int]
-
-
-# -----------------------------
-# Standard API Response Formats
-# -----------------------------
-
-class BaseResponse(BaseModel):
+# 사용자가 목표를 여러 개 선택할 때
+class HealthGoalListResponse(BaseModel):
     success: bool = True
-    message: Optional[str] = None
-
-
-class SingleHealthGoalResponse(BaseResponse):
-    data: HealthGoalResponse
-
-
-class HealthGoalListResponse(BaseResponse):
     data: List[HealthGoalResponse]
 
+# 단일 목표 반환
+class SingleHealthGoalResponse(BaseModel):
+    success: bool = True
+    data: HealthGoalResponse
 
-class DeleteResponse(BaseResponse):
+# Set user goals
+class SetUserGoalsRequest(BaseModel):
+    goalIds: List[int]
+
+# Delete response
+class DeleteResponse(BaseModel):
+    success: bool = True
     message: str
-

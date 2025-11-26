@@ -83,8 +83,6 @@ def recommend_recipes(db: Session, userId: str):
                 "matchedFoods": matched_foods
             },
             "imageUrl": recipe.imageUrl,
-            "tags": recipe.tags,
-            "difficulty": recipe.difficulty,
         })
 
     # 점수 높은 순으로 정렬

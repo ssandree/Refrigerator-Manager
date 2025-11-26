@@ -11,17 +11,15 @@ from app.meals.meal_schemas import (
     DeleteResponse
 )
 from app.meals.meal_services import (
-    get_all_meals,
-    get_meals_by_date_range,
-    get_meals_by_date,
+    query_meals,
     get_meal_by_id,
     create_meal,
     update_meal,
     delete_meal,
-    get_meals_by_type,
-    get_meals_by_recipe,
-    get_statistics
+    validate_recipe_exists,
+    get_statistics,
 )
+from app.meals.meal_constants import VALID_MEAL_TYPES
 
 router = APIRouter(
     prefix="/meals",
@@ -31,71 +29,40 @@ router = APIRouter(
 
 
 # -----------------------------
-# Read - All
+# Read - Unified
 # -----------------------------
 @router.get("", response_model=MealListResponse)
-def find_all(userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    meals = get_all_meals(db, userId)
-    return MealListResponse(
-        data=[MealResponse.model_validate(meal) for meal in meals]
-    )
-
-
-# -----------------------------
-# Read - By Date Range
-# -----------------------------
-@router.get("/range", response_model=MealListResponse)
-def find_by_range(
-    startDate: str = Query(..., description="startDate"),
-    endDate: str = Query(..., description="endDate"),
+def find_all(
+    date: str | None = Query(None, description="특정 날짜 (YYYY-MM-DD)"),
+    startDate: str | None = Query(None, alias="startDate", description="조회 기간 시작일"),
+    endDate: str | None = Query(None, alias="endDate", description="조회 기간 종료일"),
+    mealType: str | None = Query(
+        None,
+        alias="type",
+        description="식사 타입 (breakfast, lunch, dinner, snack)",
+    ),
+    recipeId: str | None = Query(None, alias="recipeId", description="레시피 ID"),
     userId=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    meals = get_meals_by_date_range(db, userId, startDate, endDate)
-    return MealListResponse(
-        data=[MealResponse.model_validate(meal) for meal in meals]
-    )
-
-
-# -----------------------------
-# Read - By Date
-# -----------------------------
-@router.get("/date/{date}", response_model=MealListResponse)
-def find_by_date(date: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    meals = get_meals_by_date(db, userId, date)
-    return MealListResponse(
-        data=[MealResponse.model_validate(meal) for meal in meals]
-    )
-
-
-# -----------------------------
-# Read - By Type
-# -----------------------------
-@router.get("/type/{mealType}", response_model=MealListResponse)
-def find_by_type(mealType: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    from app.meals.meal_constants import VALID_MEAL_TYPES
-    if mealType not in VALID_MEAL_TYPES:
-        from fastapi import HTTPException
+    if mealType and mealType not in VALID_MEAL_TYPES:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid mealType. Must be one of {VALID_MEAL_TYPES}"
+            status_code=400,
+            detail=f"Invalid mealType. Must be one of {VALID_MEAL_TYPES}",
         )
-    meals = get_meals_by_type(db, userId, mealType)
-    return MealListResponse(
-        data=[MealResponse.model_validate(meal) for meal in meals]
+
+    if recipeId:
+        validate_recipe_exists(db, recipeId)
+
+    meals = query_meals(
+        db=db,
+        userId=userId,
+        date=date,
+        start_date=startDate,
+        end_date=endDate,
+        meal_type=mealType,
+        recipe_id=recipeId,
     )
-
-
-# -----------------------------
-# Read - By Recipe
-# -----------------------------
-@router.get("/recipe/{recipeId}", response_model=MealListResponse)
-def find_by_recipe(recipeId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    # 레시피 존재 여부 확인
-    from app.meals.meal_services import validate_recipe_exists
-    validate_recipe_exists(db, recipeId)
-    
-    meals = get_meals_by_recipe(db, userId, recipeId)
     return MealListResponse(
         data=[MealResponse.model_validate(meal) for meal in meals]
     )

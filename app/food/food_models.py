@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey
 import uuid
 from datetime import datetime
 from app.core.database import Base
@@ -19,14 +19,4 @@ class Food(Base):
     expiryDate = Column(Date, nullable=True)
     storageLocation = Column(String(100))
     alertBeforeDays = Column(Integer)
-    
-    # 영양 정보 필드들
-    calories_per_gram = Column(Float, nullable=True)
-    carbohydrates = Column(Float, nullable=True)
-    protein = Column(Float, nullable=True)
-    fat = Column(Float, nullable=True)
-    sodium = Column(Float, nullable=True)
-    vitamin_c = Column(Float, nullable=True)
-    vitamin_d = Column(Float, nullable=True)
-    zinc = Column(Float, nullable=True)
 

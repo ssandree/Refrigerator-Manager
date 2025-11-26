@@ -1,31 +1,36 @@
+# app/dashboard/dashboard_schemas.py
+
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
 
 # -----------------------------
-# Response Schemas
+# Nutrition Info
 # -----------------------------
-
-class NutritionInfo(BaseModel):
+class TodayNutrition(BaseModel):
     calories: int
     protein: int
     carbs: int
     fat: int
 
 
-class DashboardData(BaseModel):
-    todayNutrition: NutritionInfo
-    mealCount: int
+# -----------------------------
+# Home Dashboard
+# -----------------------------
+class HomeDashboard(BaseModel):
+    expiringIngredients: List[dict]
+    recipeRecommendations: List[dict]
+    todayMeals: List[dict]
+    todayNutrition: TodayNutrition
 
 
 # -----------------------------
-# Standard API Response Formats
+# Response Wrapper
 # -----------------------------
-
 class BaseResponse(BaseModel):
     success: bool = True
     message: Optional[str] = None
 
 
-class DashboardResponse(BaseResponse):
-    data: DashboardData
-
+class HomeDashboardResponse(BaseResponse):
+    data: HomeDashboard

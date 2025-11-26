@@ -1,0 +1,1079 @@
+# API 명세서 (Refrigerator Manager API)
+
+## 인증 (Authentication)
+**Base Path:** `/auth`
+
+### 회원가입
+- **POST** `/auth/register`
+- **설명:** 새 사용자 등록
+- **인증:** 불필요
+- **요청:**
+```json
+{
+  "name": "홍길동",
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": "uuid-string",
+      "name": "홍길동",
+      "email": "user@example.com",
+      "age": null,
+      "sex": null,
+      "weight": null,
+      "activityLevel": null,
+      "bmi": null
+    },
+    "token": "jwt-token-string"
+  }
+}
+```
+- **에러:** 400 (이미 존재하는 이메일 등)
+
+### 로그인
+- **POST** `/auth/login`
+- **설명:** 사용자 로그인
+- **인증:** 불필요
+- **요청:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": "uuid-string",
+      "name": "홍길동",
+      "email": "user@example.com",
+      "age": 30,
+      "sex": "male",
+      "weight": 70.5,
+      "activityLevel": "moderate",
+      "bmi": 22.5
+    },
+    "token": "jwt-token-string"
+  }
+}
+```
+- **에러:** 400 (잘못된 이메일/비밀번호)
+
+### 토큰 갱신
+- **POST** `/auth/refresh`
+- **설명:** 만료된 토큰 갱신
+- **인증:** 불필요 (만료된 토큰 허용)
+- **요청:**
+```json
+{
+  "token": "expired-jwt-token-string"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "user": {
+      "id": "uuid-string",
+      "name": "홍길동",
+      "email": "user@example.com",
+      "age": 30,
+      "sex": "male",
+      "weight": 70.5,
+      "activityLevel": "moderate",
+      "bmi": 22.5
+    },
+    "token": "new-jwt-token-string"
+  }
+}
+```
+- **에러:** 401 (유효하지 않은 토큰)
+
+### 현재 사용자 정보 조회
+- **GET** `/auth/me`
+- **설명:** 현재 로그인한 사용자 정보 조회
+- **인증:** 필요 (Bearer Token)
+- **응답:**
+```json
+{
+  "id": "uuid-string",
+  "name": "홍길동",
+  "email": "user@example.com",
+  "age": 30,
+  "sex": "male",
+  "weight": 70.5,
+  "activityLevel": "moderate",
+  "bmi": 22.5
+}
+```
+- **에러:** 404 (사용자 없음)
+
+### 사용자 정보 수정
+- **PUT** `/auth/user/{userId}`
+- **설명:** 사용자 정보 수정 (본인만 수정 가능)
+- **인증:** 필요 (Bearer Token)
+- **요청:**
+```json
+{
+  "name": "홍길동",
+  "age": 31,
+  "sex": "male",
+  "weight": 72.0,
+  "activityLevel": "high",
+  "bmi": 23.0
+}
+```
+- **응답:**
+```json
+{
+  "id": "uuid-string",
+  "name": "홍길동",
+  "email": "user@example.com",
+  "age": 31,
+  "sex": "male",
+  "weight": 72.0,
+  "activityLevel": "high",
+  "bmi": 23.0
+}
+```
+- **에러:** 403 (본인이 아님), 404 (사용자 없음)
+
+### 계정 삭제
+- **DELETE** `/auth/user/{userId}`
+- **설명:** 계정 삭제 (본인만 삭제 가능, 관련 데이터도 함께 삭제)
+- **인증:** 필요 (Bearer Token)
+- **응답:** `{"success": true, "message": "계정이 성공적으로 삭제되었습니다"}`
+- **에러:** 403 (본인이 아님), 404 (사용자 없음)
+
+---
+
+## 음식 관리 (Foods)
+**Base Path:** `/foods`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 음식 생성
+- **POST** `/foods`
+- **설명:** 새 음식 등록
+- **요청:**
+```json
+{
+  "imageUrl": "https://example.com/image.jpg",
+  "category": "채소",
+  "name": "양파",
+  "quantity": 3,
+  "weight": "500g",
+  "purchaseDate": "2024-01-15",
+  "expiryDate": "2024-01-25",
+  "storageLocation": "냉장실",
+  "alertBeforeDays": 3
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "imageUrl": "https://example.com/image.jpg",
+    "category": "채소",
+    "name": "양파",
+    "quantity": 3,
+    "weight": "500g",
+    "registeredAt": "2024-01-15T10:30:00",
+    "purchaseDate": "2024-01-15",
+    "expiryDate": "2024-01-25",
+    "storageLocation": "냉장실",
+    "alertBeforeDays": 3
+  }
+}
+```
+- **특징:** 
+  - purchaseDate 기본값 설정 (FE에서 필드 누락 시 자동 today 적용)
+  - userId 자동 설정 (get_current_user로)
+
+### 음식 목록 조회 (필터링)
+- **GET** `/foods`
+- **설명:** 음식 목록 조회 (다양한 필터 지원)
+- **Query Parameters:**
+  - `category` (optional): 카테고리 필터
+  - `location` (optional): 보관 장소 필터
+  - `expired` (optional, bool): 만료 여부 (true/false)
+  - `expiring` (optional, bool): 임박 여부
+  - `sort` (optional): 정렬 (예: "expiryDate ASC")
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string-1",
+      "imageUrl": "https://example.com/image1.jpg",
+      "category": "채소",
+      "name": "양파",
+      "quantity": 3,
+      "weight": "500g",
+      "registeredAt": "2024-01-15T10:30:00",
+      "purchaseDate": "2024-01-15",
+      "expiryDate": "2024-01-25",
+      "storageLocation": "냉장실",
+      "alertBeforeDays": 3
+    },
+    {
+      "id": "uuid-string-2",
+      "imageUrl": null,
+      "category": "육류",
+      "name": "닭가슴살",
+      "quantity": 2,
+      "weight": "300g",
+      "registeredAt": "2024-01-16T14:20:00",
+      "purchaseDate": "2024-01-16",
+      "expiryDate": "2024-01-20",
+      "storageLocation": "냉동실",
+      "alertBeforeDays": 2
+    }
+  ]
+}
+```
+- **특징:**
+  - Filter chaining 정확함
+  - expired / expiring 구분 매우 정확
+  - SQL Filter → Python Filter → 정렬 처리 순서 잘 잡힘
+  - sort nulls_last까지 들어간 점 매우 세심함
+  - userId로 자동 필터링 (본인 음식만 조회)
+
+### 음식 수정
+- **PUT** `/foods/{foodId}`
+- **설명:** 음식 정보 수정
+- **요청:**
+```json
+{
+  "quantity": 5,
+  "expiryDate": "2024-01-30",
+  "storageLocation": "냉동실"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "imageUrl": "https://example.com/image.jpg",
+    "category": "채소",
+    "name": "양파",
+    "quantity": 5,
+    "weight": "500g",
+    "registeredAt": "2024-01-15T10:30:00",
+    "purchaseDate": "2024-01-15",
+    "expiryDate": "2024-01-30",
+    "storageLocation": "냉동실",
+    "alertBeforeDays": 3
+  }
+}
+```
+- **에러:** 404 (FOOD_NOT_FOUND)
+- **특징:** Optional 필드만 업데이트하는 방식 정확함
+
+### 음식 단일 삭제
+- **DELETE** `/foods/{foodId}`
+- **설명:** 음식 삭제
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "음식이 삭제되었습니다"
+}
+```
+- **에러:** 404 (FOOD_NOT_FOUND)
+- **특징:** 유저 validation 포함한 점 굿
+
+### 음식 일괄 삭제
+- **DELETE** `/foods`
+- **설명:** 여러 음식 일괄 삭제
+- **요청:**
+```json
+{
+  "foodIds": ["uuid-string-1", "uuid-string-2", "uuid-string-3"]
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "3개의 음식이 삭제되었습니다",
+  "deletedCount": 3
+}
+```
+- **에러:** 400 (삭제할 음식 ID가 필요)
+- **특징:**
+  - 유저 id 기반 제한 → 다른 사람 음식 삭제 불가
+  - 보안적으로 정답
+
+---
+
+## 레시피 (Recipes)
+**Base Path:** `/recipes`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 레시피 전체 조회
+- **GET** `/recipes`
+- **설명:** 모든 레시피 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string-1",
+      "recipeName": "김치볶음밥",
+      "calories": 450,
+      "healthGoal": 1,
+      "imageUrl": "https://example.com/recipe1.jpg",
+      "requiredfoods": ["김치", "밥", "양파"],
+      "carbohydrates": 60.5,
+      "protein": 15.2,
+      "fat": 12.3,
+      "sodium": 1200.0,
+      "vitamin_c": 25.0,
+      "vitamin_d": null,
+      "zinc": 2.5
+    }
+  ]
+}
+```
+
+### 레시피 상세 조회
+- **GET** `/recipes/{recipe_id}`
+- **설명:** 특정 레시피 상세 정보 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "recipeName": "김치볶음밥",
+    "calories": 450,
+    "healthGoal": 1,
+    "imageUrl": "https://example.com/recipe1.jpg",
+    "requiredfoods": ["김치", "밥", "양파"],
+    "carbohydrates": 60.5,
+    "protein": 15.2,
+    "fat": 12.3,
+    "sodium": 1200.0,
+    "vitamin_c": 25.0,
+    "vitamin_d": null,
+    "zinc": 2.5
+  }
+}
+```
+- **에러:** 404 (RECIPE_NOT_FOUND)
+
+### 레시피 검색
+- **GET** `/recipes/search/?q={query}`
+- **설명:** 레시피 검색
+- **Query Parameters:**
+  - `q` (required): 검색어
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string",
+      "recipeName": "김치볶음밥",
+      "calories": 450,
+      "healthGoal": 1,
+      "imageUrl": "https://example.com/recipe1.jpg",
+      "requiredfoods": ["김치", "밥", "양파"],
+      "carbohydrates": 60.5,
+      "protein": 15.2,
+      "fat": 12.3,
+      "sodium": 1200.0,
+      "vitamin_c": 25.0,
+      "vitamin_d": null,
+      "zinc": 2.5
+    }
+  ]
+}
+```
+
+### 레시피 추천
+- **GET** `/recipes/recommend`
+- **설명:** 사용자 맞춤 레시피 추천
+- **응답:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid-string",
+      "recipeName": "김치볶음밥",
+      "calories": 450,
+      "healthGoal": 1,
+      "imageUrl": "https://example.com/recipe1.jpg",
+      "requiredfoods": ["김치", "밥", "양파"],
+      "carbohydrates": 60.5,
+      "protein": 15.2,
+      "fat": 12.3,
+      "sodium": 1200.0,
+      "vitamin_c": 25.0,
+      "vitamin_d": null,
+      "zinc": 2.5
+    }
+  ]
+}
+```
+- **특징:** 사용자의 냉장고 재료 기반 추천
+
+### 레시피 필터링
+- **GET** `/recipes/filter`
+- **설명:** 다양한 조건으로 레시피 필터링
+- **Query Parameters:**
+  - `ingredients` (optional, string[]): 이 재료들을 모두 포함하는 레시피만 조회
+  - `expiringOnly` (optional, bool, default: false): 임박 재료(3일 이내 만료) 포함 레시피만 조회
+  - `minCalories` (optional, int, ge=0): 최소 칼로리
+  - `maxCalories` (optional, int, ge=0): 최대 칼로리
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string",
+      "recipeName": "김치볶음밥",
+      "calories": 450,
+      "healthGoal": 1,
+      "imageUrl": "https://example.com/recipe1.jpg",
+      "requiredfoods": ["김치", "밥", "양파"],
+      "carbohydrates": 60.5,
+      "protein": 15.2,
+      "fat": 12.3,
+      "sodium": 1200.0,
+      "vitamin_c": 25.0,
+      "vitamin_d": null,
+      "zinc": 2.5
+    }
+  ]
+}
+```
+- **특징:** 사용자의 냉장고 재료와 연동하여 필터링
+
+---
+
+## 식사 기록 (Meals)
+**Base Path:** `/meals`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 식사 목록 조회
+- **GET** `/meals`
+- **설명:** 식사 기록 조회 (다양한 필터 지원)
+- **Query Parameters:**
+  - `date` (optional): 특정 날짜 (YYYY-MM-DD)
+  - `startDate` (optional): 조회 기간 시작일
+  - `endDate` (optional): 조회 기간 종료일
+  - `mealType` (optional, alias: "type"): 식사 타입 (breakfast, lunch, dinner, snack)
+  - `recipeId` (optional): 레시피 ID
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string",
+      "recipeId": "recipe-uuid",
+      "foodIds": ["food-uuid-1", "food-uuid-2"],
+      "quantity": "1인분",
+      "consumedAt": "2024-01-15T12:30:00",
+      "registeredAt": "2024-01-15T12:00:00",
+      "notes": "맛있었음",
+      "mealType": "lunch"
+    }
+  ]
+}
+```
+- **에러:** 400 (Invalid mealType)
+- **특징:** 
+  - recipeId가 있으면 validate_recipe_exists()로 존재 확인
+  - userId로 자동 필터링
+
+### 식사 상세 조회
+- **GET** `/meals/{mealId}`
+- **설명:** 특정 식사 기록 상세 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "recipeId": "recipe-uuid",
+    "foodIds": ["food-uuid-1", "food-uuid-2"],
+    "quantity": "1인분",
+    "consumedAt": "2024-01-15T12:30:00",
+    "registeredAt": "2024-01-15T12:00:00",
+    "notes": "맛있었음",
+    "mealType": "lunch"
+  }
+}
+```
+- **에러:** 404 (MEAL_NOT_FOUND)
+
+### 식사 기록 생성
+- **POST** `/meals`
+- **설명:** 새 식사 기록 추가
+- **요청:**
+```json
+{
+  "recipeId": "recipe-uuid",
+  "foodIds": ["food-uuid-1", "food-uuid-2"],
+  "quantity": "1인분",
+  "consumedAt": "2024-01-15T12:30:00",
+  "notes": "맛있었음",
+  "mealType": "lunch"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "recipeId": "recipe-uuid",
+    "foodIds": ["food-uuid-1", "food-uuid-2"],
+    "quantity": "1인분",
+    "consumedAt": "2024-01-15T12:30:00",
+    "registeredAt": "2024-01-15T12:00:00",
+    "notes": "맛있었음",
+    "mealType": "lunch"
+  }
+}
+```
+
+### 식사 기록 수정
+- **PUT** `/meals/{mealId}`
+- **설명:** 식사 기록 수정
+- **요청:**
+```json
+{
+  "quantity": "2인분",
+  "notes": "수정된 메모",
+  "mealType": "dinner"
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "recipeId": "recipe-uuid",
+    "foodIds": ["food-uuid-1", "food-uuid-2"],
+    "quantity": "2인분",
+    "consumedAt": "2024-01-15T12:30:00",
+    "registeredAt": "2024-01-15T12:00:00",
+    "notes": "수정된 메모",
+    "mealType": "dinner"
+  }
+}
+```
+- **에러:** 404 (MEAL_NOT_FOUND)
+
+### 식사 기록 삭제
+- **DELETE** `/meals/{mealId}`
+- **설명:** 식사 기록 삭제
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "식사가 삭제되었습니다"
+}
+```
+- **에러:** 404 (MEAL_NOT_FOUND)
+
+### 식사 통계
+- **GET** `/meals/statistics`
+- **설명:** 식사 관련 통계 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalCalories": 0,
+    "totalMeals": 30,
+    "averagePerMeal": 0
+  }
+}
+```
+
+---
+
+## 즐겨찾기 레시피 (Favorite Recipes)
+**Base Path:** `/favorite-recipes`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 즐겨찾기 목록 조회
+- **GET** `/favorite-recipes`
+- **설명:** 유저의 즐겨찾기 레시피 목록 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string",
+      "recipeName": "김치볶음밥",
+      "calories": 450,
+      "healthGoal": 1,
+      "imageUrl": "https://example.com/recipe1.jpg",
+      "requiredfoods": ["김치", "밥", "양파"],
+      "carbohydrates": 60.5,
+      "protein": 15.2,
+      "fat": 12.3,
+      "sodium": 1200.0,
+      "vitamin_c": 25.0,
+      "vitamin_d": null,
+      "zinc": 2.5
+    }
+  ]
+}
+```
+- **특징:**
+  - get_current_user()로 userId 자동 가져옴
+  - FavoriteRecipe 테이블에서 userId로 필터
+  - Recipe JOIN해서 FE에게 바로 쓸 수 있는 recipe list 반환
+
+### 즐겨찾기 확인
+- **GET** `/favorite-recipes/{recipeId}/check`
+- **설명:** 특정 recipe가 즐겨찾기인지 확인
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "isFavorite": true
+  }
+}
+```
+- **특징:**
+  - validate_recipe_exists()로 존재 확인
+  - is_favorite() 실행
+  - boolean 반환
+
+### 즐겨찾기 추가
+- **POST** `/favorite-recipes/{recipeId}`
+- **설명:** 즐겨찾기 추가
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "recipeName": "김치볶음밥",
+    "calories": 450,
+    "healthGoal": 1,
+    "imageUrl": "https://example.com/recipe1.jpg",
+    "requiredfoods": ["김치", "밥", "양파"],
+    "carbohydrates": 60.5,
+    "protein": 15.2,
+    "fat": 12.3,
+    "sodium": 1200.0,
+    "vitamin_c": 25.0,
+    "vitamin_d": null,
+    "zinc": 2.5
+  }
+}
+```
+- **특징:**
+  - 레시피 존재 검사
+  - add_favorite() 실행 (중복이면 그냥 반환)
+  - 해당 Recipe 정보를 data에 넣어 반환
+
+### 즐겨찾기 삭제
+- **DELETE** `/favorite-recipes/{recipeId}`
+- **설명:** 즐겨찾기 삭제
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "즐겨찾기에서 제거되었습니다"
+}
+```
+- **에러:** 404 (NOT_FAVORITED)
+- **특징:**
+  - remove_favorite()
+  - 없는 favorite인 경우 404
+  - 있으면 정상 삭제 후 메시지 반환
+
+---
+
+## 건강 목표 (Health Goals)
+**Base Path:** `/health-goals`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 사용자 선택 목표 조회
+- **GET** `/health-goals/user-selected`
+- **설명:** 사용자가 선택한 건강 목표 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "체중 감량"
+    },
+    {
+      "id": 2,
+      "title": "근육 증가"
+    }
+  ]
+}
+```
+- **특징:** userId로 필터링하여 사용자의 목표만 반환
+
+### 건강 목표 통계
+- **GET** `/health-goals/user-statistics`
+- **설명:** 사용자의 건강 목표 달성 통계
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "selectedGoals": 2,
+    "achievementRate": 0
+  }
+}
+```
+
+---
+
+## 알림 (Notifications)
+**Base Path:** `/notifications`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 알림 목록 조회
+- **GET** `/notifications`
+- **설명:** 알림 목록 조회 (필터링 및 페이지네이션 지원)
+- **Query Parameters:**
+  - `read` (optional, bool): 읽음 여부 필터
+  - `limit` (optional, int, default: 50): 페이지 크기
+  - `offset` (optional, int, default: 0): 오프셋
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": [
+    {
+      "id": "uuid-string",
+      "type": "expiry",
+      "title": "음식 만료 알림",
+      "message": "양파가 곧 만료됩니다",
+      "relatedfoodId": "food-uuid",
+      "relatedRecipeId": null,
+      "read": false,
+      "createdAt": "2024-01-15T10:30:00"
+    }
+  ]
+}
+```
+- **특징:** userId로 자동 필터링
+
+### 알림 상세 조회
+- **GET** `/notifications/{notiId}`
+- **설명:** 특정 알림 상세 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "type": "expiry",
+    "title": "음식 만료 알림",
+    "message": "양파가 곧 만료됩니다",
+    "relatedfoodId": "food-uuid",
+    "relatedRecipeId": null,
+    "read": false,
+    "createdAt": "2024-01-15T10:30:00"
+  }
+}
+```
+- **에러:** 404 (NOTIFICATION_NOT_FOUND)
+
+### 읽지 않은 알림 개수 조회
+- **GET** `/notifications/unread-count`
+- **설명:** 읽지 않은 알림 개수 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "unreadCount": 5
+  }
+}
+```
+
+### 알림 읽음 처리
+- **PATCH** `/notifications/{notiId}/read`
+- **설명:** 특정 알림을 읽음 처리
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "id": "uuid-string",
+    "type": "expiry",
+    "title": "음식 만료 알림",
+    "message": "양파가 곧 만료됩니다",
+    "relatedfoodId": "food-uuid",
+    "relatedRecipeId": null,
+    "read": true,
+    "createdAt": "2024-01-15T10:30:00"
+  }
+}
+```
+- **에러:** 404 (NOTIFICATION_NOT_FOUND)
+
+### 모든 알림 읽음 처리
+- **PATCH** `/notifications/read-all`
+- **설명:** 모든 알림을 읽음 처리
+- **응답:** `{"success": true, "message": "모든 알림이 읽음 처리되었습니다"}`
+
+### 알림 삭제
+- **DELETE** `/notifications/{notiId}`
+- **설명:** 알림 삭제
+- **응답:**
+```json
+{
+  "success": true,
+  "message": "알림이 삭제되었습니다"
+}
+```
+- **에러:** 404 (NOTIFICATION_NOT_FOUND)
+
+---
+
+## 대시보드 (Dashboard)
+**Base Path:** `/dashboard`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 홈 대시보드
+- **GET** `/dashboard/home`
+- **설명:** 홈 화면 전용 Dashboard API
+- **응답:**
+```json
+{
+  "success": true,
+  "message": null,
+  "data": {
+    "expiringIngredients": [
+      {
+        "id": "food-uuid",
+        "name": "양파",
+        "expiryDate": "2024-01-18",
+        "daysUntilExpiry": 3
+      }
+    ],
+    "recipeRecommendations": [
+      {
+        "id": "recipe-uuid",
+        "recipeName": "김치볶음밥",
+        "calories": 450,
+        "imageUrl": "https://example.com/recipe1.jpg"
+      }
+    ],
+    "todayMeals": [
+      {
+        "id": "meal-uuid",
+        "recipeName": "김치볶음밥",
+        "mealType": "lunch",
+        "consumedAt": "2024-01-15T12:30:00"
+      }
+    ],
+    "todayNutrition": {
+      "calories": 1800,
+      "protein": 120,
+      "carbs": 200,
+      "fat": 60
+    }
+  }
+}
+```
+- **특징:** 
+  - 사용자의 냉장고 상태, 임박 음식, 최근 식사 등 종합 정보 제공
+  - userId로 자동 필터링
+
+---
+
+## 통계 (Statistics)
+**Base Path:** `/statistics`
+**인증:** 모든 엔드포인트에 Bearer Token 필요
+
+### 식사 통계
+- **GET** `/statistics/meals`
+- **설명:** 식사 관련 통계 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalMeals": 30,
+    "mealsByType": {
+      "breakfast": 10,
+      "lunch": 10,
+      "dinner": 8,
+      "snack": 2
+    },
+    "averageCalories": 450,
+    "totalCalories": 13500
+  }
+}
+```
+- **특징:** userId로 자동 필터링
+
+### 일일 건강 통계
+- **GET** `/statistics/daily`
+- **설명:** 특정 날짜의 건강 통계 조회
+- **Query Parameters:**
+  - `date` (optional): 통계를 조회할 날짜 (ISO 포맷, 기본값: 오늘)
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "date": "2024-01-15",
+    "calories": 1800,
+    "protein": 120,
+    "carbohydrates": 200,
+    "fat": 60,
+    "sodium": 2000,
+    "vitamin_c": 50,
+    "vitamin_d": 10,
+    "zinc": 8
+  }
+}
+```
+- **특징:** 
+  - 칼로리, 영양소 섭취량 등 일일 통계
+  - userId로 자동 필터링
+
+### 주간 건강 통계
+- **GET** `/statistics/weekly`
+- **설명:** 주간 건강 통계 조회
+- **Query Parameters:**
+  - `startDate` (required): 주간 통계를 시작할 날짜 (ISO 포맷)
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "startDate": "2024-01-15",
+    "endDate": "2024-01-21",
+    "averageDailyCalories": 1800,
+    "averageDailyProtein": 120,
+    "averageDailyCarbs": 200,
+    "averageDailyFat": 60,
+    "dailyStats": [
+      {
+        "date": "2024-01-15",
+        "calories": 1800,
+        "protein": 120,
+        "carbohydrates": 200,
+        "fat": 60
+      }
+    ]
+  }
+}
+```
+- **특징:** 
+  - 시작일부터 7일간의 통계
+  - userId로 자동 필터링
+
+### 영양소 통계
+- **GET** `/statistics/nutrition`
+- **설명:** 기간별 영양소 통계 조회
+- **Query Parameters:**
+  - `startDate` (required): 기간 시작 날짜 (ISO 포맷)
+  - `endDate` (required): 기간 종료 날짜 (ISO 포맷)
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
+    "totalCalories": 54000,
+    "totalProtein": 3600,
+    "totalCarbohydrates": 6000,
+    "totalFat": 1800,
+    "averageDailyCalories": 1742,
+    "averageDailyProtein": 116,
+    "averageDailyCarbs": 194,
+    "averageDailyFat": 58,
+    "nutritionBreakdown": {
+      "protein": 30,
+      "carbohydrates": 50,
+      "fat": 20
+    }
+  }
+}
+```
+- **특징:** 
+  - 지정된 기간의 영양소 섭취 통계
+  - userId로 자동 필터링
+
+---
+
+## 공통 사항
+
+### 인증
+- 대부분의 API는 Bearer Token 인증 필요
+- `Authorization: Bearer {token}` 헤더로 전달
+- 토큰은 `/auth/login` 또는 `/auth/register`에서 받을 수 있음
+
+### 에러 응답
+- **400:** 잘못된 요청 (Bad Request)
+- **401:** 인증 실패 (Unauthorized)
+- **403:** 권한 없음 (Forbidden)
+- **404:** 리소스 없음 (Not Found)
+
+### 공통 응답 형식
+- 대부분의 API는 `success`, `data`, `message` 필드를 포함한 일관된 응답 형식 사용
+- 리스트 응답: `{data: [...]}`
+- 단일 항목 응답: `{data: {...}}`
+- 삭제/업데이트 응답: `{success: true, message: "..."}`
+
+### 보안
+- 모든 사용자 데이터는 userId로 자동 필터링
+- 본인 데이터만 조회/수정/삭제 가능
+- 다른 사용자의 데이터 접근 시 403 또는 404 에러 반환
+

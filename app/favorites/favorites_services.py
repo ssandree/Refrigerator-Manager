@@ -60,12 +60,3 @@ def is_favorite(db: Session, userId: str, recipeId: str):
 
     return fav is not None
 
-
-def filter_favorites_by_tags(db: Session, userId: str, tags: list):
-    return db.query(Recipe).join(
-        FavoriteRecipe, Recipe.id == FavoriteRecipe.recipeId
-    ).filter(
-        FavoriteRecipe.userId == userId,
-        Recipe.tags.contains(tags)
-    ).all()
-

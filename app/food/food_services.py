@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.food.food_models import Food
-from datetime import datetime, date, timedelta
+from datetime import date
 
 def create_food(db: Session, userId: str, data):
     new_food = Food(
@@ -10,18 +10,10 @@ def create_food(db: Session, userId: str, data):
         name=data.name,
         quantity=data.quantity,
         weight=data.weight,
-        purchaseDate=data.purchaseDate,
+        purchaseDate=data.purchaseDate if data.purchaseDate is not None else date.today(),
         expiryDate=data.expiryDate,
         storageLocation=data.storageLocation,
         alertBeforeDays=data.alertBeforeDays,
-        calories_per_gram=data.calories_per_gram,
-        carbohydrates=data.carbohydrates,
-        protein=data.protein,
-        fat=data.fat,
-        sodium=data.sodium,
-        vitamin_c=data.vitamin_c,
-        vitamin_d=data.vitamin_d,
-        zinc=data.zinc,
     )
     db.add(new_food)
     db.commit()
@@ -30,6 +22,75 @@ def create_food(db: Session, userId: str, data):
 
 def get_all(db: Session, userId: str):
     return db.query(Food).filter(Food.userId == userId).all()
+
+
+def get_all_with_filters(
+    db: Session, 
+    userId: str,
+    category: str | None = None,
+    location: str | None = None,
+    expired: bool | None = None,
+    expiring: bool | None = None,
+    sort: str | None = None
+):
+    """통합 필터링 함수"""
+    query = db.query(Food).filter(Food.userId == userId)
+    
+    # 카테고리 필터
+    if category:
+        query = query.filter(Food.category == category)
+    
+    # 보관 장소 필터
+    if location:
+        query = query.filter(Food.storageLocation == location)
+    
+    # 만료 여부 필터
+    today = date.today()
+    if expired is not None:
+        if expired:
+            # 만료된 음식 (expiryDate가 오늘보다 이전)
+            query = query.filter(
+                Food.expiryDate.isnot(None),
+                Food.expiryDate < today
+            )
+        else:
+            # 만료되지 않은 음식 (expiryDate가 없거나 오늘 이후)
+            query = query.filter(
+                (Food.expiryDate.is_(None)) | (Food.expiryDate >= today)
+            )
+    
+    # 정렬
+    if sort:
+        # "expiryDate ASC" 또는 "expiryDate DESC" 형식
+        sort_parts = sort.strip().split()
+        if len(sort_parts) == 2:
+            column_name = sort_parts[0]
+            order = sort_parts[1].upper()
+            
+            if column_name == "expiryDate":
+                if order == "ASC":
+                    query = query.order_by(Food.expiryDate.asc().nulls_last())
+                elif order == "DESC":
+                    query = query.order_by(Food.expiryDate.desc().nulls_last())
+            elif column_name == "registeredAt":
+                if order == "ASC":
+                    query = query.order_by(Food.registeredAt.asc())
+                elif order == "DESC":
+                    query = query.order_by(Food.registeredAt.desc())
+    
+    foods = query.all()
+    
+    # 임박 여부 필터 (Python에서 처리 - 각 음식의 alertBeforeDays 값이 다르므로)
+    if expiring is not None and expiring:
+        filtered_foods = []
+        for food in foods:
+            if food.expiryDate and food.alertBeforeDays:
+                days_until_expiry = (food.expiryDate - today).days
+                if 0 <= days_until_expiry <= food.alertBeforeDays:
+                    filtered_foods.append(food)
+        foods = filtered_foods
+    
+    return foods
 
 def get_by_id(db: Session, food_id: str, userId: str):
     return db.query(Food).filter(
@@ -56,22 +117,6 @@ def update_food(db: Session, food: Food, data):
         food.storageLocation = data.storageLocation
     if data.alertBeforeDays is not None:
         food.alertBeforeDays = data.alertBeforeDays
-    if data.calories_per_gram is not None:
-        food.calories_per_gram = data.calories_per_gram
-    if data.carbohydrates is not None:
-        food.carbohydrates = data.carbohydrates
-    if data.protein is not None:
-        food.protein = data.protein
-    if data.fat is not None:
-        food.fat = data.fat
-    if data.sodium is not None:
-        food.sodium = data.sodium
-    if data.vitamin_c is not None:
-        food.vitamin_c = data.vitamin_c
-    if data.vitamin_d is not None:
-        food.vitamin_d = data.vitamin_d
-    if data.zinc is not None:
-        food.zinc = data.zinc
     
     db.commit()
     db.refresh(food)
@@ -96,19 +141,6 @@ def get_by_storage_location(db: Session, userId: str, location: str):
     return db.query(Food).filter(
         Food.userId == userId,
         Food.storageLocation == location
-    ).all()
-
-
-def get_expiring(db: Session, userId: str, days: int):
-    """만료 예정 음식 조회 (지정된 일수 이내에 만료되는 음식)"""
-    today = date.today()
-    expiry_threshold = today + timedelta(days=days)
-    
-    return db.query(Food).filter(
-        Food.userId == userId,
-        Food.expiryDate.isnot(None),
-        Food.expiryDate >= today,
-        Food.expiryDate <= expiry_threshold
     ).all()
 
 

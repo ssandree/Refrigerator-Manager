@@ -1,56 +1,102 @@
+# app/dashboard/dashboard_services.py
+
+from datetime import datetime, timedelta, date
 from sqlalchemy.orm import Session
-from datetime import datetime
+
+from app.food.food_models import Food
 from app.meals.meal_models import Meal
 from app.recipes.recipe_models import Recipe
-from app.food.food_models import Food
+from app.recipes.recommend_service import recommend_recipes
 
-def today_dashboard(db: Session, userId: str):
-    today = datetime.utcnow().date()
 
+# -----------------------------------------------------------
+# Home Dashboard (최적화 버전)
+# -----------------------------------------------------------
+def home_dashboard(db: Session, userId: str):
+    today = date.today()
+    start = datetime(today.year, today.month, today.day)
+    end = datetime(today.year, today.month, today.day, 23, 59, 59)
+
+    # -----------------------------
+    # 1) 오늘의 Meals 조회 (쿼리 1회)
+    # -----------------------------
     meals = db.query(Meal).filter(
         Meal.userId == userId,
-        Meal.consumedAt >= datetime(today.year, today.month, today.day),
-        Meal.consumedAt <= datetime(today.year, today.month, today.day, 23, 59, 59)
+        Meal.consumedAt >= start,
+        Meal.consumedAt <= end
+    ).order_by(Meal.consumedAt.desc()).all()
+
+    # 오늘 필요한 recipeId만 가져오기
+    recipe_ids = {m.recipeId for m in meals if m.recipeId}
+
+    # -----------------------------
+    # 2) 오늘 사용된 Recipe만 조회 (쿼리 1회)
+    # -----------------------------
+    recipes_map = {}
+    if recipe_ids:
+        recipes_map = {
+            r.id: r for r in db.query(Recipe).filter(Recipe.id.in_(recipe_ids)).all()
+        }
+
+    # -----------------------------
+    # 3) Expiring Foods (쿼리 1회)
+    # -----------------------------
+    threshold = today + timedelta(days=3)
+    expiring_foods = db.query(Food).filter(
+        Food.userId == userId,
+        Food.expiryDate.isnot(None),
+        Food.expiryDate >= today,
+        Food.expiryDate <= threshold
     ).all()
 
-    recipes = {r.id: r for r in db.query(Recipe).all()}
-    foods = {f.id: f for f in db.query(Food).filter(Food.userId == userId).all()}
+    expiring_result = [
+        {
+            "id": f.id,
+            "name": f.name,
+            "expiryDate": f.expiryDate.isoformat(),
+            "storageLocation": f.storageLocation
+        }
+        for f in expiring_foods
+    ]
 
-    total = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+    # -----------------------------
+    # 4) 식사 목록 payload
+    # -----------------------------
+    today_meals_payload = [
+        {
+            "id": m.id,
+            "consumedAt": m.consumedAt.isoformat(),
+            "mealType": m.mealType,
+            "recipeId": m.recipeId,
+            "notes": m.notes,
+        }
+        for m in meals
+    ]
 
-    for m in meals:
-        # 레시피가 있는 경우
-        if m.recipeId and m.recipeId in recipes:
-            recipe = recipes[m.recipeId]
-            total["calories"] += recipe.calories or 0
-            total["protein"] += int(recipe.protein or 0)
-            total["carbs"] += int(recipe.carbohydrates or 0)
-            total["fat"] += int(recipe.fat or 0)
-        
-        # 직접 음식을 사용한 경우
-        if m.foodIds:
-            for food_id in m.foodIds:
-                if food_id in foods:
-                    food = foods[food_id]
-                    # 음식의 영양 정보가 있는 경우 (calories_per_gram 기준으로 계산)
-                    if food.calories_per_gram and food.weight:
-                        try:
-                            weight_grams = float(food.weight.replace('g', '').replace('kg', '').strip())
-                            if 'kg' in food.weight.lower():
-                                weight_grams *= 1000
-                            calories = food.calories_per_gram * weight_grams
-                            total["calories"] += int(calories)
-                        except:
-                            pass
-                    if food.protein:
-                        total["protein"] += int(food.protein)
-                    if food.carbohydrates:
-                        total["carbs"] += int(food.carbohydrates)
-                    if food.fat:
-                        total["fat"] += int(food.fat)
+    # -----------------------------
+    # 5) 오늘 영양소 계산
+    # -----------------------------
+    macros = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
 
+    for meal in meals:
+        recipe = recipes_map.get(meal.recipeId)
+        if recipe:
+            macros["calories"] += recipe.calories or 0
+            macros["protein"] += int(recipe.protein or 0)
+            macros["carbs"] += int(recipe.carbohydrates or 0)
+            macros["fat"] += int(recipe.fat or 0)
+
+    # -----------------------------
+    # 6) 추천 레시피
+    # -----------------------------
+    recommended = recommend_recipes(db, userId)[:5]
+
+    # -----------------------------
+    # FINAL 반환 구조
+    # -----------------------------
     return {
-        "todayNutrition": total,
-        "mealCount": len(meals)
+        "expiringIngredients": expiring_result,
+        "recipeRecommendations": recommended,
+        "todayMeals": today_meals_payload,
+        "todayNutrition": macros,
     }
-

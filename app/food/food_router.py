@@ -3,14 +3,10 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.food.food_services import (
     create_food,
-    get_all,
+    get_all_with_filters,
     get_by_id,
     update_food,
     delete_food,
-    get_by_category,
-    get_by_storage_location,
-    get_expiring,
-    get_expired,
     bulk_delete_foods
 )
 from app.food.food_schemas import (
@@ -42,84 +38,30 @@ def create(data: FoodCreate, userId=Depends(get_current_user), db: Session = Dep
 
 
 # -----------------------------
-# Read - All
+# Read - All with Filters
 # -----------------------------
 @router.get("", response_model=FoodListResponse)
-def find_all(userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    foods = get_all(db, userId)
-    return FoodListResponse(
-        data=[FoodResponse.model_validate(food) for food in foods]
-    )
-
-
-# -----------------------------
-# Filter - By Category
-# -----------------------------
-@router.get("/category/{category}", response_model=FoodListResponse)
-def get_foods_by_category(
-    category: str,
+def find_all(
+    category: str | None = Query(None, description="카테고리 필터"),
+    location: str | None = Query(None, description="보관 장소 필터"),
+    expired: bool | None = Query(None, description="만료 여부 (true/false)"),
+    expiring: bool | None = Query(None, description="임박 여부"),
+    sort: str | None = Query(None, description="정렬 (예: expiryDate ASC)"),
     userId=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    foods = get_by_category(db, userId, category)
+    foods = get_all_with_filters(
+        db, 
+        userId, 
+        category=category,
+        location=location,
+        expired=expired,
+        expiring=expiring,
+        sort=sort
+    )
     return FoodListResponse(
         data=[FoodResponse.model_validate(food) for food in foods]
     )
-
-
-# -----------------------------
-# Filter - By Storage Location
-# -----------------------------
-@router.get("/location/{location}", response_model=FoodListResponse)
-def get_foods_by_storage_location(
-    location: str,
-    userId=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    foods = get_by_storage_location(db, userId, location)
-    return FoodListResponse(
-        data=[FoodResponse.model_validate(food) for food in foods]
-    )
-
-
-# -----------------------------
-# Filter - Expiring Foods
-# -----------------------------
-@router.get("/expiring", response_model=FoodListResponse)
-def get_expiring_foods(
-    days: int = Query(..., description="만료까지 남은 일수"),
-    userId=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    foods = get_expiring(db, userId, days)
-    return FoodListResponse(
-        data=[FoodResponse.model_validate(food) for food in foods]
-    )
-
-
-# -----------------------------
-# Filter - Expired Foods
-# -----------------------------
-@router.get("/expired", response_model=FoodListResponse)
-def get_expired_foods(
-    userId=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    foods = get_expired(db, userId)
-    return FoodListResponse(
-        data=[FoodResponse.model_validate(food) for food in foods]
-    )
-
-
-# -----------------------------
-# Read - One
-# -----------------------------
-@router.get("/{foodId}", response_model=SingleFoodResponse)
-def find_one(foodId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    food = get_by_id(db, foodId, userId)
-    if not food:
-        raise HTTPException(status_code=404, detail="FOOD_NOT_FOUND")
-    return SingleFoodResponse(data=FoodResponse.model_validate(food))
 
 
 # -----------------------------
@@ -136,22 +78,9 @@ def update(foodId: str, data: FoodUpdate, userId=Depends(get_current_user), db: 
 
 
 # -----------------------------
-# Delete - Single
+# Delete - Bulk (먼저 정의해야 경로 충돌 방지)
 # -----------------------------
-@router.delete("/{foodId}", response_model=DeleteResponse)
-def delete(foodId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
-    food = get_by_id(db, foodId, userId)
-    if not food:
-        raise HTTPException(status_code=404, detail="FOOD_NOT_FOUND")
-    
-    delete_food(db, food)
-    return DeleteResponse(message="음식이 삭제되었습니다")
-
-
-# -----------------------------
-# Delete - Bulk
-# -----------------------------
-@router.delete("/bulk", response_model=BulkDeleteResponse)
+@router.delete("", response_model=BulkDeleteResponse)
 def bulk_delete(
     data: BulkDeleteRequest,
     userId=Depends(get_current_user),
@@ -165,4 +94,17 @@ def bulk_delete(
         deletedCount=deleted_count,
         message=f"{deleted_count}개의 음식이 삭제되었습니다"
     )
+
+
+# -----------------------------
+# Delete - Single
+# -----------------------------
+@router.delete("/{foodId}", response_model=DeleteResponse)
+def delete(foodId: str, userId=Depends(get_current_user), db: Session = Depends(get_db)):
+    food = get_by_id(db, foodId, userId)
+    if not food:
+        raise HTTPException(status_code=404, detail="FOOD_NOT_FOUND")
+    
+    delete_food(db, food)
+    return DeleteResponse(message="음식이 삭제되었습니다")
 

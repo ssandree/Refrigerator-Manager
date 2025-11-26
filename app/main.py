@@ -6,9 +6,9 @@ from app.recipes.recipe_router import router as recipes_router
 from app.meals.meal_router import router as meals_router
 from app.favorites.favorites_router import router as favorites_router
 from app.health_goals.health_router import router as health_goals_router
-from app.health_goals.health_stats_router import router as health_stats_router
 from app.notifications.notification_router import router as notifications_router
 from app.dashboard.dashboard_router import router as dashboard_router
+from app.statistics.statistics_router import router as statistics_router
 
 app = FastAPI()
 
@@ -18,9 +18,9 @@ app.include_router(recipes_router)
 app.include_router(meals_router)
 app.include_router(favorites_router)
 app.include_router(health_goals_router)
-app.include_router(health_stats_router)
 app.include_router(notifications_router)
 app.include_router(dashboard_router)
+app.include_router(statistics_router)
 
 
 @app.get("/")

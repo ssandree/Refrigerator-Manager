@@ -6,15 +6,12 @@ from app.recipes.recipe_schemas import (
     RecipeResponse,
     SingleRecipeResponse,
     RecipeListResponse,
-    DeleteResponse
 )
 from app.recipes.recipe_services import (
     get_all_recipes,
     get_recipe_by_id,
     search_recipes,
-    filter_by_tags,
-    filter_by_difficulty,
-    filter_by_time_category
+    filter_recipes as filter_recipes_service,
 )
 from app.recipes.recommend_service import recommend_recipes
 
@@ -59,45 +56,48 @@ def search(q: str = Query(...), db: Session = Depends(get_db)):
 
 
 # -----------------------------
-# Filter by Tags
-# -----------------------------
-@router.get("/filter-by-tags", response_model=RecipeListResponse)
-def filter_tags(
-    tags: list[str] = Query(..., description="tags"), 
-    db: Session = Depends(get_db)
-):
-    recipes = filter_by_tags(db, tags)
-    return RecipeListResponse(
-        data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
-    )
-
-
-# -----------------------------
-# Filter by Difficulty
-# -----------------------------
-@router.get("/difficulty/{difficulty}", response_model=RecipeListResponse)
-def by_difficulty(difficulty: str, db: Session = Depends(get_db)):
-    recipes = filter_by_difficulty(db, difficulty)
-    return RecipeListResponse(
-        data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
-    )
-
-
-# -----------------------------
-# Filter by Time Category
-# -----------------------------
-@router.get("/time/{time_category}", response_model=RecipeListResponse)
-def by_time(time_category: str, db: Session = Depends(get_db)):
-    recipes = filter_by_time_category(db, time_category)
-    return RecipeListResponse(
-        data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
-    )
-
-
-# -----------------------------
 # Recommend
 # -----------------------------
-@router.post("/recommend")
+@router.get("/recommend")
 def recommend(userId=Depends(get_current_user), db: Session = Depends(get_db)):
     data = recommend_recipes(db, userId)
     return {"success": True, "data": data}
+
+
+# -----------------------------
+# Filter
+# -----------------------------
+@router.get("/filter", response_model=RecipeListResponse)
+def filter_recipes(
+    ingredients: list[str] | None = Query(
+        default=None,
+        description="이 재료들을 모두 포함하는 레시피만 조회"
+    ),
+    expiringOnly: bool = Query(
+        default=False,
+        description="임박 재료(3일 이내 만료) 포함 레시피만 조회"
+    ),
+    minCalories: int | None = Query(
+        default=None,
+        ge=0,
+        description="최소 칼로리"
+    ),
+    maxCalories: int | None = Query(
+        default=None,
+        ge=0,
+        description="최대 칼로리"
+    ),
+    userId=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    recipes = filter_recipes_service(
+        db=db,
+        userId=userId,
+        ingredients=ingredients,
+        expiring_only=expiringOnly,
+        min_calories=minCalories,
+        max_calories=maxCalories
+    )
+    return RecipeListResponse(
+        data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
+    )

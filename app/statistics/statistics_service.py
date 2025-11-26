@@ -1,10 +1,44 @@
+# app/statistics/statistics_service.py
+
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional
+import math
 from app.auth.auth_models import User
-from app.dashboard.calculator_service import calculate_bmr
 from app.meals.meal_models import Meal
+from app.meals.meal_services import get_statistics as get_meal_statistics
 from app.recipes.recipe_models import Recipe
+
+
+# -----------------------------
+# BMR/TDEE 계산 함수
+# -----------------------------
+
+def calculate_bmr(user: User) -> float:
+    """
+    기초대사량(BMR) 계산 - Mifflin-St Jeor 공식 사용
+    BMR = 10 × weight(kg) + 6.25 × height(cm) - 5 × age + (성별 상수)
+    """
+    weight = getattr(user, 'weight', None) or 70.0  # 기본값 70kg
+    age = getattr(user, 'age', None) or 30  # 기본값 30세
+    sex = getattr(user, 'sex', '').lower() if getattr(user, 'sex', None) else 'male'
+    
+    # height가 없으면 BMI와 weight로부터 역산 (기본 BMI 22 사용)
+    height = getattr(user, 'height', None)
+    if not height:
+        bmi = getattr(user, 'bmi', None) or 22.0
+        # BMI = weight(kg) / (height(m))^2
+        # height(m) = sqrt(weight / BMI)
+        # height(cm) = sqrt(weight / BMI) * 100
+        height = math.sqrt(weight / bmi) * 100
+    
+    # Mifflin-St Jeor 공식
+    if sex == 'female':
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+    else:  # male (기본값)
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5
+    
+    return max(bmr, 0.0)
 
 
 def calculate_tdee(user: User) -> float:
@@ -28,6 +62,7 @@ def get_nutrition_targets(goal_id: int, user: User) -> Dict[str, float]:
     건강 목표별 필요 영양소 계산
     
     건강 목표 ID 매핑:
+    - 1001: 체중 유지
     - 1002: 체지방 감량 (체중 감량)
     - 1003: 단백질 보충
     - 1004: 체중 증량
@@ -135,6 +170,10 @@ def get_nutrition_targets(goal_id: int, user: User) -> Dict[str, float]:
     return targets
 
 
+# -----------------------------
+# 통계 조회 함수
+# -----------------------------
+
 def get_meals_between(db: Session, userId: str, start, end):
     """특정 기간의 식사 조회"""
     return db.query(Meal).filter(
@@ -162,6 +201,51 @@ def calc_meal_nutrition(meal: Meal, recipe_lookup):
         "protein": recipe.protein or 0,
         "carbs": recipe.carbohydrates or 0,
         "fat": recipe.fat or 0
+    }
+
+
+def _parse_date(value: Optional[str]) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    try:
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError:
+        return datetime.strptime(value.split('T')[0], "%Y-%m-%d")
+
+
+def daily_health_stats(db: Session, userId: str, date_str: Optional[str]):
+    """특정 날짜의 건강 통계"""
+    target = _parse_date(date_str)
+    day = target.date()
+
+    day_start = datetime(day.year, day.month, day.day, 0, 0, 0)
+    day_end = datetime(day.year, day.month, day.day, 23, 59, 59)
+
+    meals = get_meals_between(db, userId, day_start, day_end)
+    recipes = {r.id: r for r in db.query(Recipe).all()}
+
+    macros = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+    meal_history = []
+
+    for meal in meals:
+        nutrition = calc_meal_nutrition(meal, recipes)
+        for key in macros.keys():
+            macros[key] += nutrition.get(key, 0)
+
+        meal_history.append({
+            "id": meal.id,
+            "consumedAt": meal.consumedAt.isoformat(),
+            "mealType": meal.mealType,
+            "notes": meal.notes,
+            "recipeId": meal.recipeId,
+        })
+
+    return {
+        "date": day.strftime("%Y-%m-%d"),
+        "calories": macros["calories"],
+        "macros": macros,
+        "mealCount": len(meals),
+        "mealHistory": meal_history,
     }
 
 
@@ -258,3 +342,13 @@ def nutrition_stats(db: Session, userId: str, start_date: str, end_date: str):
         "dailyBreakdown": daily_breakdown
     }
 
+
+__all__ = [
+    "get_meal_statistics",
+    "calculate_bmr",
+    "calculate_tdee",
+    "get_nutrition_targets",
+    "daily_health_stats",
+    "weekly_health_stats",
+    "nutrition_stats",
+]

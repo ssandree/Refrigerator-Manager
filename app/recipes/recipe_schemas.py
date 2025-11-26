@@ -4,15 +4,9 @@ from typing import List, Optional
 class RecipeBase(BaseModel):
     recipeName: str
     calories: int
-    time: int
     healthGoal: Optional[int]
-    timeCategory: Optional[str]
     imageUrl: Optional[str]
-    difficulty: Optional[str]
-    description: Optional[str]
     requiredfoods: Optional[List[str]] = []
-    tags: Optional[List[str]] = []
-    calories_per_gram: Optional[float] = None
     carbohydrates: Optional[float] = None
     protein: Optional[float] = None
     fat: Optional[float] = None

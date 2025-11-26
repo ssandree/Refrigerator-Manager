@@ -1,14 +1,10 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from datetime import datetime
+from typing import Optional, Tuple
 from app.meals.meal_models import Meal
 from app.recipes.recipe_models import Recipe
 from app.food.food_models import Food
 from fastapi import HTTPException
-
-def get_all_meals(db: Session, userId: str):
-    return db.query(Meal).filter(Meal.userId == userId).order_by(Meal.consumedAt.desc()).all()
-
 
 def get_meal_by_id(db: Session, meal_id: str, userId: str):
     return db.query(Meal).filter(
@@ -17,66 +13,53 @@ def get_meal_by_id(db: Session, meal_id: str, userId: str):
     ).first()
 
 
-def get_meals_by_date_range(db: Session, userId: str, start_date_str: str, end_date_str: str):
+def _parse_date(value: str) -> datetime:
+    """주어진 문자열을 datetime으로 변환 (시각 정보 없으면 날짜만 사용)."""
     try:
-        # 날짜 문자열을 datetime으로 변환
-        start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
-        end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
     except ValueError:
-        # ISO 형식이 아닌 경우 다른 형식 시도
         try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-            # 하루의 끝 시간으로 설정
-            end_date = end_date.replace(hour=23, minute=59, second=59)
+            return datetime.strptime(value, "%Y-%m-%d")
         except ValueError:
-            # 기본값으로 처리
-            start_date = datetime.strptime(start_date_str.split('T')[0], "%Y-%m-%d")
-            end_date = datetime.strptime(end_date_str.split('T')[0], "%Y-%m-%d")
-            end_date = end_date.replace(hour=23, minute=59, second=59)
-    
-    return db.query(Meal).filter(
-        Meal.userId == userId,
-        Meal.consumedAt >= start_date,
-        Meal.consumedAt <= end_date
-    ).order_by(Meal.consumedAt.desc()).all()
+            return datetime.strptime(value.split('T')[0], "%Y-%m-%d")
 
 
-def get_meals_by_date(db: Session, userId: str, date_str: str):
-    try:
-        # 날짜 문자열 파싱
-        if 'T' in date_str:
-            date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-        else:
-            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-        
-        start_datetime = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_datetime = date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
-    except ValueError:
-        # 기본 형식 시도
-        date_obj = datetime.strptime(date_str.split('T')[0], "%Y-%m-%d")
-        start_datetime = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_datetime = date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    return db.query(Meal).filter(
-        Meal.userId == userId,
-        Meal.consumedAt >= start_datetime,
-        Meal.consumedAt <= end_datetime
-    ).order_by(Meal.consumedAt.desc()).all()
+def _day_range(value: str) -> Tuple[datetime, datetime]:
+    date_obj = _parse_date(value)
+    start_datetime = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_datetime = date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return start_datetime, end_datetime
 
 
-def get_meals_by_type(db: Session, userId: str, mealType: str):
-    return db.query(Meal).filter(
-        Meal.userId == userId,
-        Meal.mealType == mealType
-    ).order_by(Meal.consumedAt.desc()).all()
+def query_meals(
+    db: Session,
+    userId: str,
+    date: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    meal_type: Optional[str] = None,
+    recipe_id: Optional[str] = None,
+):
+    query = db.query(Meal).filter(Meal.userId == userId)
 
+    if date:
+        start_dt, end_dt = _day_range(date)
+        query = query.filter(Meal.consumedAt >= start_dt, Meal.consumedAt <= end_dt)
+    else:
+        if start_date:
+            start_dt = _parse_date(start_date).replace(hour=0, minute=0, second=0, microsecond=0)
+            query = query.filter(Meal.consumedAt >= start_dt)
+        if end_date:
+            end_dt = _parse_date(end_date).replace(hour=23, minute=59, second=59, microsecond=999999)
+            query = query.filter(Meal.consumedAt <= end_dt)
 
-def get_meals_by_recipe(db: Session, userId: str, recipeId: str):
-    return db.query(Meal).filter(
-        Meal.userId == userId,
-        Meal.recipeId == recipeId
-    ).order_by(Meal.consumedAt.desc()).all()
+    if meal_type:
+        query = query.filter(Meal.mealType == meal_type)
+
+    if recipe_id:
+        query = query.filter(Meal.recipeId == recipe_id)
+
+    return query.order_by(Meal.consumedAt.desc()).all()
 
 
 def validate_recipe_exists(db: Session, recipe_id: str):
