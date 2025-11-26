@@ -20,9 +20,11 @@ import {
   StorageLocationLabel,
 } from "../../src/enums/storageLocation";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { useDateStore } from "../../src/stores/useDateStore";
 import { useFridgeStore } from "../../src/stores/useFoodStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { Food } from "../../src/types/food";
+import { addDaysInKorea } from "../../src/utils/dateUtils";
 import { logger } from "../../src/utils/logger";
 
 export default function EditFood() {
@@ -63,6 +65,9 @@ export default function EditFood() {
 
   const [formData, setFormData] = useState<Partial<Food>>({});
 
+  // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
+  const todayISO = useDateStore((s) => s.todayISO);
+
   // food가 로드되면 formData 초기화
   useEffect(() => {
     if (food) {
@@ -78,13 +83,12 @@ export default function EditFood() {
       });
     } else {
       // 새로 추가하는 경우 구매일을 오늘 날짜로 기본 설정
-      const today = new Date().toISOString().split("T")[0];
       setFormData((prev) => ({
         ...prev,
-        purchaseDate: prev.purchaseDate || today,
+        purchaseDate: prev.purchaseDate || todayISO,
       }));
     }
-  }, [food]);
+  }, [food, todayISO]);
 
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showStoragePicker, setShowStoragePicker] = useState(false);
@@ -101,8 +105,6 @@ export default function EditFood() {
       // 카테고리가 변경되면 보관 위치와 유통기한 자동 설정
       if (field === "category") {
         const category = value as FoodCategory;
-        const today = new Date();
-        const expiryDate = new Date(today);
 
         // 카테고리별 보관 위치 설정
         let storageLocation: StorageLocation;
@@ -130,32 +132,34 @@ export default function EditFood() {
           storageLocation = StorageLocation.ROOM_TEMP;
         }
 
-        // 카테고리별 유통기한 설정
+        // 카테고리별 유통기한 설정 (한국 시간 기준)
+        const todayISO = useDateStore.getState().todayISO;
+        let daysToAdd = 30;
         switch (category) {
           case FoodCategory.MEAT:
-            expiryDate.setDate(today.getDate() + 3);
+            daysToAdd = 3;
             break;
           case FoodCategory.FISH:
-            expiryDate.setDate(today.getDate() + 2);
+            daysToAdd = 2;
             break;
           case FoodCategory.VEGETABLE:
-            expiryDate.setDate(today.getDate() + 7);
+            daysToAdd = 7;
             break;
           case FoodCategory.FRUIT:
-            expiryDate.setDate(today.getDate() + 7);
+            daysToAdd = 7;
             break;
           case FoodCategory.DAIRY:
-            expiryDate.setDate(today.getDate() + 14);
+            daysToAdd = 14;
             break;
           case FoodCategory.DRINK:
-            expiryDate.setDate(today.getDate() + 14);
+            daysToAdd = 14;
             break;
           default:
-            expiryDate.setDate(today.getDate() + 30);
+            daysToAdd = 30;
         }
 
         newData.storageLocation = storageLocation;
-        newData.expiryDate = expiryDate.toISOString().split("T")[0];
+        newData.expiryDate = addDaysInKorea(todayISO, daysToAdd);
       }
 
       return newData;
@@ -210,9 +214,8 @@ export default function EditFood() {
           category: formData.category!,
           quantity: formData.quantity ?? null,
           weight: formData.weight!,
-          registeredAt: new Date().toISOString().split("T")[0],
-          purchaseDate:
-            formData.purchaseDate || new Date().toISOString().split("T")[0],
+          registeredAt: todayISO,
+          purchaseDate: formData.purchaseDate || todayISO,
           expiryDate: formData.expiryDate!,
           storageLocation: formData.storageLocation!,
           alertBeforeDays: formData.alertBeforeDays ?? 3,
@@ -555,22 +558,21 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
-    marginLeft: -8,
   },
   backButtonText: {
-    fontSize: FontSizes.xl,
-    color: Colors.text,
-    fontWeight: "bold",
+    fontSize: FontSizes.lg,
+    color: Colors.primary,
+    fontWeight: "600",
   },
   headerTitle: {
     fontSize: FontSizes.xl,

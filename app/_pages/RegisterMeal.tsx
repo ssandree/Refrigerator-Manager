@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -12,8 +12,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { useDateStore } from "../../src/stores/useDateStore";
 import { Meal, useMealStore } from "../../src/stores/useMealStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { toKoreaDateISO } from "../../src/utils/dateUtils";
 
 export default function RegisterMeal() {
   const { mealId } = useLocalSearchParams<{ mealId: string }>();
@@ -24,12 +26,10 @@ export default function RegisterMeal() {
   const meals = useMealStore((s) => s.meals);
   const { clearError } = useStoreWithError(useMealStore);
 
-  const [meal, setMeal] = useState<Meal | null>(null);
+  // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
+  const todayStr = useDateStore((s) => s.todayISO);
 
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    return d.toISOString().split("T")[0];
-  }, []);
+  const [meal, setMeal] = useState<Meal | null>(null);
 
   const [mealType, setMealType] = useState<
     "breakfast" | "lunch" | "dinner" | "snack" | undefined
@@ -45,7 +45,7 @@ export default function RegisterMeal() {
     if (Number.isNaN(date.getTime())) {
       return value.split("T")[0] ?? value;
     }
-    return date.toISOString().split("T")[0];
+    return toKoreaDateISO(date);
   };
 
   useEffect(() => {
@@ -108,13 +108,13 @@ export default function RegisterMeal() {
 
   const toISODateTime = (value: string) => {
     if (!value) {
-      return new Date().toISOString();
+      return useDateStore.getState().now.toISOString();
     }
     const parsed = new Date(`${value}T00:00:00`);
     if (Number.isNaN(parsed.getTime())) {
       const fallback = new Date(value);
       return Number.isNaN(fallback.getTime())
-        ? new Date().toISOString()
+        ? useDateStore.getState().now.toISOString()
         : fallback.toISOString();
     }
     return parsed.toISOString();

@@ -130,8 +130,8 @@ export default function FridgeScreen() {
     toggleIngredientSelect(ingredientId);
   };
 
-  // 레시피 검색 버튼 클릭 핸들러
-  const handleRecipeSearch = () => {
+  // 레시피 검색 버튼 클릭 핸들러 (useCallback으로 메모이제이션)
+  const handleRecipeSearch = React.useCallback(() => {
     if (selectedIngredients.length === 0) return;
 
     // 선택된 재료 ID를 이름으로 변환
@@ -149,7 +149,7 @@ export default function FridgeScreen() {
         ingredients: JSON.stringify(selectedIngredientNames),
       },
     });
-  };
+  }, [selectedIngredients, foods]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

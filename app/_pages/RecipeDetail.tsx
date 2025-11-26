@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
+import { useDateStore } from "../../src/stores/useDateStore";
 import { useMealStore } from "../../src/stores/useMealStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
@@ -27,6 +28,8 @@ export default function RecipeDetail() {
   const error = useRecipeStore((s) => s.error);
 
   const addMeal = useMealStore((s) => s.addMeal);
+  const mealLoading = useMealStore((s) => s.isLoading);
+  const mealError = useMealStore((s) => s.error);
   useStoreWithError(useMealStore);
   useStoreWithError(useRecipeStore);
 
@@ -59,11 +62,12 @@ export default function RecipeDetail() {
       return;
     }
 
+    // POST /meals API 호출
     const success = await addMeal({
       recipeId: recipe.id,
       foodIds: [],
       quantity: "1인분",
-      consumedAt: new Date().toISOString(),
+      consumedAt: useDateStore.getState().now.toISOString(),
       notes: recipe.recipeName,
       mealType: null,
     });
@@ -75,6 +79,8 @@ export default function RecipeDetail() {
           onPress: () => router.replace("/(tabs)/Meal"),
         },
       ]);
+    } else if (mealError) {
+      // 에러는 useStoreWithError가 토스트로 표시하므로 여기서는 추가 처리 불필요
     }
   };
 
@@ -114,31 +120,75 @@ export default function RecipeDetail() {
             ) : recipe ? (
               <>
                 <Text style={styles.title}>{recipe.recipeName}</Text>
-                <View style={styles.infoSection}>
-                  <Text style={styles.label}>칼로리</Text>
-                  <Text style={styles.infoText}>{recipe.calories}kcal</Text>
-                </View>
-                <View style={styles.infoSection}>
-                  <Text style={styles.label}>조리 시간</Text>
-                  <Text style={styles.infoText}>{recipe.time}분</Text>
-                </View>
-                <View style={styles.infoSection}>
-                  <Text style={styles.label}>난이도</Text>
-                  <Text style={styles.infoText}>{recipe.difficulty}</Text>
-                </View>
-                {recipe.description && (
-                  <View style={styles.infoSection}>
-                    <Text style={styles.label}>설명</Text>
-                    <Text style={styles.infoText}>{recipe.description}</Text>
+
+                {/* 영양 성분 섹션 */}
+                <View style={styles.nutritionSection}>
+                  <Text style={styles.sectionTitle}>영양 성분</Text>
+                  <View style={styles.nutritionGrid}>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>칼로리</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.calories ?? 0}
+                        <Text style={styles.nutritionUnit}> kcal</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>단백질</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.protein ?? 0}
+                        <Text style={styles.nutritionUnit}> g</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>탄수화물</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.carbohydrates ?? 0}
+                        <Text style={styles.nutritionUnit}> g</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>지방</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.fat ?? 0}
+                        <Text style={styles.nutritionUnit}> g</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>비타민 C</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.vitamin_c ?? 0}
+                        <Text style={styles.nutritionUnit}> mg</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>비타민 D</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.vitamin_d ?? 0}
+                        <Text style={styles.nutritionUnit}> µg</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.nutritionItem}>
+                      <Text style={styles.nutritionLabel}>아연</Text>
+                      <Text style={styles.nutritionValue}>
+                        {recipe.zinc ?? 0}
+                        <Text style={styles.nutritionUnit}> mg</Text>
+                      </Text>
+                    </View>
                   </View>
-                )}
+                </View>
 
                 {/* 식사 등록 버튼 */}
                 <TouchableOpacity
-                  style={styles.registerButton}
+                  style={[
+                    styles.registerButton,
+                    mealLoading && styles.registerButtonDisabled,
+                  ]}
                   onPress={handleRegisterMeal}
+                  disabled={mealLoading}
                 >
-                  <Text style={styles.registerButtonText}>식사로 등록하기</Text>
+                  <Text style={styles.registerButtonText}>
+                    {mealLoading ? "등록 중..." : "식사로 등록하기"}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : null}
@@ -160,10 +210,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -194,6 +244,43 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 24,
   },
+  nutritionSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: "bold",
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  nutritionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  nutritionItem: {
+    width: "48%",
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  nutritionLabel: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  nutritionValue: {
+    fontSize: FontSizes.lg,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  nutritionUnit: {
+    fontSize: FontSizes.sm,
+    fontWeight: "400",
+    color: Colors.textSecondary,
+  },
   infoSection: {
     marginBottom: 20,
   },
@@ -215,6 +302,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 24,
     marginBottom: 40,
+  },
+  registerButtonDisabled: {
+    opacity: 0.6,
   },
   registerButtonText: {
     fontSize: FontSizes.lg,

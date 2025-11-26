@@ -10,8 +10,10 @@ import {
 } from "react-native";
 import MealCardList from "../../src/components/tabs/meal/MealCardList";
 import TodayTotal from "../../src/components/tabs/meal/todaytotal";
+import { useDateStore } from "../../src/stores/useDateStore";
 import { useMealStore } from "../../src/stores/useMealStore";
 import { Colors, createShadowStyle } from "../../src/styles/common";
+import { addDaysInKorea } from "../../src/utils/dateUtils";
 
 const summaryCardShadow = createShadowStyle({
   opacity: 0.1,
@@ -20,9 +22,20 @@ const summaryCardShadow = createShadowStyle({
 });
 
 export default function Meal() {
-  const [selectedDateISO, setSelectedDateISO] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
+  const todayISO = useDateStore((s) => s.todayISO);
+
+  const [selectedDateISO, setSelectedDateISO] = useState(() => todayISO);
+
+  // todayISO가 변경되면 selectedDateISO도 업데이트 (자정 지나면)
+  useEffect(() => {
+    if (selectedDateISO === todayISO) return;
+    // 선택된 날짜가 오늘이었으면 오늘로 업데이트
+    const prevToday = addDaysInKorea(todayISO, -1);
+    if (selectedDateISO === prevToday) {
+      setSelectedDateISO(todayISO);
+    }
+  }, [todayISO, selectedDateISO]);
 
   const selectedDateLabel = useMemo(() => {
     const d = new Date(selectedDateISO + "T00:00:00");
@@ -34,17 +47,10 @@ export default function Meal() {
     });
   }, [selectedDateISO]);
 
-  const todayISO = useMemo(() => {
-    return new Date().toISOString().split("T")[0];
-  }, []);
-
   const isOneWeekAgo = useMemo(() => {
-    const today = new Date();
-    const oneWeekAgo = new Date(today);
-    oneWeekAgo.setDate(today.getDate() - 7);
-    const oneWeekAgoIso = oneWeekAgo.toISOString().split("T")[0];
+    const oneWeekAgoIso = addDaysInKorea(todayISO, -7);
     return selectedDateISO === oneWeekAgoIso;
-  }, [selectedDateISO]);
+  }, [selectedDateISO, todayISO]);
 
   const isTodayOrAfter = useMemo(() => {
     return selectedDateISO >= todayISO;
@@ -63,22 +69,14 @@ export default function Meal() {
   const goPrevDay = () => {
     if (isOneWeekAgo) return; // 일주일 전이면 더 이상 이전으로 이동 불가
 
-    // ISO 문자열을 직접 파싱하여 날짜 계산 (타임존 문제 방지)
-    const [year, month, day] = selectedDateISO.split("-").map(Number);
-    const currentDate = new Date(Date.UTC(year, month - 1, day));
-    currentDate.setUTCDate(currentDate.getUTCDate() - 1);
-
-    const prevDateISO = currentDate.toISOString().split("T")[0];
+    // 한국 시간 기준으로 하루 전 날짜 계산
+    const prevDateISO = addDaysInKorea(selectedDateISO, -1);
     setSelectedDateISO(prevDateISO);
   };
 
   const goNextDay = () => {
-    // 다음 날짜가 오늘 이후면 이동 불가
-    const [year, month, day] = selectedDateISO.split("-").map(Number);
-    const currentDate = new Date(Date.UTC(year, month - 1, day));
-    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-
-    const nextDateISO = currentDate.toISOString().split("T")[0];
+    // 한국 시간 기준으로 하루 후 날짜 계산
+    const nextDateISO = addDaysInKorea(selectedDateISO, 1);
 
     // 다음 날짜가 오늘 이후면 이동 불가
     if (nextDateISO > todayISO) return;

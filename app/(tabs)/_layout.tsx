@@ -9,7 +9,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ProfileCircle from "../../src/components/ProfileCircle";
 import { Colors, createShadowStyle, FontSizes } from "../../src/styles/common";
@@ -170,7 +170,7 @@ export default function TabsLayout() {
                 style={styles.headerIconButton}
                 onPress={() => router.push("/_pages/NotiSettings")}
               >
-                <Text style={styles.settingsIcon}>🎛️</Text>
+                <Bell size={22} color={Colors.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ),

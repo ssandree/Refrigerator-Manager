@@ -1,12 +1,12 @@
-import TodayHealthGoal from "@/components/tabs/home/TodayNutritionGoal";
 import { tabsStyles } from "@/styles/tabs";
 import React, { useEffect } from "react";
 import { ScrollView, View } from "react-native";
 import QuickFoodAdd from "../../src/components/QuickFoodAdd";
 import ExpiringIngredientSection from "../../src/components/tabs/home/ExpiringIngredientCard";
-import Greeting from "../../src/components/tabs/home/Greeting";
+import NutritionProgress from "../../src/components/tabs/home/NutritionProgress";
 import RecipeRecommand from "../../src/components/tabs/home/RecipeRecommand";
 import TodayMeals from "../../src/components/tabs/home/TodayMeals";
+import TodayProgress from "../../src/components/tabs/home/TodayProgress";
 import { useDashboardStore } from "../../src/stores/useDashboardStore";
 
 export default function HomeScreen() {
@@ -26,9 +26,9 @@ export default function HomeScreen() {
         contentContainerStyle={tabsStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 인사 및 빠른 등록 버튼 */}
+        {/* 오늘의 달성률 */}
         <View style={tabsStyles.section}>
-          <Greeting />
+          <TodayProgress />
         </View>
 
         {/* 오늘의 식사 목록 (Dashboard.todayMeals 사용) */}
@@ -50,10 +50,11 @@ export default function HomeScreen() {
           ingredients={todayData?.expiringIngredients ?? []}
         />
 
-        {/* 건강 목표 */}
-        <TodayHealthGoal />
+        {/* 영양소 달성률 */}
+        <View style={tabsStyles.section}>
+          <NutritionProgress />
+        </View>
       </ScrollView>
-
       {/* 플로팅 버튼 */}
       <QuickFoodAdd />
     </View>

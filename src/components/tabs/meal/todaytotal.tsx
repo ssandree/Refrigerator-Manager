@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useDateStore } from "../../../stores/useDateStore";
 import { useNutritionStore } from "../../../stores/useNutritionStore";
 import { useStatisticsStore } from "../../../stores/useStatisticsStore";
 import { Colors, FontSizes, commonStyles } from "../../../styles/common";
@@ -18,11 +19,14 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
   const statsLoading = useStatisticsStore((s) => s.isLoading);
   const statsError = useStatisticsStore((s) => s.error);
 
+  // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
+  const todayISO = useDateStore((s) => s.todayISO);
+
   // 선택된 날짜(또는 오늘) 기준 일일 통계 로드
   useEffect(() => {
-    const targetDate = dateISO || new Date().toISOString().split("T")[0];
+    const targetDate = dateISO || todayISO;
     fetchDailyStats(targetDate);
-  }, [dateISO, fetchDailyStats]);
+  }, [dateISO, todayISO, fetchDailyStats]);
 
   // 통계 응답을 NutritionStore의 totals로 반영
   useEffect(() => {
@@ -40,19 +44,17 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
   }, [dailyStats, setDate, setTotals]);
 
   const nutritionItems = [
-    { label: "총 칼로리", value: `${totals.calories}`, unit: "kcal" },
-    { label: "단백질", value: `${totals.protein}`, unit: "g" },
-    { label: "탄수화물", value: `${totals.carbs}`, unit: "g" },
-    { label: "지방", value: `${totals.fat}`, unit: "g" },
+    { label: "총 칼로리", value: `${totals.calories ?? 0}`, unit: "kcal" },
+    { label: "단백질", value: `${totals.protein ?? 0}`, unit: "g" },
+    { label: "탄수화물", value: `${totals.carbs ?? 0}`, unit: "g" },
+    { label: "지방", value: `${totals.fat ?? 0}`, unit: "g" },
   ] as const;
 
   // 날짜 레이블 생성
   const dateLabel = useMemo(() => {
-    const targetDate = dateISO || new Date().toISOString().split("T")[0];
+    const targetDate = dateISO || todayISO;
     const date = new Date(targetDate + "T00:00:00");
-    const today = new Date();
-    const isToday =
-      date.toISOString().split("T")[0] === today.toISOString().split("T")[0];
+    const isToday = targetDate === todayISO;
     if (isToday) {
       return "오늘의 총계";
     }
@@ -60,7 +62,7 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
       month: "long",
       day: "numeric",
     })}의 총계`;
-  }, [dateISO]);
+  }, [dateISO, todayISO]);
 
   return (
     <View style={styles.summarySection}>

@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useDateStore } from "../../../stores/useDateStore";
 import { useFridgeStore } from "../../../stores/useFoodStore";
 import { useMealStore } from "../../../stores/useMealStore";
 import { useRecipeStore } from "../../../stores/useRecipeStore";
 import { Colors, FontSizes } from "../../../styles/common";
 import { Food } from "../../../types/food";
+import { toKoreaDateISO } from "../../../utils/dateUtils";
 import DailyDietCard from "./MealCard";
 
 interface MealCardListProps {
@@ -27,14 +29,15 @@ export default function MealCardList({ dateISO }: MealCardListProps) {
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
 
-  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+  // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
+  const today = useDateStore((s) => s.todayISO);
   const normalizeDate = useMemo(
     () => (value: string) => {
       const parsed = new Date(value);
       if (Number.isNaN(parsed.getTime())) {
         return value.split("T")[0] ?? value;
       }
-      return parsed.toISOString().split("T")[0];
+      return toKoreaDateISO(parsed);
     },
     []
   );

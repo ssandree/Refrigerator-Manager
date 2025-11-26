@@ -42,7 +42,7 @@ export default function ProfileSection({
         </TouchableOpacity>
         <TouchableOpacity style={styles.profileMenuItem} onPress={onBadgePress}>
           <Trophy size={20} color={Colors.textSecondary} strokeWidth={2} />
-          <Text style={styles.profileMenuText}>주간 목표</Text>
+          <Text style={styles.profileMenuText}>주간 목표 달성도</Text>
           <ChevronRight size={16} color={Colors.textTertiary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
@@ -85,8 +85,9 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 12,
-    marginLeft: 0,
+    gap: 8,
   },
   profileMenuItem: {
     flexDirection: "row",
@@ -97,7 +98,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.borderLight,
     borderRadius: 6,
     flex: 1,
-    marginHorizontal: 4,
   },
   profileMenuText: {
     fontSize: 12,

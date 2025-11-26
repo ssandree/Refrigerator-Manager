@@ -11,12 +11,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import GoalCard from "../../src/components/weeklyAchieve/GoalCard";
 import HealthSummaryCard from "../../src/components/weeklyAchieve/HealthSummaryCard";
 import SectionHeader from "../../src/components/weeklyAchieve/SectionHeader";
-import { mockHealthGoals } from "../../src/data/HealthGoalConstants";
+import { authService } from "../../src/services/authService";
 import { convertActivityLevelToNumber } from "../../src/services/dashboardService";
 import { useAuthStore } from "../../src/stores/useAuthStore";
 import { useDashboardStore } from "../../src/stores/useDashboardStore";
+import { useDateStore } from "../../src/stores/useDateStore";
+import { useHealthGoalStore } from "../../src/stores/useHealthGoalStore";
 import { useStatisticsStore } from "../../src/stores/useStatisticsStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { addDaysInKorea } from "../../src/utils/dateUtils";
 
 // BMR 계산 (Mifflin-St Jeor Equation)
 function calculateBMR(
@@ -63,8 +66,15 @@ export interface HealthGoalPlan {
 
 export default function WeeklyAchieveScreen() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const dashboardLoading = useDashboardStore((state) => state.isLoading);
   const dashboardError = useDashboardStore((state) => state.error);
+
+  // 건강 목표 스토어 바인딩
+  const selectedGoals = useHealthGoalStore((state) => state.selectedGoals);
+  const loadUserSelectedGoals = useHealthGoalStore(
+    (state) => state.loadUserSelectedGoals
+  );
 
   // 통계 스토어 바인딩
   const weeklyStats = useStatisticsStore((state) => state.weeklyStats);
@@ -86,22 +96,42 @@ export default function WeeklyAchieveScreen() {
   );
 
   useEffect(() => {
-    // 주간 통계: 기본으로 최근 7일을 조회
-    const today = new Date();
-    const start = new Date(today);
-    // 오늘 포함 지난 7일 (오늘 - 6일)
-    start.setDate(today.getDate() - 6);
-    const startDateISO = start.toISOString().split("T")[0];
-    fetchWeeklyStats(startDateISO);
-  }, [fetchWeeklyStats]);
+    // 사용자 정보 로드 (온보딩에서 받은 정보 포함)
+    const loadUserInfo = async () => {
+      try {
+        const response = await authService.getCurrentUser();
+        if (response.success && response.data) {
+          updateUser({
+            age: response.data.age ?? undefined,
+            sex: response.data.sex ?? undefined,
+            height: response.data.height ?? undefined,
+            weight: response.data.weight ?? undefined,
+            activityLevel: response.data.activityLevel ?? undefined,
+            bmi: response.data.bmi ?? undefined,
+          });
+        }
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      }
+    };
+    loadUserInfo();
 
-  // HealthGoalConstants.ts + 통계 데이터를 기반으로 카드 구성
+    // 사용자가 선택한 건강 목표 로드
+    loadUserSelectedGoals();
+    // 주간 통계: 기본으로 최근 7일을 조회
+    const todayISO = useDateStore.getState().todayISO;
+    // 오늘 포함 지난 7일 (오늘 - 6일)
+    const startDateISO = addDaysInKorea(todayISO, -6);
+    fetchWeeklyStats(startDateISO);
+  }, [fetchWeeklyStats, loadUserSelectedGoals, updateUser]);
+
+  // 사용자가 선택한 건강 목표 + 통계 데이터를 기반으로 카드 구성
   const plans: (HealthGoalPlan & {
     goalTitle: string;
     color: string;
     id: number;
   })[] = useMemo(() => {
-    return mockHealthGoals.map((goal) => {
+    return selectedGoals.map((goal) => {
       // 주간 평균 칼로리/영양소를 이용해 달성률 계산
       const avgCalories = weeklyStats?.averageDailyCalories ?? 0;
       const avgProtein = weeklyStats?.averageDailyProtein ?? 0;
@@ -149,7 +179,7 @@ export default function WeeklyAchieveScreen() {
         id: goal.id,
       };
     });
-  }, [weeklyStats, tdee]);
+  }, [selectedGoals, weeklyStats, tdee]);
 
   return (
     <>

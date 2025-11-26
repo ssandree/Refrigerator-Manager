@@ -91,7 +91,15 @@ export default function GetSexAge() {
         {/* 이전/다음 버튼 - 화면 하단 고정 */}
         <OnboardingFooterButton
           prevLabel="이전"
-          onPressPrev={() => {}}
+          onPressPrev={() => {
+            // 첫 번째 온보딩 화면이므로 뒤로 갈 수 없음
+            // 안전하게 로그인 화면으로 이동
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(auth)/Login");
+            }
+          }}
           prevDisabled={true}
           label="다음"
           onPress={handleGoToNext}

@@ -90,14 +90,112 @@ export default function RecipeScreen() {
   const toggleIngredient = useToggleArray(setSelectedIngredients);
 
   // 필터 초기화
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedIngredients([]);
     setIncludeExpiring(false);
     setCalorieRange([0, 15000]);
-  };
+    // 필터 초기화 시 전체 레시피 표시
+    setDisplayedRecipes(recipes);
+  }, [recipes]);
 
-  // 필터/검색 조건이 활성화되어 있는지 확인
+  // 검색 실행 (버튼 클릭 시 호출)
+  const handleSearch = useCallback(async () => {
+    if (searchQuery.trim() === "") {
+      // 검색어가 없으면 전체 레시피 표시
+      setDisplayedRecipes(recipes);
+      return;
+    }
+
+    const results = await searchRecipes(searchQuery.trim());
+    setDisplayedRecipes(results);
+  }, [searchQuery, searchRecipes, recipes]);
+
+  // 필터 적용 (버튼 클릭 시 호출)
+  const handleApplyFilters = useCallback(async () => {
+    const filterParams: {
+      ingredients?: string[];
+      expiringOnly?: boolean;
+      minCalories?: number;
+      maxCalories?: number;
+    } = {};
+
+    if (selectedIngredients.length > 0) {
+      filterParams.ingredients = selectedIngredients;
+    }
+    if (includeExpiring) {
+      filterParams.expiringOnly = true;
+    }
+    if (calorieRange[0] > 0) {
+      filterParams.minCalories = calorieRange[0];
+    }
+    if (calorieRange[1] < 15000) {
+      filterParams.maxCalories = calorieRange[1];
+    }
+
+    // 필터 조건이 하나라도 있으면 필터 API 호출
+    const hasFilters =
+      selectedIngredients.length > 0 ||
+      includeExpiring ||
+      calorieRange[0] > 0 ||
+      calorieRange[1] < 15000;
+
+    if (hasFilters) {
+      const results = await filterRecipes(filterParams);
+      // 검색어도 함께 있는 경우: 필터 후 클라이언트에서 검색어 필터링
+      if (searchQuery.trim() !== "") {
+        const lowerQuery = searchQuery.trim().toLowerCase();
+        const filtered = results.filter((recipe) =>
+          recipe.recipeName.toLowerCase().includes(lowerQuery)
+        );
+        setDisplayedRecipes(filtered);
+      } else {
+        setDisplayedRecipes(results);
+      }
+    } else {
+      // 필터 조건이 없으면 검색어만 적용하거나 전체 레시피 표시
+      if (searchQuery.trim() !== "") {
+        await handleSearch();
+      } else {
+        setDisplayedRecipes(recipes);
+      }
+    }
+  }, [
+    selectedIngredients,
+    includeExpiring,
+    calorieRange,
+    searchQuery,
+    filterRecipes,
+    handleSearch,
+    recipes,
+  ]);
+
+  // URL 파라미터로 받은 ingredients가 있으면 자동으로 필터 적용 (마운트 시 한 번만)
+  useEffect(() => {
+    if (params.ingredients) {
+      try {
+        const parsed = JSON.parse(params.ingredients as string);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // 상태 업데이트와 필터 적용을 한 번에 처리
+          setSelectedIngredients(parsed);
+
+          // 파라미터로 받은 재료로 직접 필터 API 호출 (상태 업데이트와 분리)
+          const filterParams = { ingredients: parsed };
+          filterRecipes(filterParams).then((results) => {
+            setDisplayedRecipes(results);
+          });
+        }
+      } catch {
+        // 파싱 실패 시 무시
+      }
+    } else {
+      // 파라미터가 없으면 초기 로드 시 전체 레시피 표시
+      setDisplayedRecipes(recipes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시 한 번만 실행
+
+  // 필터/검색 조건이 활성화되어 있는지 확인 (UI 표시용)
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery.trim() !== "" ||
@@ -107,68 +205,6 @@ export default function RecipeScreen() {
       calorieRange[1] < 15000
     );
   }, [searchQuery, selectedIngredients, includeExpiring, calorieRange]);
-
-  // 검색/필터 조건에 따라 적절한 API 호출
-  useEffect(() => {
-    const loadFilteredRecipes = async () => {
-      // 검색어만 있는 경우: 검색 API 호출
-      if (searchQuery.trim() !== "" && !hasActiveFilters) {
-        const results = await searchRecipes(searchQuery.trim());
-        setDisplayedRecipes(results);
-        return;
-      }
-
-      // 필터 조건이 있는 경우: 필터 API 호출
-      if (hasActiveFilters) {
-        const filterParams: {
-          ingredients?: string[];
-          expiringOnly?: boolean;
-          minCalories?: number;
-          maxCalories?: number;
-        } = {};
-
-        if (selectedIngredients.length > 0) {
-          filterParams.ingredients = selectedIngredients;
-        }
-        if (includeExpiring) {
-          filterParams.expiringOnly = true;
-        }
-        if (calorieRange[0] > 0) {
-          filterParams.minCalories = calorieRange[0];
-        }
-        if (calorieRange[1] < 15000) {
-          filterParams.maxCalories = calorieRange[1];
-        }
-
-        // 검색어도 함께 있는 경우: 필터 후 클라이언트에서 검색어 필터링
-        const results = await filterRecipes(filterParams);
-        if (searchQuery.trim() !== "") {
-          const lowerQuery = searchQuery.trim().toLowerCase();
-          const filtered = results.filter((recipe) =>
-            recipe.recipeName.toLowerCase().includes(lowerQuery)
-          );
-          setDisplayedRecipes(filtered);
-        } else {
-          setDisplayedRecipes(results);
-        }
-        return;
-      }
-
-      // 필터/검색 조건이 없으면 전체 레시피 표시
-      setDisplayedRecipes(recipes);
-    };
-
-    loadFilteredRecipes();
-  }, [
-    searchQuery,
-    selectedIngredients,
-    includeExpiring,
-    calorieRange,
-    hasActiveFilters,
-    recipes,
-    searchRecipes,
-    filterRecipes,
-  ]);
 
   return (
     <View style={styles.container}>
@@ -184,7 +220,16 @@ export default function RecipeScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={Colors.textTertiary}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={handleSearch}
+            disabled={isLoading}
+          >
+            <Text style={styles.searchButtonText}>검색</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 선택된 필터 조건 캐러셀 */}
@@ -277,6 +322,7 @@ export default function RecipeScreen() {
       <RecipeFilterModal
         visible={visible}
         onClose={hideModal}
+        onApply={handleApplyFilters}
         slideAnim={slideAnim}
         selectedIngredients={selectedIngredients}
         onToggleIngredient={toggleIngredient}
@@ -309,8 +355,12 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 12,
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
   },
   searchInput: {
+    flex: 1,
     backgroundColor: Colors.background,
     borderRadius: 25,
     paddingHorizontal: 16,
@@ -318,6 +368,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  searchButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  searchButtonText: {
+    color: Colors.textLight,
+    fontSize: 16,
+    fontWeight: "600",
   },
   filterChipsContainer: {
     marginBottom: 12,

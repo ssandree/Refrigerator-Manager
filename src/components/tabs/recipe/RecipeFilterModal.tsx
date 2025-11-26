@@ -16,6 +16,7 @@ import { FilterChip } from "./FilterChip";
 interface RecipeFilterModalProps {
   visible: boolean;
   onClose: () => void;
+  onApply: () => void; // 필터 적용 버튼 클릭 시 호출
   slideAnim: Animated.Value;
 
   selectedIngredients: string[];
@@ -32,6 +33,7 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
   const {
     visible,
     onClose,
+    onApply,
     slideAnim,
     selectedIngredients,
     onToggleIngredient,
@@ -119,6 +121,19 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
               onChange={onSetCalorieRange}
             />
           </ScrollView>
+
+          {/* 적용 버튼 */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={() => {
+                onApply();
+                onClose();
+              }}
+            >
+              <Text style={styles.applyButtonText}>적용</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -147,10 +162,17 @@ function DualRangeSlider({
   // 터치 시작 시점의 초기 위치를 저장
   const leftStartX = React.useRef(0);
   const rightStartX = React.useRef(0);
+  // 현재 드래그 중인 썸(thumb) 추적: 'left' | 'right' | null
+  const draggingThumb = React.useRef<"left" | "right" | null>(null);
+  // 최신 값을 ref로 추적 (onPanResponderRelease에서 사용)
+  const latestLeftVal = React.useRef(leftVal);
+  const latestRightVal = React.useRef(rightVal);
 
   React.useEffect(() => {
     setLeftVal(values[0]);
     setRightVal(values[1]);
+    latestLeftVal.current = values[0];
+    latestRightVal.current = values[1];
   }, [values]);
 
   const clampValue = React.useCallback(
@@ -189,18 +211,38 @@ function DualRangeSlider({
         onMoveShouldSetPanResponder: (_, gesture) =>
           Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderGrant: () => {
-          leftStartX.current = valueToX(leftVal);
+          draggingThumb.current = "left";
+          leftStartX.current = valueToX(latestLeftVal.current);
         },
         onPanResponderMove: (_, gesture) => {
           if (width <= 0) return;
           const newX = leftStartX.current + gesture.dx;
-          const newLeft = clampValue(xToValue(newX), min, rightVal);
+          const newLeft = clampValue(
+            xToValue(newX),
+            min,
+            latestRightVal.current
+          );
+          // UI만 즉시 업데이트 (API 호출 없음)
           setLeftVal(newLeft);
-          onChange([newLeft, rightVal]);
+          latestLeftVal.current = newLeft;
+        },
+        onPanResponderRelease: () => {
+          // 터치를 놓았을 때만 onChange 호출 (API 호출)
+          if (draggingThumb.current === "left") {
+            onChange([latestLeftVal.current, latestRightVal.current]);
+            draggingThumb.current = null;
+          }
+        },
+        onPanResponderTerminate: () => {
+          // 터치가 중단되었을 때도 onChange 호출
+          if (draggingThumb.current === "left") {
+            onChange([latestLeftVal.current, latestRightVal.current]);
+            draggingThumb.current = null;
+          }
         },
         onPanResponderTerminationRequest: () => false,
       }),
-    [clampValue, valueToX, xToValue, leftVal, rightVal, min, width, onChange]
+    [clampValue, valueToX, xToValue, min, width, onChange]
   );
 
   const rightResponder = React.useMemo(
@@ -210,18 +252,38 @@ function DualRangeSlider({
         onMoveShouldSetPanResponder: (_, gesture) =>
           Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderGrant: () => {
-          rightStartX.current = valueToX(rightVal);
+          draggingThumb.current = "right";
+          rightStartX.current = valueToX(latestRightVal.current);
         },
         onPanResponderMove: (_, gesture) => {
           if (width <= 0) return;
           const newX = rightStartX.current + gesture.dx;
-          const newRight = clampValue(xToValue(newX), leftVal, max);
+          const newRight = clampValue(
+            xToValue(newX),
+            latestLeftVal.current,
+            max
+          );
+          // UI만 즉시 업데이트 (API 호출 없음)
           setRightVal(newRight);
-          onChange([leftVal, newRight]);
+          latestRightVal.current = newRight;
+        },
+        onPanResponderRelease: () => {
+          // 터치를 놓았을 때만 onChange 호출 (API 호출)
+          if (draggingThumb.current === "right") {
+            onChange([latestLeftVal.current, latestRightVal.current]);
+            draggingThumb.current = null;
+          }
+        },
+        onPanResponderTerminate: () => {
+          // 터치가 중단되었을 때도 onChange 호출
+          if (draggingThumb.current === "right") {
+            onChange([latestLeftVal.current, latestRightVal.current]);
+            draggingThumb.current = null;
+          }
         },
         onPanResponderTerminationRequest: () => false,
       }),
-    [clampValue, valueToX, xToValue, leftVal, rightVal, max, width, onChange]
+    [clampValue, valueToX, xToValue, max, width, onChange]
   );
 
   const leftX = valueToX(leftVal);
@@ -371,5 +433,22 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontWeight: "600",
     marginRight: 12,
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  applyButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  applyButtonText: {
+    color: Colors.textLight,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

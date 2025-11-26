@@ -64,10 +64,6 @@ export default function RecipeCard({
             />
           </TouchableOpacity>
         </View>
-        <Text style={recipeCardStyles.description} numberOfLines={2}>
-          {recipe.description}
-        </Text>
-
         {/* 통계 정보 */}
         <View style={recipeCardStyles.statsContainer}>
           <View style={recipeCardStyles.statItem}>

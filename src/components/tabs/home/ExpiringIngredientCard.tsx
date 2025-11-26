@@ -117,7 +117,7 @@ export default function ExpiringIngredientSection({
   const expiringFoods = getExpiringFoods();
 
   return (
-    <View style={tabsStyles.section}>
+    <View style={[tabsStyles.section, { marginBottom: 24 }]}>
       <Text style={tabsStyles.sectionTitle}>⚠️ 임박 재료</Text>
       {expiringFoods.length === 0 ? (
         <View

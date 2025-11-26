@@ -1,6 +1,5 @@
-import { ChevronRight } from "lucide-react-native";
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFavoriteRecipeStore } from "../../../stores/useFavoriteRecipeStore";
 import { useFridgeStore } from "../../../stores/useFoodStore";
 import { useStatisticsStore } from "../../../stores/useStatisticsStore";
@@ -50,18 +49,9 @@ export default function StatsSection({
   }, [mealStats]);
 
   return (
-    <View style={tabsStyles.section}>
+    <View style={[tabsStyles.section, { marginTop: 24 }]}>
       <View style={styles.sectionHeader}>
         <Text style={tabsStyles.sectionTitle}>📊 나의 통계</Text>
-        {onWeeklyAchievePress && (
-          <TouchableOpacity
-            style={styles.weeklyButton}
-            onPress={onWeeklyAchievePress}
-          >
-            <Text style={styles.weeklyButtonText}>주간 달성</Text>
-            <ChevronRight size={16} color={Colors.primary} strokeWidth={2} />
-          </TouchableOpacity>
-        )}
       </View>
       <View style={styles.statsCard}>
         <View style={styles.statItem}>

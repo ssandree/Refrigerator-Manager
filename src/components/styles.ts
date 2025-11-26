@@ -268,12 +268,12 @@ export const recipeCardStyles = StyleSheet.create({
     ...recipeCardShadow,
     overflow: "hidden",
     flexDirection: "row",
-    height: 150,
+    height: 100,
   },
   imageContainer: {
     position: "relative",
     width: 110,
-    height: 110,
+    height: 100, // container 높이와 동일하게 맞춤
     alignItems: "center",
     justifyContent: "center",
   },
@@ -287,7 +287,8 @@ export const recipeCardStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 2,
+    marginBottom: 4,
+    paddingVertical: 6,
   },
   favoriteBtn: {
     padding: 4,
@@ -295,7 +296,8 @@ export const recipeCardStyles = StyleSheet.create({
   infoSection: {
     flex: 1,
     padding: 12,
-    justifyContent: "space-between",
+    height: 150, // imageContainer 높이와 동일하게 맞춤
+    justifyContent: "flex-start", // space-between 대신 flex-start로 변경
   },
   recipeName: {
     fontSize: 16,
@@ -304,38 +306,15 @@ export const recipeCardStyles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  description: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-    lineHeight: 16,
-  },
-  tagsContainer: {
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 8,
-  },
-  tag: {
-    backgroundColor: Colors.fridge,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  tagText: {
-    fontSize: 10,
-    color: Colors.secondaryDark,
-    fontWeight: "500",
-  },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-    paddingVertical: 4,
-    backgroundColor: Colors.backgroundDark,
+    alignItems: "flex-start",
+    gap: 4,
     borderRadius: 6,
-    paddingHorizontal: 8,
+    paddingRight: 8,
+    paddingVertical: 6,
+    marginTop: 8,
   },
   statItem: {
     flexDirection: "row",

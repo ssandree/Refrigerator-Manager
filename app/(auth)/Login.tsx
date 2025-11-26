@@ -40,18 +40,19 @@ export default function LoginScreen() {
       const authState = useAuthStore.getState();
       const shouldGoOnboarding = needsOnboarding(authState.user);
       // 로그인 성공 후 온보딩 시작
+      // dismissAll()을 사용하지 않고 replace만 사용하여 스택 문제 방지
       try {
-        router.dismissAll();
+        router.replace(
+          shouldGoOnboarding ? "/onboarding/GetSexAge" : "/(tabs)/Home"
+        );
+      } catch (navError) {
+        logger.error("네비게이션 오류:", navError);
+        // 에러 발생 시에도 replace 재시도
         setTimeout(() => {
           router.replace(
             shouldGoOnboarding ? "/onboarding/GetSexAge" : "/(tabs)/Home"
           );
-        }, 50);
-      } catch (navError) {
-        logger.error("네비게이션 오류:", navError);
-        router.replace(
-          shouldGoOnboarding ? "/onboarding/GetSexAge" : "/(tabs)/Home"
-        );
+        }, 100);
       }
     } else {
       // 로그인 실패 시 에러 메시지는 useStoreWithError가 처리

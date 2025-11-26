@@ -49,8 +49,10 @@ const defaultTargets: NutrientMap = {
   zinc: 11,
 };
 
+import { getTodayInKorea } from "../utils/dateUtils";
+
 export const useNutritionStore = create<NutritionState>((set) => ({
-  dateISO: new Date().toISOString().split("T")[0],
+  dateISO: getTodayInKorea(),
   totals: { ...defaultTotals },
   targets: { ...defaultTargets },
   setDate: (dateISO) => set({ dateISO }),

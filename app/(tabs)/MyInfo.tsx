@@ -1,19 +1,10 @@
 import { useRouter } from "expo-router";
-import { Settings } from "lucide-react-native";
 import React, { useState } from "react";
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal, ScrollView, StyleSheet, View } from "react-native";
 import GoalsSection from "../../src/components/tabs/myinfo/GoalsSection";
-import HealthGoalStats from "../../src/components/tabs/myinfo/HealthGoalStats";
 import ProfileSection from "../../src/components/tabs/myinfo/ProfileSection";
 import StatsSection from "../../src/components/tabs/myinfo/StatsSection";
-import { Colors, FontSizes, commonStyles } from "../../src/styles/common";
+import { Colors, FontSizes } from "../../src/styles/common";
 import { tabsStyles } from "../../src/styles/tabs";
 import UpdateHealthGoal from "../_pages/UpdateHealthGoal";
 
@@ -57,25 +48,8 @@ export default function MyInfoScreen() {
         />
 
         <View style={styles.content}>
-          <GoalsSection onEditGoals={handleEditGoalsPress} />
-          <HealthGoalStats />
           <StatsSection onWeeklyAchievePress={handleWeeklyAchievePress} />
-
-          {/* 설정 메뉴 */}
-          <View style={styles.settingsSection}>
-            <TouchableOpacity
-              style={[commonStyles.card, styles.settingsItem]}
-              onPress={handleSettingsPress}
-            >
-              <Settings size={24} color={Colors.primary} strokeWidth={2} />
-              <View style={styles.settingsItemContent}>
-                <Text style={styles.settingsItemTitle}>알림 설정</Text>
-                <Text style={styles.settingsItemDescription}>
-                  알림 수신 설정을 관리합니다
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <GoalsSection onEditGoals={handleEditGoalsPress} />
         </View>
       </ScrollView>
 
