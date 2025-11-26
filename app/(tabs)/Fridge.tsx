@@ -132,7 +132,10 @@ export default function FridgeScreen() {
 
   // 레시피 검색 버튼 클릭 핸들러 (useCallback으로 메모이제이션)
   const handleRecipeSearch = React.useCallback(() => {
-    if (selectedIngredients.length === 0) return;
+    if (selectedIngredients.length === 0) {
+      console.log("선택된 재료가 없습니다.");
+      return;
+    }
 
     // 선택된 재료 ID를 이름으로 변환
     const selectedIngredientNames = selectedIngredients
@@ -141,6 +144,8 @@ export default function FridgeScreen() {
         return food?.name;
       })
       .filter(Boolean) as string[];
+
+    console.log("레시피 검색 버튼 클릭:", selectedIngredientNames);
 
     // Recipe 화면으로 이동하면서 선택된 재료를 파라미터로 전달
     router.push({
@@ -512,7 +517,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 100, // 버튼이 가려지지 않도록 여백 추가
   },
   foodCardContainer: { width: "48%", marginBottom: 12 },
   emptyState: {
@@ -535,6 +540,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 12,
     alignItems: "center",
+    zIndex: 1000, // 다른 요소 위에 표시되도록 zIndex 추가
+    elevation: 10, // Android에서도 위에 표시되도록 elevation 추가
   },
   recipeButtonText: {
     color: "#fff",
