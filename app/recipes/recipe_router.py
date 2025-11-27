@@ -34,18 +34,7 @@ def find_all(db: Session = Depends(get_db)):
 
 
 # -----------------------------
-# Read - One
-# -----------------------------
-@router.get("/{recipe_id}", response_model=SingleRecipeResponse)
-def find_one(recipe_id: str, db: Session = Depends(get_db)):
-    recipe = get_recipe_by_id(db, recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="RECIPE_NOT_FOUND")
-    return SingleRecipeResponse(data=RecipeResponse.model_validate(recipe))
-
-
-# -----------------------------
-# Search
+# Search (경로 파라미터보다 먼저 정의 필요)
 # -----------------------------
 @router.get("/search/", response_model=RecipeListResponse)
 def search(q: str = Query(...), db: Session = Depends(get_db)):
@@ -56,7 +45,7 @@ def search(q: str = Query(...), db: Session = Depends(get_db)):
 
 
 # -----------------------------
-# Recommend
+# Recommend (경로 파라미터보다 먼저 정의 필요)
 # -----------------------------
 @router.get("/recommend")
 def recommend(userId=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -65,7 +54,7 @@ def recommend(userId=Depends(get_current_user), db: Session = Depends(get_db)):
 
 
 # -----------------------------
-# Filter
+# Filter (경로 파라미터보다 먼저 정의 필요)
 # -----------------------------
 @router.get("/filter", response_model=RecipeListResponse)
 def filter_recipes(
@@ -101,3 +90,14 @@ def filter_recipes(
     return RecipeListResponse(
         data=[RecipeResponse.model_validate(recipe) for recipe in recipes]
     )
+
+
+# -----------------------------
+# Read - One (경로 파라미터는 마지막에 정의)
+# -----------------------------
+@router.get("/{recipe_id}", response_model=SingleRecipeResponse)
+def find_one(recipe_id: str, db: Session = Depends(get_db)):
+    recipe = get_recipe_by_id(db, recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="RECIPE_NOT_FOUND")
+    return SingleRecipeResponse(data=RecipeResponse.model_validate(recipe))

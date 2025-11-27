@@ -757,6 +757,38 @@
 ```
 - **특징:** userId로 필터링하여 사용자의 목표만 반환
 
+### 사용자 선택 목표 설정
+- **POST** `/health-goals/user-selected`
+- **설명:** 사용자가 선택한 건강 목표 설정
+- **요청:**
+```json
+{
+  "goalIds": [1, 2, 3]
+}
+```
+- **응답:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "체중 감량"
+    },
+    {
+      "id": 2,
+      "title": "근육 증가"
+    },
+    {
+      "id": 3,
+      "title": "단백질 보충"
+    }
+  ]
+}
+```
+- **에러:** 400 (Invalid goalIds)
+- **특징:** 기존 목표를 삭제하고 새로운 목표로 교체
+
 ### 건강 목표 통계
 - **GET** `/health-goals/user-statistics`
 - **설명:** 사용자의 건강 목표 달성 통계
@@ -766,6 +798,7 @@
   "success": true,
   "data": {
     "selectedGoals": 2,
+    "goalsAchieved": 0,
     "achievementRate": 0
   }
 }
@@ -964,7 +997,7 @@
 - **GET** `/statistics/daily`
 - **설명:** 특정 날짜의 건강 통계 조회
 - **Query Parameters:**
-  - `date` (optional): 통계를 조회할 날짜 (ISO 포맷, 기본값: 오늘)
+  - `date` (optional, string): 통계를 조회할 날짜 (ISO 포맷: "YYYY-MM-DD" 또는 "YYYY-MM-DDTHH:MM:SS", 기본값: 오늘)
 - **응답:**
 ```json
 {
@@ -972,19 +1005,66 @@
   "data": {
     "date": "2024-01-15",
     "calories": 1800,
-    "protein": 120,
-    "carbohydrates": 200,
-    "fat": 60,
-    "sodium": 2000,
-    "vitamin_c": 50,
-    "vitamin_d": 10,
-    "zinc": 8
+    "macros": {
+      "calories": 1800,
+      "protein": 120,
+      "carbs": 200,
+      "fat": 60,
+      "vitamin_c": 50,
+      "vitamin_d": 10,
+      "zinc": 8
+    },
+    "mealCount": 3,
+    "mealHistory": [
+      {
+        "id": "meal-uuid-1",
+        "consumedAt": "2024-01-15T08:00:00",
+        "mealType": "breakfast",
+        "notes": "맛있었음",
+        "recipeId": "recipe-uuid-1"
+      },
+      {
+        "id": "meal-uuid-2",
+        "consumedAt": "2024-01-15T12:30:00",
+        "mealType": "lunch",
+        "notes": null,
+        "recipeId": "recipe-uuid-2"
+      },
+      {
+        "id": "meal-uuid-3",
+        "consumedAt": "2024-01-15T19:00:00",
+        "mealType": "dinner",
+        "notes": "저녁 식사",
+        "recipeId": "recipe-uuid-3"
+      }
+    ]
   }
 }
 ```
+- **응답 필드 설명:**
+  - `date` (string): 조회한 날짜 (YYYY-MM-DD 형식)
+  - `calories` (number): 해당 날짜의 총 칼로리 (macros.calories와 동일)
+  - `macros` (object): 영양소 정보
+    - `calories` (number): 총 칼로리 (kcal)
+    - `protein` (number): 단백질 (g)
+    - `carbs` (number): 탄수화물 (g)
+    - `fat` (number): 지방 (g)
+    - `vitamin_c` (number): 비타민C (mg)
+    - `vitamin_d` (number): 비타민D (μg)
+    - `zinc` (number): 아연 (mg)
+  - `mealCount` (number): 해당 날짜의 식사 횟수
+  - `mealHistory` (array): 식사 기록 목록
+    - `id` (string): 식사 ID
+    - `consumedAt` (string): 섭취 시간 (ISO 8601 형식)
+    - `mealType` (string | null): 식사 타입 (breakfast, lunch, dinner, snack)
+    - `notes` (string | null): 메모
+    - `recipeId` (string | null): 레시피 ID
 - **특징:** 
   - 칼로리, 영양소 섭취량 등 일일 통계
-  - userId로 자동 필터링
+  - **meal 테이블 기준으로만 계산** (Meal과 Recipe LEFT JOIN)
+  - recipeId가 NULL인 meal은 영양소 계산에서 제외됨
+  - userId로 자동 필터링 (본인 데이터만 조회)
+  - date 파라미터가 없으면 오늘 날짜 기준으로 조회
 
 ### 주간 건강 통계
 - **GET** `/statistics/weekly`
@@ -998,24 +1078,26 @@
   "data": {
     "startDate": "2024-01-15",
     "endDate": "2024-01-21",
-    "averageDailyCalories": 1800,
-    "averageDailyProtein": 120,
-    "averageDailyCarbs": 200,
-    "averageDailyFat": 60,
     "dailyStats": [
       {
         "date": "2024-01-15",
         "calories": 1800,
-        "protein": 120,
-        "carbohydrates": 200,
-        "fat": 60
+        "meals": 3,
+        "goalsAchieved": false
       }
-    ]
+    ],
+    "weeklyTotal": {
+      "totalCalories": 12600,
+      "totalMeals": 21,
+      "averageCalories": 1800,
+      "goalsAchievedDays": 0
+    }
   }
 }
 ```
 - **특징:** 
   - 시작일부터 7일간의 통계
+  - meal 테이블 기준으로 계산 (Meal과 Recipe JOIN)
   - userId로 자동 필터링
 
 ### 영양소 통계
@@ -1029,26 +1111,75 @@
 {
   "success": true,
   "data": {
-    "startDate": "2024-01-01",
-    "endDate": "2024-01-31",
-    "totalCalories": 54000,
-    "totalProtein": 3600,
-    "totalCarbohydrates": 6000,
-    "totalFat": 1800,
-    "averageDailyCalories": 1742,
-    "averageDailyProtein": 116,
-    "averageDailyCarbs": 194,
-    "averageDailyFat": 58,
-    "nutritionBreakdown": {
-      "protein": 30,
-      "carbohydrates": 50,
-      "fat": 20
-    }
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "total": {
+      "calories": 54000,
+      "protein": 3600,
+      "carbs": 6000,
+      "fat": 1800,
+      "vitamin_c": 1500,
+      "vitamin_d": 300,
+      "zinc": 240
+    },
+    "average": {
+      "calories": 1742,
+      "protein": 116,
+      "carbs": 194,
+      "fat": 58,
+      "vitamin_c": 48,
+      "vitamin_d": 10,
+      "zinc": 8
+    },
+    "dailyBreakdown": [
+      {
+        "date": "2024-01-01",
+        "calories": 1800,
+        "protein": 120,
+        "carbs": 200,
+        "fat": 60,
+        "vitamin_c": 50,
+        "vitamin_d": 10,
+        "zinc": 8
+      }
+    ]
   }
 }
 ```
 - **특징:** 
   - 지정된 기간의 영양소 섭취 통계
+  - meal 테이블 기준으로 계산 (Meal과 Recipe JOIN)
+  - userId로 자동 필터링
+
+### 통합 영양소 목표
+- **GET** `/statistics/combined-targets`
+- **설명:** 사용자가 선택한 건강 목표들을 기반으로 통합 영양소 목표치 계산
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "goalCount": 2,
+    "goals": [1002, 1003],
+    "targets": {
+      "calories": 1800.0,
+      "protein": 120.0,
+      "carbohydrates": 150.0,
+      "fat": 60.0,
+      "vitamin_c": 75.0,
+      "vitamin_d": 18.75,
+      "zinc": 5.0,
+      "sodium": 1000.0
+    }
+  }
+}
+```
+- **에러:** 목표가 선택되지 않은 경우 `{"message": "No health goals selected"}`
+- **특징:**
+  - 사용자가 선택한 최대 3개의 건강 목표를 기반으로 계산
+  - 각 목표별 영양소 목표치를 평균하여 통합
   - userId로 자동 필터링
 
 ---

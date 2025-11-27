@@ -10,6 +10,7 @@ from app.statistics.statistics_service import (
     daily_health_stats,
     weekly_health_stats,
     nutrition_stats,
+    calculate_combined_nutrition_targets,
 )
 
 router = APIRouter(
@@ -71,4 +72,16 @@ def nutrition_stats_endpoint(
     db: Session = Depends(get_db),
 ):
     data = nutrition_stats(db, userId, startDate, endDate)
+    return HealthStatsResponse(success=True, data=data)
+
+
+# -----------------------------
+# Combined Nutrition Targets
+# -----------------------------
+@router.get("/combined-targets", response_model=HealthStatsResponse)
+def combined_nutrition_targets(
+    userId=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = calculate_combined_nutrition_targets(db, userId)
     return HealthStatsResponse(success=True, data=data)

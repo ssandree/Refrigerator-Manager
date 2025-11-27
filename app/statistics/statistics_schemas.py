@@ -11,3 +11,5 @@ class BaseResponse(BaseModel):
 class HealthStatsResponse(BaseResponse):
     data: Dict[str, Any]
 
+class NutritionTargetResponse(BaseResponse):
+    data: Dict[str, Any]

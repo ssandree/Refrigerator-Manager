@@ -33,5 +33,6 @@ def get_user_goal_statistics(db: Session, userId: str):
     goals = get_user_goals(db, userId)
     return {
         "selectedGoals": len(goals),
+        "goalsAchieved": 0,  # 추후 계산 가능
         "achievementRate": 0,  # 추후 계산 가능
     }

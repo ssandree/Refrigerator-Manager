@@ -174,33 +174,54 @@ def get_nutrition_targets(goal_id: int, user: User) -> Dict[str, float]:
 # 통계 조회 함수
 # -----------------------------
 
-def get_meals_between(db: Session, userId: str, start, end):
-    """특정 기간의 식사 조회"""
-    return db.query(Meal).filter(
-        Meal.userId == userId,
-        Meal.consumedAt >= start,
-        Meal.consumedAt <= end
-    ).all()
+def _get_meals_with_recipes(db: Session, user_id: str, start_date=None, end_date=None):
+    """
+    Meal과 Recipe를 LEFT JOIN하여 조회
+    영양 통계는 무조건 meal 테이블을 기준으로 계산해야 함
+    recipeId가 NULL인 meal도 포함됨
+    """
+    query = (
+        db.query(Meal, Recipe)
+        .outerjoin(Recipe, Meal.recipeId == Recipe.id)  # LEFT JOIN 사용
+        .filter(Meal.userId == user_id)
+    )
+
+    if start_date:
+        query = query.filter(Meal.consumedAt >= start_date)
+    if end_date:
+        query = query.filter(Meal.consumedAt <= end_date)
+
+    return query.all()
 
 
-def calc_meal_calories(meal: Meal, recipe_lookup):
+def calc_meal_calories(meal: Meal, recipe: Recipe):
     """식사의 칼로리 계산"""
-    recipe = recipe_lookup.get(meal.recipeId)
-    return recipe.calories if recipe and recipe.calories else 0
-
-
-def calc_meal_nutrition(meal: Meal, recipe_lookup):
-    """식사의 영양소 계산"""
-    recipe = recipe_lookup.get(meal.recipeId)
-
     if not recipe:
-        return {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+        return 0
+    return recipe.calories if recipe.calories else 0
+
+
+def calc_meal_nutrition(meal: Meal, recipe: Recipe):
+    """식사의 영양소 계산"""
+    if not recipe:
+        return {
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0,
+            "vitamin_c": 0,
+            "vitamin_d": 0,
+            "zinc": 0
+        }
 
     return {
         "calories": recipe.calories or 0,
         "protein": recipe.protein or 0,
         "carbs": recipe.carbohydrates or 0,
-        "fat": recipe.fat or 0
+        "fat": recipe.fat or 0,
+        "vitamin_c": recipe.vitamin_c or 0,
+        "vitamin_d": recipe.vitamin_d or 0,
+        "zinc": recipe.zinc or 0
     }
 
 
@@ -221,14 +242,22 @@ def daily_health_stats(db: Session, userId: str, date_str: Optional[str]):
     day_start = datetime(day.year, day.month, day.day, 0, 0, 0)
     day_end = datetime(day.year, day.month, day.day, 23, 59, 59)
 
-    meals = get_meals_between(db, userId, day_start, day_end)
-    recipes = {r.id: r for r in db.query(Recipe).all()}
+    # Meal과 Recipe를 JOIN하여 조회 (meal 테이블 기준)
+    meal_recipe_pairs = _get_meals_with_recipes(db, userId, day_start, day_end)
 
-    macros = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+    macros = {
+        "calories": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "vitamin_c": 0,
+        "vitamin_d": 0,
+        "zinc": 0
+    }
     meal_history = []
 
-    for meal in meals:
-        nutrition = calc_meal_nutrition(meal, recipes)
+    for meal, recipe in meal_recipe_pairs:
+        nutrition = calc_meal_nutrition(meal, recipe)
         for key in macros.keys():
             macros[key] += nutrition.get(key, 0)
 
@@ -244,7 +273,7 @@ def daily_health_stats(db: Session, userId: str, date_str: Optional[str]):
         "date": day.strftime("%Y-%m-%d"),
         "calories": macros["calories"],
         "macros": macros,
-        "mealCount": len(meals),
+        "mealCount": len(meal_recipe_pairs),
         "mealHistory": meal_history,
     }
 
@@ -254,10 +283,8 @@ def weekly_health_stats(db: Session, userId: str, start_date: str):
     start = datetime.fromisoformat(start_date)
     end = start + timedelta(days=6)
 
-    meals = get_meals_between(db, userId, start, end)
-
-    # Recipe lookup optimization
-    recipes = {r.id: r for r in db.query(Recipe).all()}
+    # Meal과 Recipe를 JOIN하여 조회 (meal 테이블 기준)
+    meal_recipe_pairs = _get_meals_with_recipes(db, userId, start, end)
 
     daily_stats = []
     total_calories = 0
@@ -268,11 +295,13 @@ def weekly_health_stats(db: Session, userId: str, start_date: str):
         day_start = day.replace(hour=0, minute=0, second=0)
         day_end = day.replace(hour=23, minute=59, second=59)
 
+        # 해당 날짜의 meal-recipe 쌍 필터링
         day_meals = [
-            m for m in meals if day_start <= m.consumedAt <= day_end
+            (m, r) for m, r in meal_recipe_pairs
+            if day_start <= m.consumedAt <= day_end
         ]
 
-        day_calories = sum(calc_meal_calories(m, recipes) for m in day_meals)
+        day_calories = sum(calc_meal_calories(m, r) for m, r in day_meals)
 
         daily_stats.append({
             "date": day.strftime("%Y-%m-%d"),
@@ -302,25 +331,42 @@ def nutrition_stats(db: Session, userId: str, start_date: str, end_date: str):
     start = datetime.fromisoformat(start_date)
     end = datetime.fromisoformat(end_date)
 
-    meals = get_meals_between(db, userId, start, end)
-    recipes = {r.id: r for r in db.query(Recipe).all()}
+    # Meal과 Recipe를 JOIN하여 조회 (meal 테이블 기준)
+    meal_recipe_pairs = _get_meals_with_recipes(db, userId, start, end)
 
-    total = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+    total = {
+        "calories": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "vitamin_c": 0,
+        "vitamin_d": 0,
+        "zinc": 0
+    }
     daily_breakdown = []
 
     days = (end - start).days + 1
 
     for i in range(days):
         day = start + timedelta(days=i)
+        # 해당 날짜의 meal-recipe 쌍 필터링
         day_meals = [
-            m for m in meals
+            (m, r) for m, r in meal_recipe_pairs
             if m.consumedAt.date() == day.date()
         ]
 
-        day_stats = {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+        day_stats = {
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0,
+            "vitamin_c": 0,
+            "vitamin_d": 0,
+            "zinc": 0
+        }
 
-        for m in day_meals:
-            nut = calc_meal_nutrition(m, recipes)
+        for m, r in day_meals:
+            nut = calc_meal_nutrition(m, r)
             for k in total.keys():
                 day_stats[k] += nut[k]
                 total[k] += nut[k]
@@ -342,6 +388,42 @@ def nutrition_stats(db: Session, userId: str, start_date: str, end_date: str):
         "dailyBreakdown": daily_breakdown
     }
 
+def calculate_combined_nutrition_targets(db: Session, userId: str):
+    """
+    사용자가 선택한 최대 3개의 건강 목표를 기반으로
+    하루 영양소 목표치를 계산하여 통합 반환.
+    """
+    # User 객체 조회
+    user = db.query(User).filter(User.id == userId).first()
+    if not user:
+        return {"message": "User not found"}
+
+    # 사용자 목표 1~3개 가져오기
+    from app.health_goals.health_services import get_user_goals
+    user_goals = get_user_goals(db, userId)
+
+    if not user_goals:
+        return {"message": "No health goals selected"}
+
+    # 각 목표별 target 계산
+    target_list = []
+    for goal in user_goals:
+        t = get_nutrition_targets(goal["id"], user)
+        target_list.append(t)
+
+    # 평균 방식으로 통합
+    combined = {}
+    keys = target_list[0].keys()
+
+    for k in keys:
+        combined[k] = sum(t[k] for t in target_list) / len(target_list)
+
+    return {
+        "goalCount": len(user_goals),
+        "goals": [g["id"] for g in user_goals],
+        "targets": combined
+    }
+
 
 __all__ = [
     "get_meal_statistics",
@@ -351,4 +433,5 @@ __all__ = [
     "daily_health_stats",
     "weekly_health_stats",
     "nutrition_stats",
+    "calculate_combined_nutrition_targets",
 ]

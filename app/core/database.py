@@ -27,6 +27,7 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+        db.commit()  # 읽기 전용이어도 명시적으로 commit (트랜잭션 정리)
     except Exception:
         db.rollback()
         raise
