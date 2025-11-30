@@ -1,3 +1,4 @@
+### auth_schemas.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -18,6 +19,7 @@ class UserUpdateRequest(BaseModel):
     age: int | None = None
     sex: str | None = None
     weight: float | None = None
+    height: float | None = None
     activityLevel: str | None = None
     bmi: float | None = None
 
@@ -28,6 +30,7 @@ class UserResponse(BaseModel):
     age: int | None
     sex: str | None
     weight: float | None
+    height: float | None 
     activityLevel: str | None
     bmi: float | None
 

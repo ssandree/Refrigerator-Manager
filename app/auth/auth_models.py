@@ -1,3 +1,4 @@
+### auth/auth_models.py
 from sqlalchemy import Column, String, Integer, Float
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -13,6 +14,7 @@ class User(Base):
     age = Column(Integer, nullable=True)
     sex = Column(String(20), nullable=True)
     weight = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
     activityLevel = Column(String(20), nullable=True)
     bmi = Column(Float, nullable=True)
 

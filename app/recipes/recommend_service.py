@@ -216,6 +216,7 @@ def recommend_recipes(
         score_details: Dict[str, Any] = {
             "score": final_score,
             "expiryScore": expiry_score_sum,
+            "calories": recipe.calories,
             "matchScore": match_score,
             "matchedCount": matched_count,
             "totalRequired": total_required,

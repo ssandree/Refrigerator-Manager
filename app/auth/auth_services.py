@@ -1,3 +1,4 @@
+### auth_service.py
 from sqlalchemy.orm import Session
 from app.auth.auth_models import User
 from app.core.security import hash_password, verify_password
@@ -56,6 +57,8 @@ def update_user_info(db: Session, user_id: str, data):
         user.sex = data.sex
     if data.weight is not None:
         user.weight = data.weight
+    if data.height is not None:
+        user.height = data.height
     if data.activityLevel is not None:
         user.activityLevel = data.activityLevel
     if data.bmi is not None:
