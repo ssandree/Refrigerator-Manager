@@ -195,33 +195,37 @@ def _get_meals_with_recipes(db: Session, user_id: str, start_date=None, end_date
 
 
 def calc_meal_calories(meal: Meal, recipe: Recipe):
-    """식사의 칼로리 계산"""
-    if not recipe:
-        return 0
-    return recipe.calories if recipe.calories else 0
+    """식사의 칼로리 계산 - Meal의 정보를 우선 사용, 없으면 Recipe에서 가져옴"""
+    # Meal에 칼로리 정보가 있으면 우선 사용
+    if meal.calories is not None:
+        return meal.calories
+    # Meal에 없으면 Recipe에서 가져오기
+    if recipe and recipe.calories:
+        return recipe.calories
+    return 0
 
 
 def calc_meal_nutrition(meal: Meal, recipe: Recipe):
-    """식사의 영양소 계산"""
-    if not recipe:
-        return {
-            "calories": 0,
-            "protein": 0,
-            "carbs": 0,
-            "fat": 0,
-            "vitamin_c": 0,
-            "vitamin_d": 0,
-            "zinc": 0
-        }
+    """식사의 영양소 계산 - Meal의 정보를 우선 사용, 없으면 Recipe에서 가져옴"""
+    # Meal에 영양소 정보가 있으면 우선 사용
+    calories = meal.calories if meal.calories is not None else (recipe.calories if recipe and recipe.calories else 0)
+    protein = meal.protein if meal.protein is not None else (recipe.protein if recipe and recipe.protein else 0)
+    carbs = meal.carbohydrates if meal.carbohydrates is not None else (recipe.carbohydrates if recipe and recipe.carbohydrates else 0)
+    fat = meal.fat if meal.fat is not None else (recipe.fat if recipe and recipe.fat else 0)
+    sodium = meal.sodium if meal.sodium is not None else (recipe.sodium if recipe and recipe.sodium else 0)
+    vitamin_c = meal.vitamin_c if meal.vitamin_c is not None else (recipe.vitamin_c if recipe and recipe.vitamin_c else 0)
+    vitamin_d = meal.vitamin_d if meal.vitamin_d is not None else (recipe.vitamin_d if recipe and recipe.vitamin_d else 0)
+    zinc = meal.zinc if meal.zinc is not None else (recipe.zinc if recipe and recipe.zinc else 0)
 
     return {
-        "calories": recipe.calories or 0,
-        "protein": recipe.protein or 0,
-        "carbs": recipe.carbohydrates or 0,
-        "fat": recipe.fat or 0,
-        "vitamin_c": recipe.vitamin_c or 0,
-        "vitamin_d": recipe.vitamin_d or 0,
-        "zinc": recipe.zinc or 0
+        "calories": calories,
+        "protein": protein,
+        "carbs": carbs,
+        "fat": fat,
+        "sodium": sodium,
+        "vitamin_c": vitamin_c,
+        "vitamin_d": vitamin_d,
+        "zinc": zinc
     }
 
 
@@ -250,6 +254,7 @@ def daily_health_stats(db: Session, userId: str, date_str: Optional[str]):
         "protein": 0,
         "carbs": 0,
         "fat": 0,
+        "sodium": 0,
         "vitamin_c": 0,
         "vitamin_d": 0,
         "zinc": 0
@@ -339,6 +344,7 @@ def nutrition_stats(db: Session, userId: str, start_date: str, end_date: str):
         "protein": 0,
         "carbs": 0,
         "fat": 0,
+        "sodium": 0,
         "vitamin_c": 0,
         "vitamin_d": 0,
         "zinc": 0
@@ -360,6 +366,7 @@ def nutrition_stats(db: Session, userId: str, start_date: str, end_date: str):
             "protein": 0,
             "carbs": 0,
             "fat": 0,
+            "sodium": 0,
             "vitamin_c": 0,
             "vitamin_d": 0,
             "zinc": 0

@@ -94,14 +94,44 @@ def validate_foods_exist(db: Session, food_ids: list[str], userId: str):
 
 def create_meal(db: Session, userId: str, data):
     # 유효성 검사
+    recipe = None
     if data.recipeId:
-        validate_recipe_exists(db, data.recipeId)
+        recipe = validate_recipe_exists(db, data.recipeId)
     
     if data.foodIds:
         validate_foods_exist(db, data.foodIds, userId)
     
     # mealType을 문자열로 변환 (Enum인 경우)
     meal_type_value = data.mealType.value if hasattr(data.mealType, 'value') else data.mealType
+    
+    # 영양소 정보: 사용자가 제공한 값이 있으면 우선 사용, 없으면 Recipe에서 가져오기
+    calories = data.calories
+    carbohydrates = data.carbohydrates
+    protein = data.protein
+    fat = data.fat
+    sodium = data.sodium
+    vitamin_c = data.vitamin_c
+    vitamin_d = data.vitamin_d
+    zinc = data.zinc
+    
+    # Recipe가 있고 사용자가 영양소 정보를 제공하지 않은 경우, Recipe에서 복사
+    if recipe:
+        if calories is None:
+            calories = recipe.calories
+        if carbohydrates is None:
+            carbohydrates = recipe.carbohydrates
+        if protein is None:
+            protein = recipe.protein
+        if fat is None:
+            fat = recipe.fat
+        if sodium is None:
+            sodium = recipe.sodium
+        if vitamin_c is None:
+            vitamin_c = recipe.vitamin_c
+        if vitamin_d is None:
+            vitamin_d = recipe.vitamin_d
+        if zinc is None:
+            zinc = recipe.zinc
     
     meal = Meal(
         userId=userId,
@@ -110,7 +140,15 @@ def create_meal(db: Session, userId: str, data):
         quantity=data.quantity,
         consumedAt=data.consumedAt,
         notes=data.notes,
-        mealType=meal_type_value
+        mealType=meal_type_value,
+        calories=calories,
+        carbohydrates=carbohydrates,
+        protein=protein,
+        fat=fat,
+        sodium=sodium,
+        vitamin_c=vitamin_c,
+        vitamin_d=vitamin_d,
+        zinc=zinc
     )
     db.add(meal)
     db.commit()
@@ -127,6 +165,22 @@ def update_meal(db: Session, meal: Meal, data):
         # mealType을 문자열로 변환 (Enum인 경우)
         meal_type_value = data.mealType.value if hasattr(data.mealType, 'value') else data.mealType
         meal.mealType = meal_type_value
+    if data.calories is not None:
+        meal.calories = data.calories
+    if data.carbohydrates is not None:
+        meal.carbohydrates = data.carbohydrates
+    if data.protein is not None:
+        meal.protein = data.protein
+    if data.fat is not None:
+        meal.fat = data.fat
+    if data.sodium is not None:
+        meal.sodium = data.sodium
+    if data.vitamin_c is not None:
+        meal.vitamin_c = data.vitamin_c
+    if data.vitamin_d is not None:
+        meal.vitamin_d = data.vitamin_d
+    if data.zinc is not None:
+        meal.zinc = data.zinc
 
     db.commit()
     db.refresh(meal)
@@ -144,8 +198,8 @@ def get_statistics(db: Session, userId: str):
 
     totalMeals = len(meals)
 
-    # 칼로리 계산은 Recipe 모델 참조해야 함 (임시 기본값: 0)
-    totalCalories = 0
+    # 칼로리 합계 계산 (null 값은 0으로 처리)
+    totalCalories = sum(meal.calories or 0 for meal in meals)
 
     if totalMeals == 0:
         return {

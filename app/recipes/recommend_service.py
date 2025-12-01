@@ -235,6 +235,15 @@ def recommend_recipes(
                 "score": final_score,
                 "scoreDetails": score_details,
                 "imageUrl": recipe.imageUrl,
+                "sourceUrl": recipe.sourceUrl,
+                "requiredfoods": required_names,
+                "carbohydrates": recipe.carbohydrates,
+                "protein": recipe.protein,
+                "fat": recipe.fat,
+                "sodium": recipe.sodium,
+                "vitamin_c": recipe.vitamin_c,
+                "vitamin_d": recipe.vitamin_d,
+                "zinc": recipe.zinc,
             }
         )
 

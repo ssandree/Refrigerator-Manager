@@ -10,6 +10,14 @@ class MealCreate(BaseModel):
     consumedAt: datetime
     notes: Optional[str] = None
     mealType: Optional[MealType] = None
+    calories: Optional[int] = None
+    carbohydrates: Optional[float] = None
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    sodium: Optional[float] = None
+    vitamin_c: Optional[float] = None
+    vitamin_d: Optional[float] = None
+    zinc: Optional[float] = None
 
     @field_validator('mealType', mode='before')
     @classmethod
@@ -26,6 +34,14 @@ class MealUpdate(BaseModel):
     quantity: Optional[str] = None
     notes: Optional[str] = None
     mealType: Optional[MealType] = None
+    calories: Optional[int] = None
+    carbohydrates: Optional[float] = None
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    sodium: Optional[float] = None
+    vitamin_c: Optional[float] = None
+    vitamin_d: Optional[float] = None
+    zinc: Optional[float] = None
 
     @field_validator('mealType', mode='before')
     @classmethod
@@ -47,6 +63,14 @@ class MealResponse(BaseModel):
     registeredAt: datetime
     notes: Optional[str]
     mealType: Optional[str]  # DB에서 문자열로 저장되므로 str로 반환
+    calories: Optional[int]
+    carbohydrates: Optional[float]
+    protein: Optional[float]
+    fat: Optional[float]
+    sodium: Optional[float]
+    vitamin_c: Optional[float]
+    vitamin_d: Optional[float]
+    zinc: Optional[float]
 
     class Config:
         from_attributes = True

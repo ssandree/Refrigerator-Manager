@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, DateTime, ForeignKey, JSON, Integer, Float
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
@@ -20,4 +20,14 @@ class Meal(Base):
 
     notes = Column(String(500), nullable=True)
     mealType = Column(String(20), nullable=True)  # breakfast, lunch, dinner, snack
+
+    # 영양소 정보
+    calories = Column(Integer, nullable=True)
+    carbohydrates = Column(Float, nullable=True)
+    protein = Column(Float, nullable=True)
+    fat = Column(Float, nullable=True)
+    sodium = Column(Float, nullable=True)
+    vitamin_c = Column(Float, nullable=True)
+    vitamin_d = Column(Float, nullable=True)
+    zinc = Column(Float, nullable=True)
 

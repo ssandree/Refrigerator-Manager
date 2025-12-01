@@ -150,6 +150,9 @@ GOAL_CALCULATORS = {
 # 레시피 vs 건강 목표 매칭 점수 계산 헬퍼
 # ----------------------------------------
 
+# 건강 목표 매칭이 어느 정도 이상일 때만 matchedGoals에 넣을지 기준
+GOAL_MATCH_THRESHOLD = 0.5  # 0~1
+
 # 이 키들 기준으로 레시피/목표를 비교
 NUTRIENT_KEYS = [
     "calories",

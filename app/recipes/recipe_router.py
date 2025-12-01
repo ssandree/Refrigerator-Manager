@@ -21,6 +21,11 @@ from app.recipes.recipe_services import (
 )
 from app.recipes.recommend_service import recommend_recipes
 
+from app.health_goals.goal_calculator_service import (
+    calc_goal_match_for_recipe,
+    GOAL_MATCH_THRESHOLD,
+)
+from app.health_goals.health_services import get_user_goals
 
 router = APIRouter(
     prefix="/recipes",
@@ -36,9 +41,9 @@ router = APIRouter(
 def _normalize_requiredfoods(raw) -> List[str]:
     """
     DB의 requiredfoods 형태
-      - None
-      - 문자열(JSON)
-      - 리스트(str / dict)
+        - None
+        - 문자열(JSON)
+        - 리스트(str / dict)
     를 항상 List[str] (재료 이름 리스트)로 변환.
     """
     if raw is None:
@@ -85,7 +90,7 @@ def _normalize_requiredfoods(raw) -> List[str]:
     return []
 
 
-def _to_recipe_response(recipe: Recipe) -> RecipeResponse:
+def _to_recipe_response(recipe: Recipe, user=None, user_goals=None) -> RecipeResponse:
     """
     SQLAlchemy Recipe 모델 → Pydantic RecipeResponse 로 변환.
     (requiredfoods는 항상 List[str]로 맞춰서 넘김)
@@ -96,6 +101,7 @@ def _to_recipe_response(recipe: Recipe) -> RecipeResponse:
         "calories": recipe.calories,
         "healthGoal": recipe.healthGoal,
         "imageUrl": recipe.imageUrl,
+        "sourceUrl": recipe.sourceUrl,
         "requiredfoods": _normalize_requiredfoods(recipe.requiredfoods),
         "carbohydrates": recipe.carbohydrates,
         "protein": recipe.protein,
@@ -105,6 +111,25 @@ def _to_recipe_response(recipe: Recipe) -> RecipeResponse:
         "vitamin_d": recipe.vitamin_d,
         "zinc": recipe.zinc,
     }
+    # 건강 목표 매칭
+    if user and user_goals:
+        selected_goal_ids = [g["id"] for g in user_goals]
+        goal_title_map = {g["id"]: g["title"] for g in user_goals}
+        goal_scores = calc_goal_match_for_recipe(recipe, user, selected_goal_ids)
+
+        matched = []
+        for gid, score in goal_scores.items():
+            if score >= GOAL_MATCH_THRESHOLD:
+                matched.append({
+                    "id": gid,
+                    "title": goal_title_map.get(gid),
+                    "score": round(score, 3)
+                })
+
+        data["matchedGoals"] = matched
+    else:
+        data["matchedGoals"] = []
+
     return RecipeResponse.model_validate(data)
 
 
@@ -114,35 +139,34 @@ def _to_recipe_response(recipe: Recipe) -> RecipeResponse:
 @router.get("", response_model=RecipeListResponse)
 def find_all(
     db: Session = Depends(get_db),
-    limit: int = Query(
-        50,
-        ge=1,
-        le=100,
-        description="가져올 최대 레시피 개수 (기본 50)",
-    ),
-    skip: int = Query(
-        0,
-        ge=0,
-        description="건너뛸 개수 (페이지네이션용)",
-    ),
+    user=Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=100),
+    skip: int = Query(0, ge=0),
 ):
     total, recipes = get_all_recipes(db, limit=limit, skip=skip)
+    user_goals = get_user_goals(db, user.id)
+
     return RecipeListResponse(
         total=total,
-        data=[_to_recipe_response(recipe) for recipe in recipes],
+        data=[_to_recipe_response(r, user=user, user_goals=user_goals) for r in recipes],
     )
-
 
 # -----------------------------
 # Search
 # -----------------------------
-@router.get("/search/", response_model=RecipeListResponse)
-def search(q: str = Query(...), db: Session = Depends(get_db)):
+@router.get("/search", response_model=RecipeListResponse)
+def search(
+    q: str = Query(...),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
     recipes = search_recipes(db, q)
+    user_goals = get_user_goals(db, user.id)
     return RecipeListResponse(
         total=len(recipes),
-        data=[_to_recipe_response(recipe) for recipe in recipes],
+        data=[_to_recipe_response(r, user=user, user_goals=user_goals) for r in recipes],
     )
+
 
 
 # -----------------------------
@@ -150,17 +174,22 @@ def search(q: str = Query(...), db: Session = Depends(get_db)):
 # -----------------------------
 @router.get("/recommend", response_model=RecommendResponse)
 def recommend(
-    userId=Depends(get_current_user),
+    user=Depends(get_current_user),
     db: Session = Depends(get_db),
-    limit: int = Query(
-        20,
-        ge=1,
-        le=100,
-        description="최대 추천 레시피 개수",
-    ),
+    limit: int = 20,
 ):
-    data = recommend_recipes(db, userId, limit=limit)
-    return RecommendResponse(success=True, data=data)
+    raw = recommend_recipes(db, user.id, limit)
+
+    # raw 안의 scoreDetails.matchedGoals를 바깥으로 꺼낼 수 있음
+    enriched = []
+    for r in raw:
+        enriched.append({
+            **r,
+            "matchedGoals": r["scoreDetails"].get("matchedGoals", [])
+        })
+
+    return RecommendResponse(success=True, data=enriched)
+
 
 
 # -----------------------------
@@ -168,36 +197,17 @@ def recommend(
 # -----------------------------
 @router.get("/filter")
 def filter_recipes(
-    ingredients: Optional[List[str]] = Query(
-        default=None,
-        description="이 재료들을 모두 포함하는 레시피만 조회",
-    ),
-    expiringOnly: bool = Query(
-        default=False,
-        description="임박 재료(3일 이내 만료) 포함 레시피만 조회",
-    ),
-    minCalories: Optional[int] = Query(
-        default=None,
-        ge=0,
-        description="최소 칼로리",
-    ),
-    maxCalories: Optional[int] = Query(
-        default=None,
-        ge=0,
-        description="최대 칼로리",
-    ),
-    limit: int = Query(
-        50,
-        ge=1,
-        le=100,
-        description="최대 레시피 개수 (기본 50)",
-    ),
-    userId=Depends(get_current_user),
+    ingredients: Optional[List[str]] = Query(default=None),
+    expiringOnly: bool = False,
+    minCalories: Optional[int] = None,
+    maxCalories: Optional[int] = None,
+    limit: int = 50,
+    user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     recipes = filter_recipes_service(
         db=db,
-        userId=userId,
+        userId=user.id,
         ingredients=ingredients,
         expiring_only=expiringOnly,
         min_calories=minCalories,
@@ -205,24 +215,29 @@ def filter_recipes(
         limit=limit,
     )
 
-    # Pydantic 모델 → dict로 변환해서 순수 JSON 반환
+    user_goals = get_user_goals(db, user.id)
+
     return {
         "success": True,
         "message": None,
         "total": len(recipes),
         "data": [
-            _to_recipe_response(recipe).model_dump()
-            for recipe in recipes
+            _to_recipe_response(r, user=user, user_goals=user_goals).model_dump()
+            for r in recipes
         ],
     }
+
 
 
 # -----------------------------
 # Read - One
 # -----------------------------
 @router.get("/{recipe_id}", response_model=SingleRecipeResponse)
-def find_one(recipe_id: str, db: Session = Depends(get_db)):
+def find_one(recipe_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
     recipe = get_recipe_by_id(db, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="RECIPE_NOT_FOUND")
-    return SingleRecipeResponse(data=_to_recipe_response(recipe))
+
+    user_goals = get_user_goals(db, user.id)
+
+    return SingleRecipeResponse(data=_to_recipe_response(recipe, user, user_goals))
