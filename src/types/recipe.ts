@@ -1,3 +1,4 @@
+// recipe.ts
 /**
  * Database column shape for recipes table.
  */
@@ -7,7 +8,8 @@ export interface RecipeRecord {
   calories: number;
   healthGoal: number | null;
   imageUrl: string | null;
-  requiredfoods: string[] | null;
+  sourceUrl: string | null;
+  requiredfoods: string[];
   carbohydrates: number | null;
   protein: number | null;
   fat: number | null;
@@ -23,11 +25,6 @@ export interface RecipeRecord {
  * by other services (e.g. favorite flag, owned ingredient counts).
  */
 export interface Recipe extends RecipeRecord {
-  description?: string | null;
-  time?: number | null;
-  timeCategory?: string | null;
-  difficulty?: "쉬움" | "보통" | "어려움" | "매우 쉬움" | null;
-  tags?: string[];
   ingredientsOwned?: number;
   totalIngredients?: number;
   isFavorite?: boolean;
@@ -42,4 +39,24 @@ export interface RecipeFilterParams {
   // 최소 / 최대 칼로리
   minCalories?: number;
   maxCalories?: number;
+}
+
+export interface RecommendItem {
+  id: string;
+  recipeName: string;
+  foodsOwned: number;
+  totalFoods: number;
+  score: number;
+  scoreDetails: any;
+  imageUrl?: string | null;
+  sourceUrl?: string | null; // ⭐ 추가
+  requiredfoods?: string[]; // ⭐ 추천
+
+  carbohydrates?: number | null;
+  protein?: number | null;
+  fat?: number | null;
+  sodium?: number | null;
+  vitamin_c?: number | null;
+  vitamin_d?: number | null;
+  zinc?: number | null;
 }

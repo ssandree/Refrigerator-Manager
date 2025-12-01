@@ -30,7 +30,7 @@ export function filterRecipes(
     // 재료 필터 (tags를 통해 간접적으로 필터링)
     if (selectedIngredients.length > 0) {
       const hasRequiredIngredient = selectedIngredients.some((ingredient) =>
-        recipe.tags.some((tag) =>
+        (recipe.tags ?? []).some((tag) =>
           tag.toLowerCase().includes(ingredient.toLowerCase())
         )
       );

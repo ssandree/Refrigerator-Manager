@@ -45,9 +45,9 @@ export default function RecipeFilterModal(props: RecipeFilterModalProps) {
 
   const foods = useFridgeStore((s) => s.foods);
 
-  // 냉장고 재료에서 이름을 유니크하게 추출 (name 필드 가정)
+  // 냉장고 재료에서 이름을 유니크하게 추출
   const foodNames = useMemo(() => {
-    const names = foods.map((i: any) => i.name).filter(Boolean) as string[];
+    const names = foods.map((food) => food.name).filter(Boolean) as string[];
     return Array.from(new Set(names));
   }, [foods]);
 
@@ -436,7 +436,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },

@@ -55,7 +55,11 @@ export function useAutoLoadData<T>(
   options?: UseAutoLoadDataOptions
 ) {
   const hasLoadedRef = useRef(false);
+  const loadDataRef = useRef(loadData);
   const syncValidDuration = options?.syncValidDuration ?? 5 * 60 * 1000; // 기본 5분
+
+  // loadData 함수 참조를 항상 최신으로 유지
+  loadDataRef.current = loadData;
 
   useEffect(() => {
     // 로딩이 완료되면 hasLoadedRef를 true로 설정
@@ -81,12 +85,13 @@ export function useAutoLoadData<T>(
 
     // 데이터가 없고 로딩 중이 아니면 로드
     if (data.length === 0 && !isLoading) {
-      loadData(false);
+      loadDataRef.current(false);
     }
+    // loadData를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     data.length,
     isLoading,
-    loadData,
     options?.checkLastSynced,
     options?.lastSyncedAt,
     syncValidDuration,

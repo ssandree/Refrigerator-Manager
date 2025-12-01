@@ -8,10 +8,10 @@ export interface User {
   email: string;
   age?: number | null;
   sex?: string | null;
-  height?: number | null;
   weight?: number | null;
   activityLevel?: string | null;
   bmi?: number | null;
+  height?: number | null;
 }
 
 export interface LoginRequest {
@@ -33,10 +33,10 @@ export interface UserUpdateRequest {
   name?: string | null;
   age?: number | null;
   sex?: string | null;
-  height?: number | null;
   weight?: number | null;
   activityLevel?: string | null;
   bmi?: number | null;
+  height?: number | null;
 }
 
 // 백엔드 응답 구조에 맞춘 타입 정의

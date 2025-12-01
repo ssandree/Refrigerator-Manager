@@ -55,12 +55,12 @@ export const applyOnboardingData = async (userId: string): Promise<boolean> => {
     // 로컬 사용자 정보 업데이트
     const updateUser = useAuthStore.getState().updateUser;
     updateUser({
-      sex: updateResponse.data.sex || undefined,
-      age: updateResponse.data.age ?? undefined,
-      height: updateResponse.data.height ?? undefined,
-      bmi: updateResponse.data.bmi ?? undefined,
-      weight: updateResponse.data.weight ?? undefined,
-      activityLevel: updateResponse.data.activityLevel || undefined,
+      sex: updateResponse.data.sex ?? null,
+      age: updateResponse.data.age ?? null,
+      height: updateResponse.data.height ?? null,
+      bmi: updateResponse.data.bmi ?? null,
+      weight: updateResponse.data.weight ?? null,
+      activityLevel: updateResponse.data.activityLevel ?? null,
     });
 
     // 건강 목표 저장

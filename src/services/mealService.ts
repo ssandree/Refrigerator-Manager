@@ -73,10 +73,8 @@ class MealService {
   /**
    * Delete a meal
    */
-  async deleteMeal(mealId: string): Promise<ApiResponse<{ message: string }>> {
-    return await apiClient.delete<{ message: string }>(
-      `${this.basePath}/${mealId}`
-    );
+  async deleteMeal(mealId: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`${this.basePath}/${mealId}`);
   }
 
   /**

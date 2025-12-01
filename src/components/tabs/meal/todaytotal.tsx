@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useDateStore } from "../../../stores/useDateStore";
 import { useNutritionStore } from "../../../stores/useNutritionStore";
@@ -22,26 +22,40 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
   // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
   const todayISO = useDateStore((s) => s.todayISO);
 
+  // fetchDailyStats 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const fetchDailyStatsRef = useRef(fetchDailyStats);
+  fetchDailyStatsRef.current = fetchDailyStats;
+
   // 선택된 날짜(또는 오늘) 기준 일일 통계 로드
   useEffect(() => {
     const targetDate = dateISO || todayISO;
-    fetchDailyStats(targetDate);
-  }, [dateISO, todayISO, fetchDailyStats]);
+    fetchDailyStatsRef.current(targetDate);
+    // fetchDailyStats를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateISO, todayISO]);
 
   // 통계 응답을 NutritionStore의 totals로 반영
   useEffect(() => {
     if (!dailyStats) return;
-    setDate(dailyStats.date);
+
+    const targetDate = dateISO || todayISO;
+    const statsDate = dailyStats.date.split("T")[0]; // YYYY-MM-DD 형식으로 변환
+
+    // dailyStats의 날짜가 선택된 날짜와 일치하는지 확인
+    if (statsDate !== targetDate) return;
+
+    setDate(statsDate);
+    // 모든 필드를 명시적으로 설정 (부분 업데이트 방지)
     setTotals({
-      calories: dailyStats.calories,
-      protein: dailyStats.protein,
-      carbs: dailyStats.carbohydrates,
-      fat: dailyStats.fat,
-      vitaminC: dailyStats.vitamin_c,
-      vitaminD: dailyStats.vitamin_d,
-      zinc: dailyStats.zinc,
+      calories: Number(dailyStats.calories) || 0,
+      protein: Number(dailyStats.protein) || 0,
+      carbs: Number(dailyStats.carbohydrates) || 0,
+      fat: Number(dailyStats.fat) || 0,
+      vitaminC: Number(dailyStats.vitamin_c) || 0,
+      vitaminD: Number(dailyStats.vitamin_d) || 0,
+      zinc: Number(dailyStats.zinc) || 0,
     });
-  }, [dailyStats, setDate, setTotals]);
+  }, [dailyStats, dateISO, todayISO, setDate, setTotals]);
 
   const nutritionItems = [
     { label: "총 칼로리", value: `${totals.calories ?? 0}`, unit: "kcal" },

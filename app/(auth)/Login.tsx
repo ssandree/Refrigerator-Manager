@@ -86,6 +86,12 @@ export default function LoginScreen() {
           disabled={isLoading}
           style={{ marginBottom: 16 }}
         />
+        <PrimaryButton
+          label="홈으로 바로가기"
+          onPress={() => router.replace("/(tabs)/Home")}
+          disabled={isLoading}
+          variant="secondary"
+        />
       </View>
     </View>
   );

@@ -41,7 +41,11 @@ export default function RecipeCard({
       {/* 이미지 (왼쪽) */}
       <View style={recipeCardStyles.imageContainer}>
         <Image
-          source={require("../../../assets/images/tomato.jpg")}
+          source={
+            recipe.imageUrl
+              ? { uri: recipe.imageUrl }
+              : require("../../../assets/images/tomato.jpg")
+          }
           style={recipeCardStyles.image}
         />
       </View>

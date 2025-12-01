@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useNutritionStore } from "../../../stores/useNutritionStore";
+import { useStatisticsStore } from "../../../stores/useStatisticsStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 
 const statsCardShadow = createShadowStyle({
@@ -13,6 +14,62 @@ const statsCardShadow = createShadowStyle({
 export default function TodayProgress() {
   const totals = useNutritionStore((s) => s.totals);
   const targets = useNutritionStore((s) => s.targets);
+  const setTargets = useNutritionStore((s) => s.setTargets);
+
+  const combinedTargets = useStatisticsStore((s) => s.combinedTargets);
+  const fetchCombinedTargets = useStatisticsStore(
+    (s) => s.fetchCombinedTargets
+  );
+
+  // fetchCombinedTargets 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const fetchCombinedTargetsRef = useRef(fetchCombinedTargets);
+  fetchCombinedTargetsRef.current = fetchCombinedTargets;
+
+  // combinedTargets 로드
+  useEffect(() => {
+    fetchCombinedTargetsRef.current();
+    // fetchCombinedTargets를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // combinedTargets를 NutritionStore의 targets로 반영
+  const prevCombinedTargetsRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!combinedTargets) return;
+
+    const goalIds = Object.keys(combinedTargets);
+    if (goalIds.length === 0) return;
+
+    // combinedTargets가 변경되었는지 확인 (무한 루프 방지)
+    const combinedTargetsKey = JSON.stringify(combinedTargets);
+    if (prevCombinedTargetsRef.current === combinedTargetsKey) return;
+    prevCombinedTargetsRef.current = combinedTargetsKey;
+
+    // 첫 번째 건강 목표의 목표치를 사용
+    const firstGoal = combinedTargets[goalIds[0]];
+    if (firstGoal) {
+      const currentTargets = useNutritionStore.getState().targets;
+      setTargets({
+        calories: firstGoal.targetCalories ?? currentTargets.calories,
+        protein:
+          typeof firstGoal.targetProtein === "number"
+            ? firstGoal.targetProtein
+            : firstGoal.targetProtein?.max ??
+              firstGoal.targetProtein?.min ??
+              currentTargets.protein,
+        carbs: firstGoal.targetCarbs ?? currentTargets.carbs,
+        fat:
+          typeof firstGoal.targetFat === "number"
+            ? firstGoal.targetFat
+            : firstGoal.targetFat?.max ??
+              firstGoal.targetFat?.min ??
+              currentTargets.fat,
+        vitaminC: firstGoal.targetVitaminC ?? currentTargets.vitaminC,
+        vitaminD: firstGoal.targetVitaminD ?? currentTargets.vitaminD,
+        zinc: firstGoal.targetZinc ?? currentTargets.zinc,
+      });
+    }
+  }, [combinedTargets, setTargets]);
 
   // 영양소 달성률 계산 (전체 평균 계산용)
   const nutritionProgress = useMemo(() => {

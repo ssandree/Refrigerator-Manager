@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -43,6 +44,10 @@ export default function RecipeDetail() {
       const localRecipe = getRecipeById(recipeId);
       if (localRecipe) {
         setRecipe(localRecipe);
+        // sourceUrl이 있으면 바로 웹뷰 열기
+        if (localRecipe.sourceUrl) {
+          WebBrowser.openBrowserAsync(localRecipe.sourceUrl);
+        }
         return;
       }
 
@@ -50,6 +55,10 @@ export default function RecipeDetail() {
       const fetchedRecipe = await fetchRecipeById(recipeId);
       if (fetchedRecipe) {
         setRecipe(fetchedRecipe);
+        // sourceUrl이 있으면 바로 웹뷰 열기
+        if (fetchedRecipe.sourceUrl) {
+          WebBrowser.openBrowserAsync(fetchedRecipe.sourceUrl);
+        }
       }
     };
 
@@ -109,6 +118,7 @@ export default function RecipeDetail() {
 
           <ScrollView
             style={styles.content}
+            contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
           >
             {isLoading && !recipe ? (
@@ -177,22 +187,29 @@ export default function RecipeDetail() {
                   </View>
                 </View>
 
-                {/* 식사 등록 버튼 */}
-                <TouchableOpacity
-                  style={[
-                    styles.registerButton,
-                    mealLoading && styles.registerButtonDisabled,
-                  ]}
-                  onPress={handleRegisterMeal}
-                  disabled={mealLoading}
-                >
-                  <Text style={styles.registerButtonText}>
-                    {mealLoading ? "등록 중..." : "식사로 등록하기"}
-                  </Text>
-                </TouchableOpacity>
+                {/* 플로팅 버튼을 위한 여백 */}
+                <View style={styles.bottomSpacer} />
               </>
             ) : null}
           </ScrollView>
+
+          {/* 플로팅 버튼 */}
+          {recipe && (
+            <View style={styles.floatingButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.floatingButton,
+                  mealLoading && styles.floatingButtonDisabled,
+                ]}
+                onPress={handleRegisterMeal}
+                disabled={mealLoading}
+              >
+                <Text style={styles.floatingButtonText}>
+                  {mealLoading ? "등록 중..." : "식사로 등록하기"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </>
@@ -236,7 +253,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 20,
+    paddingBottom: 100, // 플로팅 버튼을 위한 여백
   },
   title: {
     fontSize: FontSizes["3xl"],
@@ -295,18 +315,39 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 22,
   },
-  registerButton: {
+  bottomSpacer: {
+    height: 20,
+  },
+  floatingButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: 20,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  floatingButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
-    marginTop: 24,
-    marginBottom: 40,
+    justifyContent: "center",
   },
-  registerButtonDisabled: {
+  floatingButtonDisabled: {
     opacity: 0.6,
   },
-  registerButtonText: {
+  floatingButtonText: {
     fontSize: FontSizes.lg,
     fontWeight: "bold",
     color: Colors.surface,

@@ -5,6 +5,7 @@ import authApi, {
   RegisterRequest,
   User as ServiceUser,
 } from "../services/authService";
+import { deleteToken } from "../services/tokenStorage";
 import { logger } from "../utils/logger";
 import { createSecureStorage } from "./storage";
 
@@ -13,12 +14,12 @@ interface User {
   id: string;
   name: string;
   email: string;
-  age?: number;
-  sex?: string;
-  height?: number;
-  bmi?: number;
-  weight?: number;
-  activityLevel?: string;
+  age?: number | null;
+  sex?: string | null;
+  height?: number | null;
+  bmi?: number | null;
+  weight?: number | null;
+  activityLevel?: string | null;
 }
 
 // 인증 스토어의 상태와 액션 정의
@@ -69,12 +70,12 @@ export const useAuthStore = create<AuthState>()(
               id: apiUser.id,
               name: apiUser.name,
               email: apiUser.email,
-              age: apiUser.age ?? undefined,
-              sex: apiUser.sex ?? undefined,
-              height: apiUser.height ?? undefined,
-              bmi: apiUser.bmi ?? undefined,
-              weight: apiUser.weight ?? undefined,
-              activityLevel: apiUser.activityLevel ?? undefined,
+              age: apiUser.age ?? null,
+              sex: apiUser.sex ?? null,
+              height: apiUser.height ?? null,
+              bmi: apiUser.bmi ?? null,
+              weight: apiUser.weight ?? null,
+              activityLevel: apiUser.activityLevel ?? null,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });
@@ -95,15 +96,8 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: async () => {
-        // 로그아웃 API 호출 (선택적)
-        try {
-          await authApi.logout();
-        } catch (error) {
-          // 로그아웃 API 실패해도 로컬 상태는 초기화
-          logger.error("로그아웃 API 호출 실패:", error);
-        }
-        // persist 미들웨어가 자동으로 저장소에서 제거
+      logout: () => {
+        deleteToken(); // async 필요 없음
         set({ user: null, isAuthenticated: false, error: null });
       },
 
@@ -134,12 +128,12 @@ export const useAuthStore = create<AuthState>()(
               id: apiUser.id,
               name: apiUser.name,
               email: apiUser.email,
-              age: apiUser.age ?? undefined,
-              sex: apiUser.sex ?? undefined,
-              height: apiUser.height ?? undefined,
-              bmi: apiUser.bmi ?? undefined,
-              weight: apiUser.weight ?? undefined,
-              activityLevel: apiUser.activityLevel ?? undefined,
+              age: apiUser.age ?? null,
+              sex: apiUser.sex ?? null,
+              height: apiUser.height ?? null,
+              bmi: apiUser.bmi ?? null,
+              weight: apiUser.weight ?? null,
+              activityLevel: apiUser.activityLevel ?? null,
             };
             // persist 미들웨어가 자동으로 저장
             set({ user: mappedUser, isAuthenticated: true, error: null });

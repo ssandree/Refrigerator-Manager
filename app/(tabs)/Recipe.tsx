@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import {
   RefreshControl,
   ScrollView,
@@ -19,7 +20,7 @@ import { useToggleArray } from "../../src/hooks/useToggleArray";
 import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors } from "../../src/styles/common";
-import { Recipe } from "../../src/types/recipe";
+import { Recipe, RecipeFilterParams } from "../../src/types/recipe";
 
 export default function RecipeScreen() {
   const recipes = useRecipeStore((s) => s.recipes);
@@ -38,10 +39,16 @@ export default function RecipeScreen() {
   useStoreWithError(useRecipeStore);
   useStoreWithError(useFavoriteRecipeStore);
 
+  // loadRecipes 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const loadRecipesRef = useRef(loadRecipes);
+  loadRecipesRef.current = loadRecipes;
+
   // 초기 마운트 시 무조건 GET /recipes 호출
   useEffect(() => {
-    loadRecipes(true);
-  }, [loadRecipes]);
+    loadRecipesRef.current(true);
+    // loadRecipes를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useAutoLoadData(favoriteRecipes, isLoadingFavorites, loadFavorites, {
     checkLastSynced: true,
@@ -113,12 +120,7 @@ export default function RecipeScreen() {
 
   // 필터 적용 (버튼 클릭 시 호출)
   const handleApplyFilters = useCallback(async () => {
-    const filterParams: {
-      ingredients?: string[];
-      expiringOnly?: boolean;
-      minCalories?: number;
-      maxCalories?: number;
-    } = {};
+    const filterParams: RecipeFilterParams = {};
 
     if (selectedIngredients.length > 0) {
       filterParams.ingredients = selectedIngredients;
@@ -180,7 +182,7 @@ export default function RecipeScreen() {
           setSelectedIngredients(parsed);
 
           // 파라미터로 받은 재료로 직접 필터 API 호출 (상태 업데이트와 분리)
-          const filterParams = { ingredients: parsed };
+          const filterParams: RecipeFilterParams = { ingredients: parsed };
           filterRecipes(filterParams).then((results) => {
             setDisplayedRecipes(results);
           });
@@ -310,7 +312,6 @@ export default function RecipeScreen() {
               }}
               onFavoriteToggle={async () => {
                 await toggleFavorite(recipe);
-                // 즐겨찾기 상태 변경 후 목록 새로고침
                 await loadFavorites(true);
               }}
             />

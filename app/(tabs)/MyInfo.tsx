@@ -4,7 +4,7 @@ import { Modal, ScrollView, StyleSheet, View } from "react-native";
 import GoalsSection from "../../src/components/tabs/myinfo/GoalsSection";
 import ProfileSection from "../../src/components/tabs/myinfo/ProfileSection";
 import StatsSection from "../../src/components/tabs/myinfo/StatsSection";
-import { Colors, FontSizes } from "../../src/styles/common";
+import { Colors } from "../../src/styles/common";
 import { tabsStyles } from "../../src/styles/tabs";
 import UpdateHealthGoal from "../_pages/UpdateHealthGoal";
 
@@ -30,10 +30,6 @@ export default function MyInfoScreen() {
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
-  };
-
-  const handleSettingsPress = () => {
-    router.push("/_pages/NotiSettings");
   };
 
   return (
@@ -77,28 +73,5 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 0,
-  },
-  settingsSection: {
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  settingsItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-  },
-  settingsItemContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  settingsItemTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  settingsItemDescription: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
 });

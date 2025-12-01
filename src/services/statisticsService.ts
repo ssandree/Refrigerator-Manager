@@ -66,6 +66,23 @@ export interface NutritionStats {
   nutritionBreakdown: NutritionBreakdown;
 }
 
+// GET /statistics/combined-targets
+// 건강 목표별 영양소 목표량 (BE에서 계산된 값)
+export interface CombinedNutritionTargets {
+  [goalId: string]: {
+    targetCalories?: number;
+    targetProtein?: number | { min?: number; max?: number };
+    targetFat?: number | { min?: number; max?: number };
+    targetCarbs?: number;
+    targetSodium?: number;
+    targetVitaminC?: number;
+    targetVitaminD?: number;
+    targetZinc?: number;
+    recommendedFoods?: string[];
+    notes?: string[];
+  };
+}
+
 class StatisticsService {
   private readonly basePath = "/statistics";
 
@@ -116,6 +133,16 @@ class StatisticsService {
     )}&endDate=${encodeURIComponent(endDate)}`;
     return await apiClient.get<NutritionStats>(
       `${this.basePath}/nutrition${query}`
+    );
+  }
+
+  /**
+   * 건강 목표별 통합 영양소 목표량
+   * GET /statistics/combined-targets
+   */
+  async getCombinedTargets(): Promise<ApiResponse<CombinedNutritionTargets>> {
+    return await apiClient.get<CombinedNutritionTargets>(
+      `${this.basePath}/combined-targets`
     );
   }
 }

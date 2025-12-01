@@ -1,7 +1,8 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,7 +15,9 @@ import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useDateStore } from "../../src/stores/useDateStore";
 import { Meal, useMealStore } from "../../src/stores/useMealStore";
+import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
+import { Recipe } from "../../src/types/recipe";
 import { toKoreaDateISO } from "../../src/utils/dateUtils";
 
 export default function RegisterMeal() {
@@ -25,11 +28,19 @@ export default function RegisterMeal() {
   const fetchMealById = useMealStore((s) => s.fetchMealById);
   const meals = useMealStore((s) => s.meals);
   const { clearError } = useStoreWithError(useMealStore);
+  const searchRecipes = useRecipeStore((s) => s.searchRecipes);
+  // searchRecipes 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const searchRecipesRef = useRef(searchRecipes);
+  searchRecipesRef.current = searchRecipes;
 
   // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
   const todayStr = useDateStore((s) => s.todayISO);
 
   const [meal, setMeal] = useState<Meal | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [searchResults, setSearchResults] = useState<Recipe[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const [mealType, setMealType] = useState<
     "breakfast" | "lunch" | "dinner" | "snack" | undefined
@@ -38,6 +49,62 @@ export default function RegisterMeal() {
   const [consumedAt, setConsumedAt] = useState<string>(todayStr);
   const [foodName, setFoodName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+
+  // 영양 정보 상태
+  const [calories, setCalories] = useState<string>("");
+  const [protein, setProtein] = useState<string>("");
+  const [carbohydrates, setCarbohydrates] = useState<string>("");
+  const [fat, setFat] = useState<string>("");
+  const [sodium, setSodium] = useState<string>("");
+  const [vitaminC, setVitaminC] = useState<string>("");
+  const [vitaminD, setVitaminD] = useState<string>("");
+  const [zinc, setZinc] = useState<string>("");
+
+  // 레시피 검색 (debounce)
+  useEffect(() => {
+    if (!foodName || foodName.trim().length === 0) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        // useRef를 통해 안정적인 함수 참조 사용
+        const results = await searchRecipesRef.current(foodName.trim(), 10); // limit=10으로 고정
+        setSearchResults(results);
+        setShowSearchResults(results.length > 0);
+      } catch (error) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+    // searchRecipes를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foodName]);
+
+  // 레시피 선택 핸들러
+  const handleSelectRecipe = useCallback((recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    setFoodName(recipe.recipeName);
+    setShowSearchResults(false);
+
+    // 레시피의 영양 정보를 자동으로 입력
+    if (recipe.calories !== null) setCalories(String(recipe.calories));
+    if (recipe.protein !== null) setProtein(String(recipe.protein));
+    if (recipe.carbohydrates !== null)
+      setCarbohydrates(String(recipe.carbohydrates));
+    if (recipe.fat !== null) setFat(String(recipe.fat));
+    if (recipe.sodium !== null) setSodium(String(recipe.sodium));
+    if (recipe.vitamin_c !== null) setVitaminC(String(recipe.vitamin_c));
+    if (recipe.vitamin_d !== null) setVitaminD(String(recipe.vitamin_d));
+    if (recipe.zinc !== null) setZinc(String(recipe.zinc));
+  }, []);
 
   // mealId가 있으면 수정 모드로 동작
   const formatDateInputValue = (value: string) => {
@@ -68,6 +135,15 @@ export default function RegisterMeal() {
         setFoodName(notesStr);
         setNotes("");
       }
+      // 영양 정보 초기화 (현재는 notes에 저장되지 않으므로 빈 값)
+      setCalories("");
+      setProtein("");
+      setCarbohydrates("");
+      setFat("");
+      setSodium("");
+      setVitaminC("");
+      setVitaminD("");
+      setZinc("");
       return;
     }
 
@@ -103,6 +179,15 @@ export default function RegisterMeal() {
         setFoodName(notesStr);
         setNotes("");
       }
+      // 영양 정보 초기화 (현재는 notes에 저장되지 않으므로 빈 값)
+      setCalories("");
+      setProtein("");
+      setCarbohydrates("");
+      setFat("");
+      setSodium("");
+      setVitaminC("");
+      setVitaminD("");
+      setZinc("");
     })();
   }, [mealId, getMealById, fetchMealById]);
 
@@ -165,7 +250,7 @@ export default function RegisterMeal() {
     } else {
       // 추가 모드: POST API 호출
       const success = await addMeal({
-        recipeId: null,
+        recipeId: selectedRecipe?.id || null,
         foodIds: [],
         quantity: quantity || null,
         consumedAt: consumedAtISO,
@@ -260,13 +345,58 @@ export default function RegisterMeal() {
             {/* 음식 */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>음식</Text>
-              <TextInput
-                style={styles.textInput}
-                value={foodName}
-                onChangeText={setFoodName}
-                placeholder="예: 된장찌개, 닭가슴살 샐러드"
-                placeholderTextColor={Colors.textSecondary}
-              />
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  value={foodName}
+                  onChangeText={(text) => {
+                    setFoodName(text);
+                    setSelectedRecipe(null); // 입력 변경 시 선택 해제
+                  }}
+                  onFocus={() => {
+                    if (searchResults.length > 0) {
+                      setShowSearchResults(true);
+                    }
+                  }}
+                  placeholder="예: 된장찌개, 닭가슴살 샐러드"
+                  placeholderTextColor={Colors.textSecondary}
+                />
+                {showSearchResults && searchResults.length > 0 && (
+                  <View style={styles.searchResultsContainer}>
+                    {isSearching && (
+                      <View style={styles.searchResultItem}>
+                        <Text style={styles.searchResultText}>검색 중...</Text>
+                      </View>
+                    )}
+                    <FlatList
+                      data={searchResults}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.searchResultItem}
+                          onPress={() => handleSelectRecipe(item)}
+                        >
+                          <Text style={styles.searchResultText}>
+                            {item.recipeName}
+                          </Text>
+                          {item.calories !== null && (
+                            <Text style={styles.searchResultSubtext}>
+                              {item.calories} kcal
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                      style={styles.searchResultsList}
+                      nestedScrollEnabled
+                    />
+                  </View>
+                )}
+              </View>
+              {selectedRecipe && (
+                <Text style={styles.selectedRecipeText}>
+                  ✓ 레시피 선택됨: {selectedRecipe.recipeName}
+                </Text>
+              )}
             </View>
 
             {/* 수량 */}
@@ -304,6 +434,109 @@ export default function RegisterMeal() {
                 placeholderTextColor={Colors.textSecondary}
                 multiline
               />
+            </View>
+
+            {/* 영양 정보 섹션 */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>영양 정보</Text>
+
+              <View style={styles.nutritionGrid}>
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>칼로리 (kcal)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={calories}
+                    onChangeText={setCalories}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>단백질 (g)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={protein}
+                    onChangeText={setProtein}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>탄수화물 (g)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={carbohydrates}
+                    onChangeText={setCarbohydrates}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>지방 (g)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={fat}
+                    onChangeText={setFat}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>나트륨 (mg)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={sodium}
+                    onChangeText={setSodium}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>비타민 C (mg)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={vitaminC}
+                    onChangeText={setVitaminC}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>비타민 D (μg)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={vitaminD}
+                    onChangeText={setVitaminD}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionLabel}>아연 (mg)</Text>
+                  <TextInput
+                    style={styles.nutritionInput}
+                    value={zinc}
+                    onChangeText={setZinc}
+                    placeholder="0"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
             </View>
 
             {/* 저장 버튼 */}
@@ -422,5 +655,89 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: "bold",
     color: Colors.surface,
+  },
+  section: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  nutritionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  nutritionItem: {
+    width: "48%",
+    marginBottom: 12,
+  },
+  nutritionLabel: {
+    fontSize: FontSizes.sm,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+  nutritionInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: FontSizes.base,
+    color: Colors.text,
+    backgroundColor: Colors.surface,
+  },
+  searchContainer: {
+    position: "relative",
+  },
+  searchResultsContainer: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 1000,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  searchResultsList: {
+    maxHeight: 200,
+  },
+  searchResultItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  searchResultText: {
+    fontSize: FontSizes.base,
+    color: Colors.text,
+    fontWeight: "500",
+  },
+  searchResultSubtext: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  selectedRecipeText: {
+    fontSize: FontSizes.sm,
+    color: Colors.primary,
+    marginTop: 8,
+    fontWeight: "500",
   },
 });

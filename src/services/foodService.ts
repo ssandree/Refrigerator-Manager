@@ -26,13 +26,13 @@ class FoodService {
         searchParams.append("category", params.category);
       }
       if (params.location) {
-        searchParams.append("location", params.location);
+        searchParams.append("storageLocation", params.location);
       }
       if (typeof params.expired === "boolean") {
-        searchParams.append("expired", params.expired.toString());
+        searchParams.append("expiredOnly", params.expired.toString());
       }
       if (typeof params.expiring === "boolean") {
-        searchParams.append("expiring", params.expiring.toString());
+        searchParams.append("expiringOnly", params.expiring.toString());
       }
       if (params.sort) {
         searchParams.append("sort", params.sort);

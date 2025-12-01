@@ -1,5 +1,5 @@
 import { Stack, router } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -78,10 +78,14 @@ export default function WeeklyAchieveScreen() {
 
   // 통계 스토어 바인딩
   const weeklyStats = useStatisticsStore((state) => state.weeklyStats);
+  const combinedTargets = useStatisticsStore((state) => state.combinedTargets);
   const statisticsLoading = useStatisticsStore((state) => state.isLoading);
   const statisticsError = useStatisticsStore((state) => state.error);
   const fetchWeeklyStats = useStatisticsStore(
     (state) => state.fetchWeeklyStats
+  );
+  const fetchCombinedTargets = useStatisticsStore(
+    (state) => state.fetchCombinedTargets
   );
 
   // 클라이언트 사이드에서 BMR/TDEE 계산
@@ -95,19 +99,29 @@ export default function WeeklyAchieveScreen() {
     [bmr, user?.activityLevel]
   );
 
+  // 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const fetchWeeklyStatsRef = useRef(fetchWeeklyStats);
+  const fetchCombinedTargetsRef = useRef(fetchCombinedTargets);
+  const loadUserSelectedGoalsRef = useRef(loadUserSelectedGoals);
+  const updateUserRef = useRef(updateUser);
+  fetchWeeklyStatsRef.current = fetchWeeklyStats;
+  fetchCombinedTargetsRef.current = fetchCombinedTargets;
+  loadUserSelectedGoalsRef.current = loadUserSelectedGoals;
+  updateUserRef.current = updateUser;
+
   useEffect(() => {
     // 사용자 정보 로드 (온보딩에서 받은 정보 포함)
     const loadUserInfo = async () => {
       try {
         const response = await authService.getCurrentUser();
         if (response.success && response.data) {
-          updateUser({
-            age: response.data.age ?? undefined,
-            sex: response.data.sex ?? undefined,
-            height: response.data.height ?? undefined,
-            weight: response.data.weight ?? undefined,
-            activityLevel: response.data.activityLevel ?? undefined,
-            bmi: response.data.bmi ?? undefined,
+          updateUserRef.current({
+            age: response.data.age ?? null,
+            sex: response.data.sex ?? null,
+            height: response.data.height ?? null,
+            weight: response.data.weight ?? null,
+            activityLevel: response.data.activityLevel ?? null,
+            bmi: response.data.bmi ?? null,
           });
         }
       } catch (error) {
@@ -117,13 +131,192 @@ export default function WeeklyAchieveScreen() {
     loadUserInfo();
 
     // 사용자가 선택한 건강 목표 로드
-    loadUserSelectedGoals();
+    loadUserSelectedGoalsRef.current();
     // 주간 통계: 기본으로 최근 7일을 조회
     const todayISO = useDateStore.getState().todayISO;
     // 오늘 포함 지난 7일 (오늘 - 6일)
     const startDateISO = addDaysInKorea(todayISO, -6);
-    fetchWeeklyStats(startDateISO);
-  }, [fetchWeeklyStats, loadUserSelectedGoals, updateUser]);
+    fetchWeeklyStatsRef.current(startDateISO);
+    // 건강 목표별 영양소 목표량 로드
+    fetchCombinedTargetsRef.current();
+    // 함수들을 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 건강 목표별 계산 함수
+  // API에서 받아온 combinedTargets를 사용하여 목표량 계산
+  const calculateGoalMetrics = (
+    avgCalories: number,
+    avgProtein: number,
+    avgFat: number,
+    avgCarbs: number,
+    apiTargets:
+      | {
+          targetCalories?: number;
+          targetProtein?: number | { min?: number; max?: number };
+          targetFat?: number | { min?: number; max?: number };
+          targetCarbs?: number;
+          targetSodium?: number;
+          targetVitaminC?: number;
+          targetVitaminD?: number;
+          targetZinc?: number;
+          recommendedFoods?: string[];
+          notes?: string[];
+        }
+      | null
+      | undefined
+  ) => {
+    // API 데이터가 없으면 빈 데이터 반환
+    if (!apiTargets) {
+      return {
+        targetCalories: 0,
+        overallProgress: 0,
+        metrics: [],
+        recommendedFoods: [],
+        notes: [],
+      };
+    }
+
+    // API에서 받아온 목표량 사용
+    const targetCalories = apiTargets.targetCalories ?? 0;
+    const calorieProgress =
+      targetCalories > 0 ? Math.min(1, avgCalories / targetCalories) : 0;
+
+    // 단백질 목표량 파싱
+    let targetProteinMin: number | undefined;
+    let targetProteinMax: number | undefined;
+    if (typeof apiTargets.targetProtein === "number") {
+      targetProteinMin = apiTargets.targetProtein;
+      targetProteinMax = apiTargets.targetProtein;
+    } else if (apiTargets.targetProtein) {
+      targetProteinMin = apiTargets.targetProtein.min;
+      targetProteinMax = apiTargets.targetProtein.max;
+    }
+
+    // 지방 목표량 파싱
+    let targetFatMin: number | undefined;
+    let targetFatMax: number | undefined;
+    if (typeof apiTargets.targetFat === "number") {
+      targetFatMin = apiTargets.targetFat;
+      targetFatMax = apiTargets.targetFat;
+    } else if (apiTargets.targetFat) {
+      targetFatMin = apiTargets.targetFat.min;
+      targetFatMax = apiTargets.targetFat.max;
+    }
+
+    const metrics: {
+      label: string;
+      target: string;
+      current?: string;
+      progress?: number;
+      note?: string;
+    }[] = [];
+
+    // 칼로리
+    if (targetCalories > 0) {
+      metrics.push({
+        label: "목표 칼로리",
+        target: `${Math.round(targetCalories)} kcal`,
+        current: `${Math.round(avgCalories)} kcal`,
+        progress: calorieProgress,
+        note: "일일 목표 칼로리",
+      });
+    }
+
+    // 단백질
+    if (targetProteinMin !== undefined && targetProteinMax !== undefined) {
+      const proteinProgress =
+        targetProteinMax > 0 ? Math.min(1, avgProtein / targetProteinMax) : 0;
+      metrics.push({
+        label: "단백질",
+        target:
+          targetProteinMin === targetProteinMax
+            ? `${Math.round(targetProteinMin)} g`
+            : `${Math.round(targetProteinMin)}~${Math.round(
+                targetProteinMax
+              )} g`,
+        current: `${Math.round(avgProtein)} g`,
+        progress: proteinProgress,
+      });
+    }
+
+    // 지방
+    if (targetFatMin !== undefined && targetFatMax !== undefined) {
+      const fatProgress =
+        targetFatMax > 0 ? Math.min(1, avgFat / targetFatMax) : 0;
+      metrics.push({
+        label: "지방",
+        target:
+          targetFatMin === targetFatMax
+            ? `${Math.round(targetFatMin)} g`
+            : `${Math.round(targetFatMin)}~${Math.round(targetFatMax)} g`,
+        current: `${Math.round(avgFat)} g`,
+        progress: fatProgress,
+      });
+    }
+
+    // 탄수화물
+    if (apiTargets.targetCarbs !== undefined) {
+      const carbsProgress =
+        apiTargets.targetCarbs > 0
+          ? Math.min(1, avgCarbs / apiTargets.targetCarbs)
+          : 0;
+      metrics.push({
+        label: "탄수화물",
+        target: `${Math.round(apiTargets.targetCarbs)} g`,
+        current: `${Math.round(avgCarbs)} g`,
+        progress: carbsProgress,
+      });
+    }
+
+    // 나트륨
+    if (apiTargets.targetSodium !== undefined) {
+      metrics.push({
+        label: "나트륨",
+        target: `${Math.round(apiTargets.targetSodium)} mg 이하`,
+        current: "추적 필요",
+        note: "혈압 관리",
+      });
+    }
+
+    // 비타민 C
+    if (apiTargets.targetVitaminC !== undefined) {
+      metrics.push({
+        label: "비타민 C",
+        target: `${Math.round(apiTargets.targetVitaminC)} mg`,
+        current: "추적 필요",
+        note: "면역력 강화",
+      });
+    }
+
+    // 비타민 D
+    if (apiTargets.targetVitaminD !== undefined) {
+      metrics.push({
+        label: "비타민 D",
+        target: `${Math.round(apiTargets.targetVitaminD)} IU`,
+        current: "추적 필요",
+        note: "면역력 강화",
+      });
+    }
+
+    // 아연
+    if (apiTargets.targetZinc !== undefined) {
+      metrics.push({
+        label: "아연",
+        target: `${Math.round(apiTargets.targetZinc)} mg`,
+        current: "추적 필요",
+        note: "면역력 강화",
+      });
+    }
+
+    return {
+      targetCalories,
+      overallProgress: calorieProgress,
+      metrics,
+      recommendedFoods: apiTargets.recommendedFoods || [],
+      notes: apiTargets.notes || [],
+    };
+  };
 
   // 사용자가 선택한 건강 목표 + 통계 데이터를 기반으로 카드 구성
   const plans: (HealthGoalPlan & {
@@ -136,50 +329,44 @@ export default function WeeklyAchieveScreen() {
       const avgCalories = weeklyStats?.averageDailyCalories ?? 0;
       const avgProtein = weeklyStats?.averageDailyProtein ?? 0;
       const avgFat = weeklyStats?.averageDailyFat ?? 0;
+      const avgCarbs = weeklyStats?.averageDailyCarbs ?? 0;
 
-      const targetCalories = tdee ?? 0;
-      const calorieProgress =
-        targetCalories > 0 ? Math.min(1, avgCalories / targetCalories) : 0;
+      // API에서 받아온 목표량 사용 (goalId를 문자열로 변환하여 조회)
+      const apiTargets = combinedTargets?.[String(goal.id)];
 
-      const overallProgress = calorieProgress;
+      const goalData = calculateGoalMetrics(
+        avgCalories,
+        avgProtein,
+        avgFat,
+        avgCarbs,
+        apiTargets
+      );
 
-      const metrics =
-        weeklyStats && targetCalories > 0
-          ? [
-              {
-                label: "평균 일일 칼로리",
-                target: `${Math.round(targetCalories)} kcal`,
-                current: `${Math.round(avgCalories)} kcal`,
-                progress: calorieProgress,
-                note: "유지 칼로리 대비 섭취량",
-              },
-              {
-                label: "평균 일일 단백질",
-                target: "권장 섭취량은 개인에 따라 다릅니다",
-                current: `${Math.round(avgProtein)} g`,
-              },
-              {
-                label: "평균 일일 지방",
-                target: "권장 섭취량은 개인에 따라 다릅니다",
-                current: `${Math.round(avgFat)} g`,
-              },
-            ]
-          : [];
+      // 목표별 색상 설정
+      const goalColors: Record<number, string> = {
+        1001: "#4CAF50", // 체중 유지 - 초록
+        1002: "#2196F3", // 체지방 감량 - 파랑
+        1003: "#FF9800", // 단백질 보충 - 주황
+        1004: "#F44336", // 체중 증량 - 빨강
+        1005: "#9C27B0", // 혈당 관리 - 보라
+        1006: "#00BCD4", // 면역력 강화 - 청록
+        1007: "#FF5722", // 체력 유지/향상 - 주황빨강
+      };
 
       return {
         goalType: goal.title,
         title: goal.title,
-        summary: "",
-        overallProgress,
-        metrics,
-        recommendedFoods: [],
-        notes: [],
+        summary: goal.description || "",
+        overallProgress: goalData.overallProgress,
+        metrics: goalData.metrics,
+        recommendedFoods: goalData.recommendedFoods,
+        notes: goalData.notes,
         goalTitle: goal.title,
-        color: Colors.primary,
+        color: goal.color || goalColors[goal.id] || Colors.primary,
         id: goal.id,
       };
     });
-  }, [selectedGoals, weeklyStats, tdee]);
+  }, [selectedGoals, weeklyStats, combinedTargets]);
 
   return (
     <>
@@ -269,7 +456,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.surface,
@@ -278,6 +464,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    marginRight: 8,
   },
   backButtonText: {
     fontSize: FontSizes.lg,
@@ -288,9 +475,10 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xl,
     fontWeight: "bold",
     color: Colors.textPrimary,
+    flex: 1,
   },
   headerRight: {
-    width: 60, // 뒤로 버튼과 균형을 맞추기 위한 공간
+    width: 40, // 뒤로 버튼과 균형을 맞추기 위한 공간
   },
   content: {
     flex: 1,

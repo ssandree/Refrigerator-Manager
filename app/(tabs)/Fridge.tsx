@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Edit3, Trash2 } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -39,10 +39,16 @@ export default function FridgeScreen() {
 
   useStoreWithError(useFridgeStore);
 
+  // loadFoods 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const loadFoodsRef = useRef(loadFoods);
+  loadFoodsRef.current = loadFoods;
+
   // 초기 마운트 시 무조건 GET /foods 호출
   useEffect(() => {
-    loadFoods({ force: true });
-  }, [loadFoods]);
+    loadFoodsRef.current({ force: true });
+    // loadFoods를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [selectedCategories, setSelectedCategories] = useState<FoodCategory[]>(
     []
@@ -130,7 +136,7 @@ export default function FridgeScreen() {
     toggleIngredientSelect(ingredientId);
   };
 
-  // 레시피 검색 버튼 클릭 핸들러 (useCallback으로 메모이제이션)
+  // 레시피 검색 버튼 클릭 핸들러
   const handleRecipeSearch = React.useCallback(() => {
     if (selectedIngredients.length === 0) {
       console.log("선택된 재료가 없습니다.");
@@ -148,13 +154,18 @@ export default function FridgeScreen() {
     console.log("레시피 검색 버튼 클릭:", selectedIngredientNames);
 
     // Recipe 화면으로 이동하면서 선택된 재료를 파라미터로 전달
+    const params = {
+      ingredients: JSON.stringify(selectedIngredientNames),
+    };
+
+    console.log("Recipe 화면으로 이동:", params);
+
+    // expo-router의 경로는 파일 구조를 따름
     router.push({
-      pathname: "/(tabs)/Recipe",
-      params: {
-        ingredients: JSON.stringify(selectedIngredientNames),
-      },
+      pathname: "/Recipe",
+      params,
     });
-  }, [selectedIngredients, foods]);
+  }, [selectedIngredients, foods, router]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -324,7 +335,11 @@ export default function FridgeScreen() {
         {selectedIngredients.length > 0 && (
           <TouchableOpacity
             style={styles.recipeButton}
-            onPress={handleRecipeSearch}
+            onPress={() => {
+              console.log("레시피 검색 버튼 눌림");
+              handleRecipeSearch();
+            }}
+            activeOpacity={0.7}
           >
             <Text style={styles.recipeButtonText}>
               {selectedIngredients.length}개 재료로 레시피 검색

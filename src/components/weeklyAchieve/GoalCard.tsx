@@ -73,22 +73,33 @@ export default function GoalCard({ plan }: GoalCardProps) {
         ))}
       </View>
 
-      <View style={styles.detailSection}>
-        <Text style={styles.detailTitle}>추천 식품</Text>
-        <Text style={styles.detailText}>
-          {plan.recommendedFoods.join(" · ")}
-        </Text>
-      </View>
-
-      <View style={styles.detailSection}>
-        <Text style={styles.detailTitle}>참고 사항</Text>
-        {plan.notes.map((note, index) => (
-          <View style={styles.noteRow} key={`${plan.goalType}-note-${index}`}>
-            <View style={styles.noteBullet} />
-            <Text style={styles.detailText}>{note}</Text>
+      {plan.recommendedFoods.length > 0 && (
+        <View style={styles.detailSection}>
+          <Text style={styles.detailTitle}>🍎 추천 식품</Text>
+          <View style={styles.foodChipsContainer}>
+            {plan.recommendedFoods.map((food, index) => (
+              <View
+                key={`${plan.goalType}-food-${index}`}
+                style={styles.foodChip}
+              >
+                <Text style={styles.foodChipText}>{food}</Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        </View>
+      )}
+
+      {plan.notes.length > 0 && (
+        <View style={styles.detailSection}>
+          <Text style={styles.detailTitle}>💡 참고 사항</Text>
+          {plan.notes.map((note, index) => (
+            <View style={styles.noteRow} key={`${plan.goalType}-note-${index}`}>
+              <View style={styles.noteBullet} />
+              <Text style={styles.detailText}>{note}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -184,5 +195,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 3,
     backgroundColor: Colors.primary,
+  },
+  foodChipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  foodChip: {
+    backgroundColor: Colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  foodChipText: {
+    fontSize: FontSizes.sm,
+    color: Colors.text,
+    fontWeight: "500",
   },
 });

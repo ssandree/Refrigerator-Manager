@@ -95,16 +95,6 @@ export default function TodayMeals({
     );
   }
 
-  const sumFoodCalories = (items: Food[]) =>
-    items.reduce((sum, food) => {
-      const grams =
-        parseFloat(food.weight?.replace(/[^0-9.]/g, "") || "0") || 0;
-      return sum + (food.calories_per_gram || 0) * grams;
-    }, 0);
-
-  const sumMacro = (items: Food[], key: "protein" | "carbohydrates" | "fat") =>
-    items.reduce((sum, food) => sum + (food[key] || 0), 0);
-
   const formatTime = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
@@ -173,18 +163,14 @@ export default function TodayMeals({
             <Text style={styles.mealTitle}>{sec.title}</Text>
             {items.map((meal) => {
               const recipe = getRecipeForMeal(meal);
-              const linkedFoods = getFoodsForMeal(meal);
               return (
                 <DailyDietCard
                   key={meal.id}
                   recipeName={recipe?.recipeName || meal.notes || "자유식"}
-                  calories={recipe?.calories ?? sumFoodCalories(linkedFoods)}
-                  protein={recipe?.protein ?? sumMacro(linkedFoods, "protein")}
-                  carbs={
-                    recipe?.carbohydrates ??
-                    sumMacro(linkedFoods, "carbohydrates")
-                  }
-                  fat={recipe?.fat ?? sumMacro(linkedFoods, "fat")}
+                  calories={recipe?.calories ?? 0}
+                  protein={recipe?.protein ?? 0}
+                  carbs={recipe?.carbohydrates ?? 0}
+                  fat={recipe?.fat ?? 0}
                   time={formatTime(meal.consumedAt)}
                 />
               );

@@ -1,7 +1,9 @@
 import { CheckCircle2, Circle } from "lucide-react-native";
-import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { FoodCategoryColor } from "../../../enums/ingredientCategory";
+import {
+  FoodCategory,
+  FoodCategoryColor,
+} from "../../../enums/ingredientCategory";
 import { StorageLocation } from "../../../enums/storageLocation";
 import { Colors, FontSizes, commonStyles } from "../../../styles/common";
 import { Food } from "../../../types/food";
@@ -40,6 +42,33 @@ export default function FoodCard({
       default:
         return "📦";
     }
+  };
+
+  const getCategoryImage = () => {
+    const categoryImageMap: Record<FoodCategory, any> = {
+      [FoodCategory.MEAT]: require("../../../../assets/foods/MEAT.png"),
+      [FoodCategory.FISH]: require("../../../../assets/foods/FISH.png"),
+      [FoodCategory.VEGETABLE]: require("../../../../assets/foods/VEGETABLE.png"),
+      [FoodCategory.FRUIT]: require("../../../../assets/foods/FRUIT.png"),
+      [FoodCategory.DAIRY]: require("../../../../assets/foods/DAIRY.png"),
+      [FoodCategory.GRAIN]: require("../../../../assets/foods/GRAIN.png"),
+      [FoodCategory.SEASONING]: require("../../../../assets/foods/SEASONING.png"),
+      [FoodCategory.NOODLE]: require("../../../../assets/foods/NOODLE.png"),
+      [FoodCategory.SIDE]: require("../../../../assets/foods/SIDE.png"),
+      [FoodCategory.SEAFOOD]: require("../../../../assets/foods/SEAFOOD.png"),
+      [FoodCategory.NUT]: require("../../../../assets/foods/NUT.png"),
+      [FoodCategory.BREAD]: require("../../../../assets/foods/BREAD.png"),
+      [FoodCategory.RICE_CAKE]: require("../../../../assets/foods/RICE_CAKE.png"),
+      [FoodCategory.SAUCE]: require("../../../../assets/foods/SAUCE.png"),
+      [FoodCategory.FROZEN]: require("../../../../assets/foods/FROZEN.png"),
+      [FoodCategory.DRINK]: require("../../../../assets/foods/DRINK.png"),
+      [FoodCategory.INSTANT]: require("../../../../assets/foods/INSTANT.png"),
+      [FoodCategory.OTHER]: require("../../../../assets/foods/OTHER.png"),
+    };
+    return (
+      categoryImageMap[food.category] ||
+      require("../../../../assets/foods/OTHER.png")
+    );
   };
 
   return (
@@ -86,10 +115,7 @@ export default function FoodCard({
       {/* 상단 행: 사진과 저장위치 */}
       <View style={styles.topRow}>
         <View style={styles.foodCardImageContainer}>
-          <Image
-            source={require("../../../assets/images/tomato.jpg")}
-            style={styles.foodCardImage}
-          />
+          <Image source={getCategoryImage()} style={styles.foodCardImage} />
         </View>
       </View>
 
@@ -163,7 +189,7 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 6,
-    // backgroundColor: Colors.backgroundDark,
+    // backgroundColor: Colors.backgroundLight,
   },
   bottomRow: {
     flexDirection: "row",

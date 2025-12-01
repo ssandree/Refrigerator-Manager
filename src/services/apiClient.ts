@@ -9,8 +9,13 @@ import { getToken } from "./tokenStorage";
 // Windows: ipconfig 명령어로 IPv4 주소 확인
 // Mac/Linux: ifconfig 또는 ip addr 명령어로 확인
 // 백엔드가 /api prefix 없이 실행되면 "/api"를 제거하세요
+//
+// 주의:
+// - Android 에뮬레이터: "http://10.0.2.2:8000" 사용
+// - iOS 시뮬레이터: "http://localhost:8000" 사용
+// - 실제 기기/Expo Go: 컴퓨터의 실제 로컬 IP 사용 (예: "http://172.16.69.179:8000")
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.2:8000";
+  process.env.EXPO_PUBLIC_API_URL || "http://172.16.69.179:8000";
 
 // 성공 응답 타입
 export interface ApiSuccessResponse<T> {

@@ -73,22 +73,15 @@ class NotificationService {
   /**
    * Mark all notifications as read
    */
-  async markAllAsRead(): Promise<ApiResponse<{ message: string }>> {
-    return await apiClient.patch<{ message: string }>(
-      `${this.basePath}/read-all`,
-      {}
-    );
+  async markAllAsRead(): Promise<ApiResponse<void>> {
+    return await apiClient.patch<void>(`${this.basePath}/read-all`, {});
   }
 
   /**
    * Delete a notification
    */
-  async deleteNotification(
-    notiId: string
-  ): Promise<ApiResponse<{ message: string }>> {
-    return await apiClient.delete<{ message: string }>(
-      `${this.basePath}/${notiId}`
-    );
+  async deleteNotification(notiId: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`${this.basePath}/${notiId}`);
   }
 }
 

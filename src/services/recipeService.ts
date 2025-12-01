@@ -1,5 +1,6 @@
+// recipService.ts
 // Recipe service for managing recipes
-import { Recipe, type RecipeFilterParams } from "../types/recipe";
+import { Recipe, RecipeFilterParams, RecommendItem } from "../types/recipe";
 import apiClient, { ApiResponse } from "./apiClient";
 
 class RecipeService {
@@ -8,40 +9,48 @@ class RecipeService {
   /**
    * Get all recipes
    */
-  async getAllRecipes(): Promise<ApiResponse<Recipe[]>> {
-    // GET /recipes
-    return await apiClient.get<Recipe[]>(this.basePath);
+  async getAllRecipes(): Promise<
+    ApiResponse<{ total: number; data: Recipe[] }>
+  > {
+    return await apiClient.get<{ total: number; data: Recipe[] }>(
+      this.basePath
+    );
   }
 
   /**
    * Get recipe by ID
    */
-  async getRecipeById(recipeId: string): Promise<ApiResponse<Recipe>> {
-    // GET /recipes/{recipe_id}
-    return await apiClient.get<Recipe>(`${this.basePath}/${recipeId}`);
+  async getRecipeById(
+    recipeId: string
+  ): Promise<ApiResponse<{ data: Recipe }>> {
+    return await apiClient.get<{ data: Recipe }>(
+      `${this.basePath}/${recipeId}`
+    );
   }
 
   /**
    * Search recipes by query
    */
-  async searchRecipes(query: string): Promise<ApiResponse<Recipe[]>> {
-    // GET /recipes/search/?q={query}
-    return await apiClient.get<Recipe[]>(
-      `${this.basePath}/search/?q=${encodeURIComponent(query)}`
+  async searchRecipes(
+    query: string,
+    limit?: number
+  ): Promise<ApiResponse<{ total: number; data: Recipe[] }>> {
+    const searchParams = new URLSearchParams();
+    searchParams.append("q", query);
+    if (limit) {
+      searchParams.append("limit", String(limit));
+    }
+    return await apiClient.get<{ total: number; data: Recipe[] }>(
+      `${this.basePath}/search/?${searchParams.toString()}`
     );
   }
 
   /**
    * Filter recipes
-   * - ingredients: 이 재료들을 모두 포함하는 레시피만 조회
-   * - expiringOnly: 임박 재료(3일 이내 만료) 포함 레시피만 조회
-   * - minCalories / maxCalories: 칼로리 범위 필터
-   *
-   * GET /recipes/filter
    */
   async filterRecipes(
     params: RecipeFilterParams
-  ): Promise<ApiResponse<Recipe[]>> {
+  ): Promise<ApiResponse<{ total: number; data: Recipe[] }>> {
     const searchParams = new URLSearchParams();
 
     if (params.ingredients && params.ingredients.length > 0) {
@@ -62,21 +71,18 @@ class RecipeService {
       searchParams.append("maxCalories", String(params.maxCalories));
     }
 
-    const queryString = searchParams.toString();
-    const endpoint = queryString
-      ? `${this.basePath}/filter?${queryString}`
+    const endpoint = searchParams.toString()
+      ? `${this.basePath}/filter?${searchParams.toString()}`
       : `${this.basePath}/filter`;
 
-    return await apiClient.get<Recipe[]>(endpoint);
+    return await apiClient.get<{ total: number; data: Recipe[] }>(endpoint);
   }
 
   /**
-   * Get recommended recipes based on user's ingredients
+   * Get recommended recipes (RecommendItem[])
    */
-  async getDashboardRecommendations(): Promise<ApiResponse<Recipe[]>> {
-    // BE: GET /recipes/recommend → { success, data: Recipe[] }
-    // 대시보드/추천 레시피 용도로 재사용
-    return await apiClient.get<Recipe[]>(`${this.basePath}/recommend`);
+  async getDashboardRecommendations(): Promise<ApiResponse<RecommendItem[]>> {
+    return await apiClient.get<RecommendItem[]>(`${this.basePath}/recommend`);
   }
 }
 

@@ -1,8 +1,8 @@
 import { authStyles } from "@/styles/auth";
-import { Ionicons } from "@expo/vector-icons";
 import { router, Slot, usePathname } from "expo-router";
 import React, { useMemo } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors } from "../../src/styles/colors";
 
 export default function AuthLayout() {
   const pathname = usePathname();
@@ -50,7 +49,11 @@ export default function AuthLayout() {
         ]}
       >
         <View style={authStyles.logoContainer}>
-          <Ionicons name="snow" size={60} color={Colors.primary} />
+          <Image
+            source={require("../../assets/icon.png")}
+            style={{ width: 110, height: 100 }}
+            resizeMode="contain"
+          />
           <Text style={authStyles.logoText}>{authConfig.title}</Text>
           <Text style={authStyles.subtitle}>{authConfig.subtitle}</Text>
         </View>

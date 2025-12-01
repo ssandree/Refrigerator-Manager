@@ -1,6 +1,3 @@
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#fff";
-
 export const Colors = {
   // 앱 전용 색상 팔레트
   primary: "#4CAF50",
