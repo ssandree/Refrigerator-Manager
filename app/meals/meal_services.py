@@ -157,6 +157,8 @@ def create_meal(db: Session, userId: str, data):
 
 
 def update_meal(db: Session, meal: Meal, data):
+    if data.consumedAt is not None:
+        meal.consumedAt = data.consumedAt
     if data.quantity is not None:
         meal.quantity = data.quantity
     if data.notes is not None:

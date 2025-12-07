@@ -1,10 +1,10 @@
 # app/recipes/recommend_service.py
 
 import json
-from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 from sqlalchemy.orm import Session
+from app.core.datetime_utils import get_kst_today
 
 from app.food.food_models import Food
 from app.recipes.recipe_models import Recipe
@@ -34,7 +34,7 @@ def calculate_expiry_score(food: Food) -> float:
     if not food.expiryDate:
         return 0.0
 
-    today = datetime.utcnow().date()
+    today = get_kst_today()
     dday = (food.expiryDate - today).days
 
     if dday <= 0:
@@ -96,6 +96,7 @@ def recommend_recipes(
     db: Session,
     userId: str,
     limit: Optional[int] = None,
+    skip: Optional[int] = None,
 ):
     """
     - 유저가 가진 식재료(Food)와
@@ -250,7 +251,11 @@ def recommend_recipes(
     # 3) 점수 높은 순으로 정렬
     result.sort(key=lambda x: x["score"], reverse=True)
 
-    # 4) limit가 있으면 상위 N개만
+    # 4) skip이 있으면 앞부분 건너뛰기
+    if skip is not None and skip > 0:
+        result = result[skip:]
+
+    # 5) limit가 있으면 상위 N개만
     if limit is not None:
         result = result[:limit]
 

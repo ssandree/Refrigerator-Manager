@@ -174,7 +174,7 @@
   "category": "채소",
   "name": "양파",
   "quantity": 3,
-  "weight": "500g",
+  "weight": 500.0,
   "purchaseDate": "2024-01-15",
   "expiryDate": "2024-01-25",
   "storageLocation": "냉장실",
@@ -185,14 +185,14 @@
 ```json
 {
   "success": true,
-  "message": null,
   "data": {
     "id": "uuid-string",
+    "userId": "user-uuid",
     "imageUrl": "https://example.com/image.jpg",
     "category": "채소",
     "name": "양파",
     "quantity": 3,
-    "weight": "500g",
+    "weight": 500.0,
     "registeredAt": "2024-01-15T10:30:00",
     "purchaseDate": "2024-01-15",
     "expiryDate": "2024-01-25",
@@ -202,6 +202,7 @@
 }
 ```
 - **특징:** 
+  - 같은 user + 같은 name이면 새 row를 만들지 않고 quantity를 합침
   - purchaseDate 기본값 설정 (FE에서 필드 누락 시 자동 today 적용)
   - userId 자동 설정 (get_current_user로)
 
@@ -209,24 +210,24 @@
 - **GET** `/foods`
 - **설명:** 음식 목록 조회 (다양한 필터 지원)
 - **Query Parameters:**
-  - `category` (optional): 카테고리 필터
-  - `location` (optional): 보관 장소 필터
-  - `expired` (optional, bool): 만료 여부 (true/false)
-  - `expiring` (optional, bool): 임박 여부
-  - `sort` (optional): 정렬 (예: "expiryDate ASC")
+  - `name` (optional, string): 식재료 이름 부분 검색
+  - `category` (optional, string): 카테고리 필터
+  - `storageLocation` (optional, string): 보관 장소 필터 (냉장, 냉동, 실온 등)
+  - `expiringOnly` (optional, bool, default: false): 3일 이내 만료 예정인 재료만
+  - `expiredOnly` (optional, bool, default: false): 이미 만료된 재료만
 - **응답:**
 ```json
 {
   "success": true,
-  "message": null,
   "data": [
     {
       "id": "uuid-string-1",
+      "userId": "user-uuid",
       "imageUrl": "https://example.com/image1.jpg",
       "category": "채소",
       "name": "양파",
       "quantity": 3,
-      "weight": "500g",
+      "weight": 500.0,
       "registeredAt": "2024-01-15T10:30:00",
       "purchaseDate": "2024-01-15",
       "expiryDate": "2024-01-25",
@@ -235,11 +236,12 @@
     },
     {
       "id": "uuid-string-2",
+      "userId": "user-uuid",
       "imageUrl": null,
       "category": "육류",
       "name": "닭가슴살",
       "quantity": 2,
-      "weight": "300g",
+      "weight": 300.0,
       "registeredAt": "2024-01-16T14:20:00",
       "purchaseDate": "2024-01-16",
       "expiryDate": "2024-01-20",
@@ -250,11 +252,9 @@
 }
 ```
 - **특징:**
-  - Filter chaining 정확함
-  - expired / expiring 구분 매우 정확
-  - SQL Filter → Python Filter → 정렬 처리 순서 잘 잡힘
-  - sort nulls_last까지 들어간 점 매우 세심함
   - userId로 자동 필터링 (본인 음식만 조회)
+  - name으로 부분 검색 가능
+  - expiringOnly와 expiredOnly로 만료 상태 필터링
 
 ### 음식 수정
 - **PUT** `/foods/{foodId}`
@@ -290,18 +290,44 @@
 - **에러:** 404 (FOOD_NOT_FOUND)
 - **특징:** Optional 필드만 업데이트하는 방식 정확함
 
+### 음식 단건 조회
+- **GET** `/foods/{food_id}`
+- **설명:** 특정 음식 정보 조회
+- **응답:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid-string",
+    "userId": "user-uuid",
+    "imageUrl": "https://example.com/image.jpg",
+    "category": "채소",
+    "name": "양파",
+    "quantity": 3,
+    "weight": 500.0,
+    "registeredAt": "2024-01-15T10:30:00",
+    "purchaseDate": "2024-01-15",
+    "expiryDate": "2024-01-25",
+    "storageLocation": "냉장실",
+    "alertBeforeDays": 3
+  }
+}
+```
+- **에러:** 404 (FOOD_NOT_FOUND)
+- **특징:** userId로 자동 필터링 (본인 음식만 조회)
+
 ### 음식 단일 삭제
-- **DELETE** `/foods/{foodId}`
+- **DELETE** `/foods/{food_id}`
 - **설명:** 음식 삭제
 - **응답:**
 ```json
 {
   "success": true,
-  "message": "음식이 삭제되었습니다"
+  "message": "DELETED"
 }
 ```
 - **에러:** 404 (FOOD_NOT_FOUND)
-- **특징:** 유저 validation 포함한 점 굿
+- **특징:** 유저 validation 포함 (본인 음식만 삭제 가능)
 
 ### 음식 일괄 삭제
 - **DELETE** `/foods`
@@ -309,18 +335,16 @@
 - **요청:**
 ```json
 {
-  "foodIds": ["uuid-string-1", "uuid-string-2", "uuid-string-3"]
+  "ids": ["uuid-string-1", "uuid-string-2", "uuid-string-3"]
 }
 ```
 - **응답:**
 ```json
 {
   "success": true,
-  "message": "3개의 음식이 삭제되었습니다",
-  "deletedCount": 3
+  "message": "DELETED_3"
 }
 ```
-- **에러:** 400 (삭제할 음식 ID가 필요)
 - **특징:**
   - 유저 id 기반 제한 → 다른 사람 음식 삭제 불가
   - 보안적으로 정답
@@ -334,11 +358,15 @@
 ### 레시피 전체 조회
 - **GET** `/recipes`
 - **설명:** 모든 레시피 조회
+- **Query Parameters:**
+  - `limit` (optional, int, default: 50, range: 1-100): 페이지 크기
+  - `skip` (optional, int, default: 0, ge=0): 오프셋
 - **응답:**
 ```json
 {
   "success": true,
   "message": null,
+  "total": 100,
   "data": [
     {
       "id": "uuid-string-1",
@@ -346,6 +374,7 @@
       "calories": 450,
       "healthGoal": 1,
       "imageUrl": "https://example.com/recipe1.jpg",
+      "sourceUrl": "https://example.com/recipe1",
       "requiredfoods": ["김치", "밥", "양파"],
       "carbohydrates": 60.5,
       "protein": 15.2,
@@ -353,11 +382,21 @@
       "sodium": 1200.0,
       "vitamin_c": 25.0,
       "vitamin_d": null,
-      "zinc": 2.5
+      "zinc": 2.5,
+      "matchedGoals": [
+        {
+          "id": 1,
+          "title": "체중 감량",
+          "score": 0.85
+        }
+      ]
     }
   ]
 }
 ```
+- **특징:**
+  - 사용자의 건강 목표와 매칭된 레시피에 matchedGoals 정보 포함
+  - total 필드로 전체 레시피 개수 제공
 
 ### 레시피 상세 조회
 - **GET** `/recipes/{recipe_id}`
@@ -373,6 +412,7 @@
     "calories": 450,
     "healthGoal": 1,
     "imageUrl": "https://example.com/recipe1.jpg",
+    "sourceUrl": "https://example.com/recipe1",
     "requiredfoods": ["김치", "밥", "양파"],
     "carbohydrates": 60.5,
     "protein": 15.2,
@@ -380,22 +420,33 @@
     "sodium": 1200.0,
     "vitamin_c": 25.0,
     "vitamin_d": null,
-    "zinc": 2.5
+    "zinc": 2.5,
+    "matchedGoals": [
+      {
+        "id": 1,
+        "title": "체중 감량",
+        "score": 0.85
+      }
+    ]
   }
 }
 ```
 - **에러:** 404 (RECIPE_NOT_FOUND)
+- **특징:** 사용자의 건강 목표와 매칭된 레시피에 matchedGoals 정보 포함
 
 ### 레시피 검색
-- **GET** `/recipes/search/?q={query}`
+- **GET** `/recipes/search?q={query}`
 - **설명:** 레시피 검색
 - **Query Parameters:**
-  - `q` (required): 검색어
+  - `q` (required, string): 검색어
+  - `limit` (optional, int, default: 50, range: 1-100): 페이지 크기
+  - `skip` (optional, int, default: 0, ge=0): 오프셋
 - **응답:**
 ```json
 {
   "success": true,
   "message": null,
+  "total": 5,
   "data": [
     {
       "id": "uuid-string",
@@ -403,6 +454,7 @@
       "calories": 450,
       "healthGoal": 1,
       "imageUrl": "https://example.com/recipe1.jpg",
+      "sourceUrl": "https://example.com/recipe1",
       "requiredfoods": ["김치", "밥", "양파"],
       "carbohydrates": 60.5,
       "protein": 15.2,
@@ -410,15 +462,20 @@
       "sodium": 1200.0,
       "vitamin_c": 25.0,
       "vitamin_d": null,
-      "zinc": 2.5
+      "zinc": 2.5,
+      "matchedGoals": []
     }
   ]
 }
 ```
+- **특징:** 사용자의 건강 목표와 매칭된 레시피에 matchedGoals 정보 포함
 
 ### 레시피 추천
 - **GET** `/recipes/recommend`
 - **설명:** 사용자 맞춤 레시피 추천
+- **Query Parameters:**
+  - `limit` (optional, int, default: 20, range: 1-100): 추천 레시피 개수
+  - `skip` (optional, int, default: 0, ge=0): 오프셋
 - **응답:**
 ```json
 {
@@ -430,6 +487,7 @@
       "calories": 450,
       "healthGoal": 1,
       "imageUrl": "https://example.com/recipe1.jpg",
+      "sourceUrl": "https://example.com/recipe1",
       "requiredfoods": ["김치", "밥", "양파"],
       "carbohydrates": 60.5,
       "protein": 15.2,
@@ -437,7 +495,8 @@
       "sodium": 1200.0,
       "vitamin_c": 25.0,
       "vitamin_d": null,
-      "zinc": 2.5
+      "zinc": 2.5,
+      "matchedGoals": []
     }
   ]
 }
@@ -452,11 +511,13 @@
   - `expiringOnly` (optional, bool, default: false): 임박 재료(3일 이내 만료) 포함 레시피만 조회
   - `minCalories` (optional, int, ge=0): 최소 칼로리
   - `maxCalories` (optional, int, ge=0): 최대 칼로리
+  - `limit` (optional, int, default: 50): 결과 개수 제한
 - **응답:**
 ```json
 {
   "success": true,
   "message": null,
+  "total": 10,
   "data": [
     {
       "id": "uuid-string",
@@ -464,6 +525,7 @@
       "calories": 450,
       "healthGoal": 1,
       "imageUrl": "https://example.com/recipe1.jpg",
+      "sourceUrl": "https://example.com/recipe1",
       "requiredfoods": ["김치", "밥", "양파"],
       "carbohydrates": 60.5,
       "protein": 15.2,
@@ -471,7 +533,8 @@
       "sodium": 1200.0,
       "vitamin_c": 25.0,
       "vitamin_d": null,
-      "zinc": 2.5
+      "zinc": 2.5,
+      "matchedGoals": []
     }
   ]
 }
@@ -627,6 +690,7 @@
   }
 }
 ```
+- **특징:** userId로 자동 필터링 (본인 데이터만 조회)
 
 ---
 
@@ -642,6 +706,7 @@
 {
   "success": true,
   "message": null,
+  "total": 5,
   "data": [
     {
       "id": "uuid-string",
@@ -649,6 +714,7 @@
       "calories": 450,
       "healthGoal": 1,
       "imageUrl": "https://example.com/recipe1.jpg",
+      "sourceUrl": "https://example.com/recipe1",
       "requiredfoods": ["김치", "밥", "양파"],
       "carbohydrates": 60.5,
       "protein": 15.2,
@@ -656,7 +722,8 @@
       "sodium": 1200.0,
       "vitamin_c": 25.0,
       "vitamin_d": null,
-      "zinc": 2.5
+      "zinc": 2.5,
+      "matchedGoals": []
     }
   ]
 }
@@ -665,6 +732,7 @@
   - get_current_user()로 userId 자동 가져옴
   - FavoriteRecipe 테이블에서 userId로 필터
   - Recipe JOIN해서 FE에게 바로 쓸 수 있는 recipe list 반환
+  - total 필드로 즐겨찾기 개수 제공
 
 ### 즐겨찾기 확인
 - **GET** `/favorite-recipes/{recipeId}/check`
@@ -698,6 +766,7 @@
     "calories": 450,
     "healthGoal": 1,
     "imageUrl": "https://example.com/recipe1.jpg",
+    "sourceUrl": "https://example.com/recipe1",
     "requiredfoods": ["김치", "밥", "양파"],
     "carbohydrates": 60.5,
     "protein": 15.2,
@@ -705,7 +774,8 @@
     "sodium": 1200.0,
     "vitamin_c": 25.0,
     "vitamin_d": null,
-    "zinc": 2.5
+    "zinc": 2.5,
+    "matchedGoals": []
   }
 }
 ```
@@ -971,7 +1041,7 @@
 **Base Path:** `/statistics`
 **인증:** 모든 엔드포인트에 Bearer Token 필요
 
-### 식사 통계
+### 식사 통계 (Statistics)
 - **GET** `/statistics/meals`
 - **설명:** 식사 관련 통계 조회
 - **응답:**
@@ -992,6 +1062,7 @@
 }
 ```
 - **특징:** userId로 자동 필터링
+- **참고:** `/meals/statistics` 엔드포인트도 동일한 기능 제공
 
 ### 일일 건강 통계
 - **GET** `/statistics/daily`

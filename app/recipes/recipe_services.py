@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+from app.core.datetime_utils import get_kst_today
 from typing import Iterable, Optional, Set
 import json
 
@@ -70,9 +71,9 @@ def get_recipe_by_id(db: Session, recipe_id: str):
     return db.query(Recipe).filter(Recipe.id == recipe_id).first()
 
 
-def search_recipes(db: Session, query: str):
+def search_recipes(db: Session, query: str, limit: Optional[int] = None, skip: int = 0):
     pattern = f"%{query}%"
-    return (
+    query_obj = (
         db.query(Recipe)
         .filter(
             or_(
@@ -80,8 +81,15 @@ def search_recipes(db: Session, query: str):
                 Recipe.requiredfoods.ilike(pattern),
             )
         )
-        .all()
     )
+    
+    if skip > 0:
+        query_obj = query_obj.offset(skip)
+    
+    if limit is not None and limit > 0:
+        query_obj = query_obj.limit(limit)
+    
+    return query_obj.all()
 
 
 def filter_recipes(
@@ -125,7 +133,7 @@ def filter_recipes(
 
     # ---- 임박 재료 필터 ----
     if expiring_only:
-        today = datetime.utcnow().date()
+        today = get_kst_today()
         threshold = today + timedelta(days=3)
 
         expiring_foods = (

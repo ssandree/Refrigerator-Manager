@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, JSON, Integer, Float
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 from app.core.database import Base
+from app.core.datetime_utils import get_kst_now
 
 class Meal(Base):
     __tablename__ = "meals"
@@ -16,7 +16,7 @@ class Meal(Base):
     quantity = Column(String(50), nullable=True)
 
     consumedAt = Column(DateTime, nullable=False)
-    registeredAt = Column(DateTime, default=datetime.utcnow)
+    registeredAt = Column(DateTime, default=get_kst_now)
 
     notes = Column(String(500), nullable=True)
     mealType = Column(String(20), nullable=True)  # breakfast, lunch, dinner, snack

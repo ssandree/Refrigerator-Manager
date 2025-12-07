@@ -31,6 +31,7 @@ class MealCreate(BaseModel):
         return v
 
 class MealUpdate(BaseModel):
+    consumedAt: Optional[datetime] = None
     quantity: Optional[str] = None
     notes: Optional[str] = None
     mealType: Optional[MealType] = None

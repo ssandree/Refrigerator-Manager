@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey
-from datetime import datetime
 import uuid
 from app.core.database import Base
+from app.core.datetime_utils import get_kst_now
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -19,5 +19,5 @@ class Notification(Base):
 
     read = Column(Boolean, default=False)
 
-    createdAt = Column(DateTime, default=datetime.utcnow)
+    createdAt = Column(DateTime, default=get_kst_now)
 

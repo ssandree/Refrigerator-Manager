@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.recipes.recipe_models import Recipe
 from app.auth.dependencies import get_current_user
+from app.auth.auth_models import User
 from app.recipes.recipe_schemas import (
     RecipeResponse,
     SingleRecipeResponse,
@@ -139,12 +140,13 @@ def _to_recipe_response(recipe: Recipe, user=None, user_goals=None) -> RecipeRes
 @router.get("", response_model=RecipeListResponse)
 def find_all(
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    userId=Depends(get_current_user),
     limit: int = Query(50, ge=1, le=100),
     skip: int = Query(0, ge=0),
 ):
     total, recipes = get_all_recipes(db, limit=limit, skip=skip)
-    user_goals = get_user_goals(db, user.id)
+    user_goals = get_user_goals(db, userId)
+    user = db.query(User).filter(User.id == userId).first()
 
     return RecipeListResponse(
         total=total,
@@ -158,12 +160,20 @@ def find_all(
 def search(
     q: str = Query(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    userId=Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=100),
+    skip: int = Query(0, ge=0),
 ):
-    recipes = search_recipes(db, q)
-    user_goals = get_user_goals(db, user.id)
+    recipes = search_recipes(db, q, limit=limit, skip=skip)
+    user_goals = get_user_goals(db, userId)
+    user = db.query(User).filter(User.id == userId).first()
+    
+    # 전체 검색 결과 개수를 구하기 위해 limit 없이 한 번 더 조회
+    total_recipes = search_recipes(db, q, limit=None, skip=0)
+    total = len(total_recipes)
+    
     return RecipeListResponse(
-        total=len(recipes),
+        total=total,
         data=[_to_recipe_response(r, user=user, user_goals=user_goals) for r in recipes],
     )
 
@@ -174,11 +184,12 @@ def search(
 # -----------------------------
 @router.get("/recommend", response_model=RecommendResponse)
 def recommend(
-    user=Depends(get_current_user),
+    userId=Depends(get_current_user),
     db: Session = Depends(get_db),
-    limit: int = 20,
+    limit: int = Query(20, ge=1, le=100),
+    skip: int = Query(0, ge=0),
 ):
-    raw = recommend_recipes(db, user.id, limit)
+    raw = recommend_recipes(db, userId, limit=limit, skip=skip)
 
     # raw 안의 scoreDetails.matchedGoals를 바깥으로 꺼낼 수 있음
     enriched = []
@@ -202,12 +213,12 @@ def filter_recipes(
     minCalories: Optional[int] = None,
     maxCalories: Optional[int] = None,
     limit: int = 50,
-    user=Depends(get_current_user),
+    userId=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     recipes = filter_recipes_service(
         db=db,
-        userId=user.id,
+        userId=userId,
         ingredients=ingredients,
         expiring_only=expiringOnly,
         min_calories=minCalories,
@@ -215,7 +226,8 @@ def filter_recipes(
         limit=limit,
     )
 
-    user_goals = get_user_goals(db, user.id)
+    user_goals = get_user_goals(db, userId)
+    user = db.query(User).filter(User.id == userId).first()
 
     return {
         "success": True,
@@ -233,11 +245,12 @@ def filter_recipes(
 # Read - One
 # -----------------------------
 @router.get("/{recipe_id}", response_model=SingleRecipeResponse)
-def find_one(recipe_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def find_one(recipe_id: str, db: Session = Depends(get_db), userId=Depends(get_current_user)):
     recipe = get_recipe_by_id(db, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="RECIPE_NOT_FOUND")
 
-    user_goals = get_user_goals(db, user.id)
+    user_goals = get_user_goals(db, userId)
+    user = db.query(User).filter(User.id == userId).first()
 
     return SingleRecipeResponse(data=_to_recipe_response(recipe, user, user_goals))

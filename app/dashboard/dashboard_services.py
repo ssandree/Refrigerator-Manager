@@ -1,21 +1,23 @@
 # app/dashboard/dashboard_services.py
 
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.food.food_models import Food
 from app.meals.meal_models import Meal
 from app.recipes.recipe_models import Recipe
 from app.recipes.recommend_service import recommend_recipes
+from app.core.datetime_utils import get_kst_today, get_kst_now
 
 
 # -----------------------------------------------------------
 # Home Dashboard (최적화 버전)
 # -----------------------------------------------------------
 def home_dashboard(db: Session, userId: str):
-    today = date.today()
-    start = datetime(today.year, today.month, today.day)
-    end = datetime(today.year, today.month, today.day, 23, 59, 59)
+    from app.core.datetime_utils import KST
+    today = get_kst_today()
+    start = datetime(today.year, today.month, today.day, tzinfo=KST)
+    end = datetime(today.year, today.month, today.day, 23, 59, 59, tzinfo=KST)
 
     # -----------------------------
     # 1) 오늘의 Meals 조회 (쿼리 1회)

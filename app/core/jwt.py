@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from jose import jwt
 from app.core.config import settings
+from app.core.datetime_utils import get_kst_now
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer
 
@@ -9,7 +10,7 @@ security = HTTPBearer()
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(
+    expire = get_kst_now() + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     to_encode.update({"exp": expire})

@@ -231,7 +231,8 @@ def calc_meal_nutrition(meal: Meal, recipe: Recipe):
 
 def _parse_date(value: Optional[str]) -> datetime:
     if not value:
-        return datetime.utcnow()
+        from app.core.datetime_utils import get_kst_now
+        return get_kst_now()
     try:
         return datetime.fromisoformat(value.replace('Z', '+00:00'))
     except ValueError:

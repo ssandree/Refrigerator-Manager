@@ -1,9 +1,10 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import List, Optional, Any
 
 from sqlalchemy.orm import Session
 
 from app.food.food_models import Food
+from app.core.datetime_utils import get_kst_now, get_kst_today
 from app.food.food_schemas import FoodCreate
 
 
@@ -81,7 +82,7 @@ def create_food(db: Session, userId: str, data: FoodCreate) -> Food:
         expiryDate=incoming_expiry,
         storageLocation=getattr(data, "storageLocation", None),
         alertBeforeDays=getattr(data, "alertBeforeDays", None),
-        registeredAt=getattr(data, "registeredAt", datetime.utcnow()),
+        registeredAt=getattr(data, "registeredAt", get_kst_now()),
     )
     db.add(food)
     db.commit()
@@ -125,7 +126,7 @@ def get_all_with_filters(
         query = query.filter(Food.storageLocation == storage_location)
 
     # 임박/만료 필터
-    today = date.today()
+    today = get_kst_today()
     expiring_only = filters.get("expiringOnly")
     expired_only = filters.get("expiredOnly")
 
