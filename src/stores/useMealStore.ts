@@ -107,6 +107,7 @@ export const useMealStore = create<MealState>()(
             quantity: payload.quantity ?? null,
             notes: payload.notes ?? null,
             mealType: payload.mealType ?? null,
+            consumedAt: payload.consumedAt ?? null,
           });
           if (response.success && response.data) {
             const updated = response.data;

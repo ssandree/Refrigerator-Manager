@@ -19,18 +19,19 @@ export const recipeCardStyles = StyleSheet.create({
     ...recipeCardShadow,
     overflow: "hidden",
     flexDirection: "row",
-    height: 100,
+    height: 120,
   },
   imageContainer: {
     position: "relative",
+    paddingLeft: 6,
     width: 110,
-    height: 100, // container 높이와 동일하게 맞춤
+    height: 120, // container 높이와 동일하게 맞춤
     alignItems: "center",
     justifyContent: "center",
   },
   image: {
     width: "90%",
-    height: "90%",
+    height: "75%",
     borderRadius: 10,
     backgroundColor: Colors.backgroundLight,
   },
@@ -60,12 +61,11 @@ export const recipeCardStyles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 4,
+    alignItems: "center",
+    gap: 8,
     borderRadius: 6,
     paddingRight: 8,
-    paddingVertical: 6,
-    marginTop: 8,
+    paddingBottom: 5,
   },
   statItem: {
     flexDirection: "row",

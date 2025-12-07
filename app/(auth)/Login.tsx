@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BackHandler, View } from "react-native";
 import { z } from "zod";
@@ -84,13 +84,6 @@ export default function LoginScreen() {
           label="로그인"
           onPress={handleSubmit(onSubmit)}
           disabled={isLoading}
-          style={{ marginBottom: 16 }}
-        />
-        <PrimaryButton
-          label="홈으로 바로가기"
-          onPress={() => router.replace("/(tabs)/Home")}
-          disabled={isLoading}
-          variant="secondary"
         />
       </View>
     </View>

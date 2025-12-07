@@ -21,9 +21,11 @@ export function getKoreaNow(): Date {
  */
 export function getTodayInKorea(): string {
   const koreaNow = getKoreaNow();
-  const year = koreaNow.getUTCFullYear();
-  const month = String(koreaNow.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(koreaNow.getUTCDate()).padStart(2, "0");
+  // getKoreaNow()가 반환한 Date 객체는 한국 시간으로 변환된 것이므로
+  // getFullYear(), getMonth(), getDate()를 사용해야 한국 시간 기준 날짜를 얻을 수 있음
+  const year = koreaNow.getFullYear();
+  const month = String(koreaNow.getMonth() + 1).padStart(2, "0");
+  const day = String(koreaNow.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -51,9 +53,11 @@ export function addDaysInKorea(dateISO: string, days: number): string {
  */
 export function toKoreaDateISO(date?: Date): string {
   const koreaDate = date ? convertToKoreaTime(date) : getKoreaNow();
-  const year = koreaDate.getUTCFullYear();
-  const month = String(koreaDate.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(koreaDate.getUTCDate()).padStart(2, "0");
+  // convertToKoreaTime() 또는 getKoreaNow()가 반환한 Date 객체는 한국 시간으로 변환된 것이므로
+  // getFullYear(), getMonth(), getDate()를 사용해야 한국 시간 기준 날짜를 얻을 수 있음
+  const year = koreaDate.getFullYear();
+  const month = String(koreaDate.getMonth() + 1).padStart(2, "0");
+  const day = String(koreaDate.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 

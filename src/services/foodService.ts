@@ -3,6 +3,7 @@ import { Food } from "../types/food";
 import apiClientInstance, { ApiResponse } from "./apiClient";
 
 export interface FoodQueryParams {
+  name?: string | null;
   category?: string | null;
   location?: string | null;
   expired?: boolean | null;
@@ -22,6 +23,9 @@ class FoodService {
     if (params) {
       const searchParams = new URLSearchParams();
 
+      if (params.name) {
+        searchParams.append("name", params.name);
+      }
       if (params.category) {
         searchParams.append("category", params.category);
       }
@@ -84,10 +88,10 @@ class FoodService {
    * Bulk delete foods
    */
   async bulkDeleteFoods(foodIds: string[]): Promise<ApiResponse<void>> {
-    // BE: DELETE /foods, body: { foodIds: string[] }, 응답: BulkDeleteResponse(BaseResponse + deletedCount, message)
+    // BE: DELETE /foods, body: { ids: string[] }, 응답: BulkDeleteResponse(BaseResponse + deletedCount, message)
     // 현재 FE에서는 삭제 성공 여부만 필요하므로 ApiResponse<void> 로 처리 (deletedCount는 사용하지 않음)
     return await apiClientInstance.delete<void>(this.basePath, {
-      foodIds,
+      ids: foodIds,
     });
   }
 }

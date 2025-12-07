@@ -5,6 +5,7 @@ import { useDateStore } from "../../../stores/useDateStore";
 import { useNutritionStore } from "../../../stores/useNutritionStore";
 import { useStatisticsStore } from "../../../stores/useStatisticsStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
+import { toKoreaDateISO } from "../../../utils/dateUtils";
 
 const statsCardShadow = createShadowStyle({
   opacity: 0.1,
@@ -48,19 +49,21 @@ export default function NutritionProgress() {
     if (!dailyStats) return;
 
     // dailyStats의 날짜가 오늘 날짜와 일치하는지 확인
-    const statsDate = dailyStats.date.split("T")[0]; // YYYY-MM-DD 형식으로 변환
+    // 절대 split("T")[0]를 사용하지 않음 - UTC 기준 날짜가 잘못될 수 있음
+    const statsDate = toKoreaDateISO(new Date(dailyStats.date));
     if (statsDate !== todayISO) return;
 
     setDate(statsDate);
     // 모든 필드를 명시적으로 설정 (부분 업데이트 방지)
+    // API 응답 구조: { date, calories, macros: { ... }, mealCount, mealHistory }
     setTotals({
       calories: Number(dailyStats.calories) || 0,
-      protein: Number(dailyStats.protein) || 0,
-      carbs: Number(dailyStats.carbohydrates) || 0,
-      fat: Number(dailyStats.fat) || 0,
-      vitaminC: Number(dailyStats.vitamin_c) || 0,
-      vitaminD: Number(dailyStats.vitamin_d) || 0,
-      zinc: Number(dailyStats.zinc) || 0,
+      protein: Number(dailyStats.macros?.protein) || 0,
+      carbs: Number(dailyStats.macros?.carbs) || 0,
+      fat: Number(dailyStats.macros?.fat) || 0,
+      vitaminC: Number(dailyStats.macros?.vitamin_c) || 0,
+      vitaminD: Number(dailyStats.macros?.vitamin_d) || 0,
+      zinc: Number(dailyStats.macros?.zinc) || 0,
     });
   }, [dailyStats, todayISO, setDate, setTotals]);
 
@@ -78,28 +81,17 @@ export default function NutritionProgress() {
     if (prevCombinedTargetsRef.current === combinedTargetsKey) return;
     prevCombinedTargetsRef.current = combinedTargetsKey;
 
-    // 첫 번째 건강 목표의 목표치를 사용
-    const firstGoal = combinedTargets[goalIds[0]];
-    if (firstGoal) {
+    // API 응답 구조: { goalCount, goals, targets: { ... } }
+    if (combinedTargets.targets) {
       const currentTargets = useNutritionStore.getState().targets;
       setTargets({
-        calories: firstGoal.targetCalories ?? currentTargets.calories,
-        protein:
-          typeof firstGoal.targetProtein === "number"
-            ? firstGoal.targetProtein
-            : firstGoal.targetProtein?.max ??
-              firstGoal.targetProtein?.min ??
-              currentTargets.protein,
-        carbs: firstGoal.targetCarbs ?? currentTargets.carbs,
-        fat:
-          typeof firstGoal.targetFat === "number"
-            ? firstGoal.targetFat
-            : firstGoal.targetFat?.max ??
-              firstGoal.targetFat?.min ??
-              currentTargets.fat,
-        vitaminC: firstGoal.targetVitaminC ?? currentTargets.vitaminC,
-        vitaminD: firstGoal.targetVitaminD ?? currentTargets.vitaminD,
-        zinc: firstGoal.targetZinc ?? currentTargets.zinc,
+        calories: combinedTargets.targets.calories ?? currentTargets.calories,
+        protein: combinedTargets.targets.protein ?? currentTargets.protein,
+        carbs: combinedTargets.targets.carbohydrates ?? currentTargets.carbs,
+        fat: combinedTargets.targets.fat ?? currentTargets.fat,
+        vitaminC: combinedTargets.targets.vitamin_c ?? currentTargets.vitaminC,
+        vitaminD: combinedTargets.targets.vitamin_d ?? currentTargets.vitaminD,
+        zinc: combinedTargets.targets.zinc ?? currentTargets.zinc,
       });
     }
   }, [combinedTargets, setTargets]);

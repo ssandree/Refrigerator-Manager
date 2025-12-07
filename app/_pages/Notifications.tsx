@@ -15,6 +15,7 @@ import { useAutoLoadData } from "../../src/hooks/useAutoLoadData";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
 import { useNotificationStore } from "../../src/stores/useNotificationStore";
 import { Colors, FontSizes, createShadowStyle } from "../../src/styles/common";
+import { getKoreaNow } from "../../src/utils/dateUtils";
 
 export default function Notifications() {
   const notifications = useNotificationStore((state) => state.notifications);
@@ -95,7 +96,8 @@ export default function Notifications() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
+    // 한국 시간 기준 현재 시간 사용
+    const now = getKoreaNow();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
@@ -105,7 +107,10 @@ export default function Notifications() {
     if (minutes < 60) return `${minutes}분 전`;
     if (hours < 24) return `${hours}시간 전`;
     if (days < 7) return `${days}일 전`;
-    return date.toLocaleDateString("ko-KR");
+    // 한국 시간 기준으로 날짜 표시
+    return date.toLocaleDateString("ko-KR", {
+      timeZone: "Asia/Seoul",
+    });
   };
 
   const getNotificationIcon = (type: string) => {

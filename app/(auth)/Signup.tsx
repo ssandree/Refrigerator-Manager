@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { View } from "react-native";
 import { z } from "zod";
@@ -26,7 +26,6 @@ type SignupForm = z.infer<typeof signupSchema>;
 
 export default function SigninScreen() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const register = useAuthStore((s) => s.register);
   const isLoading = useAuthStore((s) => s.isLoading);
 
@@ -65,10 +64,8 @@ export default function SigninScreen() {
         errors={errors}
         showPassword={showPassword}
         onToggleShowPassword={() => setShowPassword(!showPassword)}
-        showConfirmPassword={showConfirmPassword}
-        onToggleShowConfirmPassword={() =>
-          setShowConfirmPassword(!showConfirmPassword)
-        }
+        showConfirmPassword={true}
+        onToggleShowConfirmPassword={() => {}}
         showNameField={true}
       />
       <View style={{ marginTop: 12 }}>

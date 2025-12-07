@@ -1,21 +1,22 @@
 import { tabsStyles } from "@/styles/tabs";
 import { router } from "expo-router";
-import { AlertTriangle, Bell, CheckCircle, ChefHat } from "lucide-react-native";
+import { AlertTriangle, CheckCircle } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SecondaryButton } from "../../../components/Buttons";
-import { Colors, commonStyles, FontSizes } from "../../../styles/common";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  FoodCategory,
+  FoodCategoryColor,
+} from "../../../enums/ingredientCategory";
+import { useDateStore } from "../../../stores/useDateStore";
+import { Colors, FontSizes } from "../../../styles/common";
 import { Food } from "../../../types/food";
+import { parseKoreaDate } from "../../../utils/dateUtils";
 
 interface ExpiringIngredientCardProps {
-  name: string;
-  daysLeft: number;
+  food: Food & { daysLeft: number };
 }
 
-function ExpiringIngredientCard({
-  name,
-  daysLeft,
-}: ExpiringIngredientCardProps) {
+function ExpiringIngredientCard({ food }: ExpiringIngredientCardProps) {
   const getChipBackgroundColor = (days: number) => {
     if (days <= 1) return Colors.error;
     if (days <= 2) return Colors.warning;
@@ -26,57 +27,98 @@ function ExpiringIngredientCard({
     return Colors.textLight;
   };
 
-  const handleRecipeRecommend = () => {
-    router.push({
-      pathname: "/(tabs)/Recipe",
-      params: { q: name },
-    } as { pathname: string; params?: Record<string, string> });
-  };
-
-  const handleResetAlert = () => {
-    // 알림 재설정 로직 구현 필요
+  const getCategoryImage = () => {
+    const categoryImageMap: Record<FoodCategory, any> = {
+      [FoodCategory.MEAT]: require("../../../../assets/foods/MEAT.png"),
+      [FoodCategory.FISH]: require("../../../../assets/foods/FISH.png"),
+      [FoodCategory.VEGETABLE]: require("../../../../assets/foods/VEGETABLE.png"),
+      [FoodCategory.FRUIT]: require("../../../../assets/foods/FRUIT.png"),
+      [FoodCategory.DAIRY]: require("../../../../assets/foods/DAIRY.png"),
+      [FoodCategory.GRAIN]: require("../../../../assets/foods/GRAIN.png"),
+      [FoodCategory.SEASONING]: require("../../../../assets/foods/SEASONING.png"),
+      [FoodCategory.NOODLE]: require("../../../../assets/foods/NOODLE.png"),
+      [FoodCategory.SIDE]: require("../../../../assets/foods/SIDE.png"),
+      [FoodCategory.SEAFOOD]: require("../../../../assets/foods/SEAFOOD.png"),
+      [FoodCategory.NUT]: require("../../../../assets/foods/NUT.png"),
+      [FoodCategory.BREAD]: require("../../../../assets/foods/BREAD.png"),
+      [FoodCategory.RICE_CAKE]: require("../../../../assets/foods/RICE_CAKE.png"),
+      [FoodCategory.SAUCE]: require("../../../../assets/foods/SAUCE.png"),
+      [FoodCategory.FROZEN]: require("../../../../assets/foods/FROZEN.png"),
+      [FoodCategory.DRINK]: require("../../../../assets/foods/DRINK.png"),
+      [FoodCategory.INSTANT]: require("../../../../assets/foods/INSTANT.png"),
+      [FoodCategory.OTHER]: require("../../../../assets/foods/OTHER.png"),
+    };
+    return (
+      categoryImageMap[food.category] ||
+      require("../../../../assets/foods/OTHER.png")
+    );
   };
 
   return (
-    <View style={[tabsStyles.expiringItem, commonStyles.card]}>
-      {/* 상단: 재료명과 남은 일수 칩 */}
-      <View style={styles.headerContainer}>
-        <Text style={[tabsStyles.expiringName, styles.ingredientName]}>
-          {name}
-        </Text>
-        <View
-          style={[
-            styles.chipContainer,
-            { backgroundColor: getChipBackgroundColor(daysLeft) },
-          ]}
-        >
-          <AlertTriangle
-            size={14}
-            color={getChipTextColor(daysLeft)}
-            strokeWidth={2.5}
-          />
-          <Text
-            style={[styles.chipText, { color: getChipTextColor(daysLeft) }]}
-          >
-            D-{daysLeft}
-          </Text>
-        </View>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => {
+        router.push({
+          pathname: "/(tabs)/Recipe",
+          params: { q: food.name },
+        } as { pathname: string; params?: Record<string, string> });
+      }}
+    >
+      {/* 카테고리 상단 바 */}
+      <View
+        style={[
+          styles.categoryBar,
+          { backgroundColor: FoodCategoryColor[food.category] },
+        ]}
+      />
+
+      {/* 카테고리 이미지 */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={getCategoryImage()}
+          style={styles.image}
+          resizeMode="contain"
+        />
       </View>
 
-      {/* 하단: 버튼들 */}
-      <View style={styles.buttonContainer}>
-        <SecondaryButton
-          onPress={handleRecipeRecommend}
-          leftIcon={
-            <ChefHat size={16} color={Colors.primary} strokeWidth={2} />
+      {/* 재료 이름 */}
+      <Text style={styles.name} numberOfLines={1}>
+        {food.name}
+      </Text>
+
+      {/* 개수, 무게 */}
+      <Text style={styles.quantity}>
+        {(() => {
+          const parts: string[] = [];
+          if (food.quantity !== null && food.quantity !== undefined) {
+            parts.push(`${food.quantity}개`);
           }
+          if (food.weight !== null && food.weight !== undefined) {
+            parts.push(food.weight);
+          }
+          return parts.length > 0 ? parts.join(" · ") : "정보 없음";
+        })()}
+      </Text>
+
+      {/* D-x일 칩 */}
+      <View
+        style={[
+          styles.chipContainer,
+          { backgroundColor: getChipBackgroundColor(food.daysLeft) },
+        ]}
+      >
+        <AlertTriangle
+          size={12}
+          color={getChipTextColor(food.daysLeft)}
+          strokeWidth={2.5}
         />
-        <SecondaryButton
-          onPress={handleResetAlert}
-          leftIcon={<Bell size={16} color={Colors.secondary} strokeWidth={2} />}
-        />
+        <Text
+          style={[styles.chipText, { color: getChipTextColor(food.daysLeft) }]}
+        >
+          D-{food.daysLeft}
+        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -87,22 +129,34 @@ interface ExpiringIngredientSectionProps {
 export default function ExpiringIngredientSection({
   ingredients,
 }: ExpiringIngredientSectionProps) {
+  // 한국 시간 기준 오늘 날짜
+  const todayISO = useDateStore((state) => state.todayISO);
+
   // 3일 이하 임박 재료 필터링
   const getExpiringFoods = (): (Food & { daysLeft: number })[] => {
-    const today = new Date();
+    // 한국 시간 기준으로 오늘 날짜 파싱 (시간은 00:00:00으로 설정)
+    const today = parseKoreaDate(todayISO);
+    today.setUTCHours(0, 0, 0, 0);
+
     return ingredients
       .map((food) => {
         const expiryDateStr = food.expiryDate;
         if (!expiryDateStr) {
           return null;
         }
-        const expiryDate = new Date(expiryDateStr);
+
+        // 한국 시간 기준으로 유통기한 날짜 파싱 (시간은 00:00:00으로 설정)
+        const expiryDate = parseKoreaDate(expiryDateStr);
+        expiryDate.setUTCHours(0, 0, 0, 0);
+
         if (Number.isNaN(expiryDate.getTime())) {
           return null;
         }
-        const daysLeft = Math.ceil(
-          (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-        );
+
+        // 날짜 차이 계산 (밀리초를 일로 변환)
+        const diffMs = expiryDate.getTime() - today.getTime();
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
         return { ...food, daysLeft };
       })
       .filter(
@@ -119,6 +173,9 @@ export default function ExpiringIngredientSection({
   return (
     <View style={[tabsStyles.section, { marginBottom: 24 }]}>
       <Text style={tabsStyles.sectionTitle}>⚠️ 임박 재료</Text>
+      <Text style={styles.subtitle}>
+        재료를 클릭하면 레시피 검색으로 이동합니다
+      </Text>
       {expiringFoods.length === 0 ? (
         <View
           style={{
@@ -173,13 +230,9 @@ export default function ExpiringIngredientSection({
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={tabsStyles.expiringContainer}>
+        <View style={styles.gridContainer}>
           {expiringFoods.map((food) => (
-            <ExpiringIngredientCard
-              key={food.id}
-              name={food.name}
-              daysLeft={food.daysLeft}
-            />
+            <ExpiringIngredientCard key={food.id} food={food} />
           ))}
         </View>
       )}
@@ -188,35 +241,76 @@ export default function ExpiringIngredientSection({
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
+  gridContainer: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+    marginTop: 12,
   },
-  ingredientName: {
-    fontSize: 16,
+  card: {
+    width: "31%", // 3열 그리드 (gap 고려)
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    padding: 10,
+    position: "relative",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    minHeight: 140,
+    marginBottom: 12,
+  },
+  categoryBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  name: {
+    fontSize: FontSizes.sm,
     fontWeight: "600",
     color: Colors.textPrimary,
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  quantity: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 8,
   },
   chipContainer: {
     paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 40,
     justifyContent: "center",
+    gap: 4,
+    alignSelf: "center",
   },
   chipText: {
     fontSize: 10,
-    fontWeight: "500",
+    fontWeight: "600",
   },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 8,
+  subtitle: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 4,
+    marginBottom: 12,
   },
 });

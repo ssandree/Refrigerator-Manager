@@ -17,69 +17,95 @@ export interface MealStatisticsSummary {
 export interface DailyHealthStats {
   date: string;
   calories: number;
-  protein: number;
-  carbohydrates: number;
-  fat: number;
-  sodium: number;
-  vitamin_c: number;
-  vitamin_d: number;
-  zinc: number;
+  macros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    vitamin_c: number;
+    vitamin_d: number;
+    zinc: number;
+  };
+  mealCount: number;
+  mealHistory: Array<{
+    id: string;
+    consumedAt: string;
+    mealType: string | null;
+    notes: string | null;
+    recipeId: string | null;
+  }>;
 }
 
 // GET /statistics/weekly
 export interface WeeklyDailyStat {
   date: string;
   calories: number;
-  protein: number;
-  carbohydrates: number;
-  fat: number;
+  meals: number;
+  goalsAchieved: boolean;
 }
 
 export interface WeeklyHealthStats {
   startDate: string;
   endDate: string;
-  averageDailyCalories: number;
-  averageDailyProtein: number;
-  averageDailyCarbs: number;
-  averageDailyFat: number;
   dailyStats: WeeklyDailyStat[];
+  weeklyTotal: {
+    totalCalories: number;
+    totalMeals: number;
+    averageCalories: number;
+    goalsAchievedDays: number;
+  };
 }
 
 // GET /statistics/nutrition
-export interface NutritionBreakdown {
-  protein: number;
-  carbohydrates: number;
-  fat: number;
-}
-
 export interface NutritionStats {
-  startDate: string;
-  endDate: string;
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbohydrates: number;
-  totalFat: number;
-  averageDailyCalories: number;
-  averageDailyProtein: number;
-  averageDailyCarbs: number;
-  averageDailyFat: number;
-  nutritionBreakdown: NutritionBreakdown;
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  total: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    vitamin_c: number;
+    vitamin_d: number;
+    zinc: number;
+  };
+  average: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    vitamin_c: number;
+    vitamin_d: number;
+    zinc: number;
+  };
+  dailyBreakdown: Array<{
+    date: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    vitamin_c: number;
+    vitamin_d: number;
+    zinc: number;
+  }>;
 }
 
 // GET /statistics/combined-targets
 // 건강 목표별 영양소 목표량 (BE에서 계산된 값)
 export interface CombinedNutritionTargets {
-  [goalId: string]: {
-    targetCalories?: number;
-    targetProtein?: number | { min?: number; max?: number };
-    targetFat?: number | { min?: number; max?: number };
-    targetCarbs?: number;
-    targetSodium?: number;
-    targetVitaminC?: number;
-    targetVitaminD?: number;
-    targetZinc?: number;
-    recommendedFoods?: string[];
-    notes?: string[];
+  goalCount: number;
+  goals: number[];
+  targets: {
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+    vitamin_c: number;
+    vitamin_d: number;
+    zinc: number;
+    sodium: number;
   };
 }
 

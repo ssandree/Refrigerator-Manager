@@ -119,8 +119,11 @@ export const useAuthStore = create<AuthState>()(
       // 회원가입: 서버에 등록 후 토큰 저장 및 로그인 상태로 전환
       register: async (payload) => {
         try {
+          logger.log("[AuthStore] register 시작:", payload);
           set({ error: null, isLoading: true });
+          logger.log("[AuthStore] authApi.register 호출");
           const res = await authApi.register(payload);
+          logger.log("[AuthStore] authApi.register 응답:", res);
           if (res.success && res.data) {
             // 서버 사용자 모델을 앱 사용자 모델에 매핑
             const apiUser = res.data.user as ServiceUser;

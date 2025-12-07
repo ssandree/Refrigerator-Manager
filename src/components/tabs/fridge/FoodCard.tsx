@@ -112,26 +112,35 @@ export default function FoodCard({
         </View>
       )}
 
-      {/* 상단 행: 사진과 저장위치 */}
-      <View style={styles.topRow}>
+      {/* 1-2행: 사진과 정보 */}
+      <View style={styles.contentRow}>
+        {/* 1열: 사진 (2행에 걸침) */}
         <View style={styles.foodCardImageContainer}>
-          <Image source={getCategoryImage()} style={styles.foodCardImage} />
+          <Image
+            source={getCategoryImage()}
+            style={styles.foodCardImage}
+            resizeMode="contain"
+          />
         </View>
-      </View>
 
-      {/* 하단 행: 재료 정보 */}
-      <View style={styles.bottomRow}>
+        {/* 2열: 이름과 상세 정보 */}
         <View style={styles.foodCardInfoSection}>
+          {/* 1행: 이름 */}
           <View style={styles.nameRow}>
             <Text style={styles.foodCardName} numberOfLines={1}>
               {food.name}
             </Text>
           </View>
+          {/* 2행: 개수, 무게, 보관장소 */}
           <Text style={styles.foodCardQuantity}>
             {food.quantity}개 · {food.weight} · {getStorageEmoji()}
           </Text>
-          <Text style={styles.foodCardExpiryDate}>{food.expiryDate}까지</Text>
         </View>
+      </View>
+
+      {/* 3행: 유통기한 */}
+      <View style={styles.expiryRow}>
+        <Text style={styles.foodCardExpiryDate}>{food.expiryDate}까지</Text>
       </View>
     </TouchableOpacity>
   );
@@ -174,33 +183,34 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     fontWeight: "bold",
   },
-  topRow: {
-    // 사진이랑 아이콘
+  contentRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 0,
+    alignItems: "flex-start",
     marginTop: 2,
+    marginBottom: 6,
+    flex: 1,
   },
   foodCardImageContainer: {
-    position: "relative",
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
   },
   foodCardImage: {
-    width: 35,
-    height: 35,
+    width: 50,
+    height: "100%",
     borderRadius: 6,
-    // backgroundColor: Colors.backgroundLight,
-  },
-  bottomRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    flex: 1,
   },
   foodCardInfoSection: {
     flex: 1,
-    marginRight: 8,
     justifyContent: "space-between",
+    paddingTop: 5,
+  },
+  expiryRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
   },
   nameRow: {
     flexDirection: "row",
@@ -220,7 +230,7 @@ const styles = StyleSheet.create({
   foodCardQuantity: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginBottom: 1,
+    marginTop: 4,
   },
   foodCardExpiryDate: {
     fontSize: FontSizes.xs,

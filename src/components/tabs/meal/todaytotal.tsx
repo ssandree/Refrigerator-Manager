@@ -4,6 +4,7 @@ import { useDateStore } from "../../../stores/useDateStore";
 import { useNutritionStore } from "../../../stores/useNutritionStore";
 import { useStatisticsStore } from "../../../stores/useStatisticsStore";
 import { Colors, FontSizes, commonStyles } from "../../../styles/common";
+import { parseKoreaDate, toKoreaDateISO } from "../../../utils/dateUtils";
 
 interface TodayTotalProps {
   dateISO?: string; // 선택된 날짜 (ISO 형식: YYYY-MM-DD), 없으면 오늘
@@ -39,21 +40,23 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
     if (!dailyStats) return;
 
     const targetDate = dateISO || todayISO;
-    const statsDate = dailyStats.date.split("T")[0]; // YYYY-MM-DD 형식으로 변환
+    // 절대 split("T")[0]를 사용하지 않음 - UTC 기준 날짜가 잘못될 수 있음
+    const statsDate = toKoreaDateISO(new Date(dailyStats.date));
 
     // dailyStats의 날짜가 선택된 날짜와 일치하는지 확인
     if (statsDate !== targetDate) return;
 
     setDate(statsDate);
     // 모든 필드를 명시적으로 설정 (부분 업데이트 방지)
+    // API 응답 구조: { date, calories, macros: { ... }, mealCount, mealHistory }
     setTotals({
       calories: Number(dailyStats.calories) || 0,
-      protein: Number(dailyStats.protein) || 0,
-      carbs: Number(dailyStats.carbohydrates) || 0,
-      fat: Number(dailyStats.fat) || 0,
-      vitaminC: Number(dailyStats.vitamin_c) || 0,
-      vitaminD: Number(dailyStats.vitamin_d) || 0,
-      zinc: Number(dailyStats.zinc) || 0,
+      protein: Number(dailyStats.macros?.protein) || 0,
+      carbs: Number(dailyStats.macros?.carbs) || 0,
+      fat: Number(dailyStats.macros?.fat) || 0,
+      vitaminC: Number(dailyStats.macros?.vitamin_c) || 0,
+      vitaminD: Number(dailyStats.macros?.vitamin_d) || 0,
+      zinc: Number(dailyStats.macros?.zinc) || 0,
     });
   }, [dailyStats, dateISO, todayISO, setDate, setTotals]);
 
@@ -67,7 +70,8 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
   // 날짜 레이블 생성
   const dateLabel = useMemo(() => {
     const targetDate = dateISO || todayISO;
-    const date = new Date(targetDate + "T00:00:00");
+    // 한국 시간 기준으로 날짜 파싱
+    const date = parseKoreaDate(targetDate);
     const isToday = targetDate === todayISO;
     if (isToday) {
       return "오늘의 총계";
@@ -75,6 +79,7 @@ export default function TodayTotal({ dateISO }: TodayTotalProps) {
     return `${date.toLocaleDateString("ko-KR", {
       month: "long",
       day: "numeric",
+      timeZone: "Asia/Seoul",
     })}의 총계`;
   }, [dateISO, todayISO]);
 

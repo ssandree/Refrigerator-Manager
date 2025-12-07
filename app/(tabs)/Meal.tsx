@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -18,7 +18,11 @@ import { useMealStore } from "../../src/stores/useMealStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { Food } from "../../src/types/food";
-import { addDaysInKorea } from "../../src/utils/dateUtils";
+import {
+  addDaysInKorea,
+  parseKoreaDate,
+  toKoreaDateISO,
+} from "../../src/utils/dateUtils";
 
 export default function Meal() {
   // 한국 시간 기준 오늘 날짜를 전역 스토어에서 가져옴
@@ -26,27 +30,35 @@ export default function Meal() {
 
   const [selectedDateISO, setSelectedDateISO] = useState(() => todayISO);
 
+  // 이전 todayISO를 추적하기 위한 ref (자정이 지나서 오늘이 바뀌었는지 확인)
+  const prevTodayRef = useRef(todayISO);
+
   // todayISO가 변경되면 selectedDateISO도 업데이트 (자정 지나면)
+  // 단, 사용자가 수동으로 날짜를 변경한 경우는 제외
   useEffect(() => {
-    if (selectedDateISO === todayISO) return;
-    // 선택된 날짜가 오늘이었으면 오늘로 업데이트
-    const prevToday = addDaysInKorea(todayISO, -1);
-    if (selectedDateISO === prevToday) {
-      setSelectedDateISO(todayISO);
+    // todayISO가 변경되었고 (자정이 지남)
+    if (prevTodayRef.current !== todayISO) {
+      const prevToday = prevTodayRef.current;
+      // 선택된 날짜가 이전 오늘이었으면 새 오늘로 업데이트
+      setSelectedDateISO((currentSelected) => {
+        if (currentSelected === prevToday) {
+          return todayISO;
+        }
+        return currentSelected;
+      });
+      prevTodayRef.current = todayISO;
     }
-  }, [todayISO, selectedDateISO]);
+  }, [todayISO]); // todayISO 변경 시에만 체크
 
   const selectedDateLabel = useMemo(() => {
-    // selectedDateISO를 직접 파싱하여 한국 시간 기준으로 포맷팅
-    const [year, month, day] = selectedDateISO.split("-").map(Number);
-    // 한국 시간대(UTC+9) 기준으로 Date 객체 생성
-    const date = new Date(Date.UTC(year, month - 1, day, 9, 0, 0));
+    // selectedDateISO를 한국 시간 기준으로 파싱하여 포맷팅
+    const date = parseKoreaDate(selectedDateISO);
     return date.toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
       weekday: "long",
-      timeZone: "UTC",
+      timeZone: "Asia/Seoul",
     });
   }, [selectedDateISO]);
 
@@ -67,21 +79,51 @@ export default function Meal() {
   const mealsError = useMealStore((s) => s.error);
 
   const foods = useFridgeStore((s) => s.foods);
-  const recipes = useRecipeStore((s) => s.recipes);
+  const getRecipeById = useRecipeStore((s) => s.getRecipeById);
+  const fetchRecipeById = useRecipeStore((s) => s.fetchRecipeById);
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadMealsByDate(selectedDateISO);
-  }, [selectedDateISO, loadMealsByDate]);
+  // 화면 포커스 시 또는 날짜 변경 시 식사 데이터 로드
+  useFocusEffect(
+    useCallback(() => {
+      loadMealsByDate(selectedDateISO);
+    }, [selectedDateISO, loadMealsByDate])
+  );
 
   // 해당 날짜의 식사만 필터링
   const todayMeals = useMemo(() => {
     return meals.filter((m) => {
-      const mealDate = m.consumedAt.split("T")[0];
+      // 절대 split("T")[0]를 사용하지 않음 - UTC 기준 날짜가 잘못될 수 있음
+      const mealDate = toKoreaDateISO(new Date(m.consumedAt));
       return mealDate === selectedDateISO;
     });
   }, [meals, selectedDateISO]);
+
+  // meal의 recipeId가 있지만 recipes 스토어에 없는 경우 로드
+  useEffect(() => {
+    const loadMissingRecipes = async () => {
+      const recipeIdsToLoad = new Set<string>();
+
+      todayMeals.forEach((meal) => {
+        if (meal.recipeId) {
+          const existingRecipe = getRecipeById(meal.recipeId);
+          if (!existingRecipe) {
+            recipeIdsToLoad.add(meal.recipeId);
+          }
+        }
+      });
+
+      // 없는 recipe들을 병렬로 로드
+      await Promise.all(
+        Array.from(recipeIdsToLoad).map((recipeId) => fetchRecipeById(recipeId))
+      );
+    };
+
+    if (todayMeals.length > 0) {
+      loadMissingRecipes();
+    }
+  }, [todayMeals, getRecipeById, fetchRecipeById]);
 
   const sections = [
     { key: "breakfast", title: "🌅 아침" },
@@ -130,7 +172,7 @@ export default function Meal() {
 
   const getRecipeForMeal = (recipeId: string | null | undefined) => {
     if (!recipeId) return undefined;
-    return recipes.find((recipe) => recipe.id === recipeId);
+    return getRecipeById(recipeId);
   };
 
   const getFoodsForMeal = (meal: { foodIds: string[] }): Food[] =>
@@ -141,9 +183,11 @@ export default function Meal() {
   const formatTime = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
+    // ISO 문자열을 한국 시간 기준으로 표시
     return date.toLocaleTimeString("ko-KR", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Seoul",
     });
   };
 
@@ -219,6 +263,9 @@ export default function Meal() {
         {mealsError && <Text style={styles.errorText}>{mealsError}</Text>}
 
         {/* 식사 카드 리스트 */}
+        {todayMeals.length === 0 && !mealsLoading && (
+          <Text style={styles.emptyText}>등록된 식사가 없습니다.</Text>
+        )}
         {sections.map((sec) => {
           const items = todayMeals.filter((m) => m.mealType === sec.key);
           if (items.length === 0) return null;
@@ -247,6 +294,38 @@ export default function Meal() {
             </View>
           );
         })}
+        {/* mealType이 null이거나 매칭되지 않는 식사 표시 */}
+        {(() => {
+          const untypedMeals = todayMeals.filter(
+            (m) =>
+              !m.mealType || !sections.some((sec) => sec.key === m.mealType)
+          );
+          if (untypedMeals.length === 0) return null;
+
+          return (
+            <View style={styles.mealSection}>
+              <Text style={styles.mealTitle}>🍽️ 기타</Text>
+              {untypedMeals.map((meal) => {
+                const recipe = getRecipeForMeal(meal.recipeId);
+
+                return (
+                  <DailyDietCard
+                    key={meal.id}
+                    recipeName={recipe?.recipeName || meal.notes || "자유식"}
+                    calories={recipe?.calories ?? 0}
+                    protein={recipe?.protein ?? 0}
+                    carbs={recipe?.carbohydrates ?? 0}
+                    fat={recipe?.fat ?? 0}
+                    time={formatTime(meal.consumedAt)}
+                    onLongPress={() => handleLongPress(meal.id)}
+                    onEdit={() => openEditScreen(meal.id)}
+                    onDelete={() => confirmDeleteMeal(meal.id)}
+                  />
+                );
+              })}
+            </View>
+          );
+        })()}
 
         {/* 선택된 날짜의 총계 */}
         <TodayTotal dateISO={selectedDateISO} />
@@ -341,6 +420,13 @@ const styles = StyleSheet.create({
     color: Colors.error,
     marginTop: 4,
     marginBottom: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 20,
+    marginBottom: 20,
   },
   addMealButton: {
     backgroundColor: "#4CAF50",

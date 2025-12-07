@@ -1,6 +1,6 @@
 import { authStyles } from "@/styles/auth";
 import { router, Slot, usePathname } from "expo-router";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { noShadowStyle } from "../../src/styles/common";
 
 export default function AuthLayout() {
   const pathname = usePathname();
@@ -51,7 +52,7 @@ export default function AuthLayout() {
         <View style={authStyles.logoContainer}>
           <Image
             source={require("../../assets/icon.png")}
-            style={{ width: 110, height: 100 }}
+            style={[{ width: 110, height: 100 }, noShadowStyle]}
             resizeMode="contain"
           />
           <Text style={authStyles.logoText}>{authConfig.title}</Text>

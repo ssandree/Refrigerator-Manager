@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import recipeServiceApi from "../services/recipeService";
 import { Recipe, RecommendItem } from "../types/recipe";
+import { logger } from "../utils/logger";
 import { getErrorMessage } from "../utils/storeErrorHandler";
 import { createSecureStorage } from "./storage";
 import {
@@ -33,6 +34,7 @@ function convertRecommendToRecipe(item: RecommendItem): Recipe {
     imageUrl: item.imageUrl ?? null,
     sourceUrl: item.sourceUrl ?? null, // ⭐ 추가
     requiredfoods: item.requiredfoods ?? [], // ⭐ 추가
+    matchedGoals: item.matchedGoals ?? [], // ⭐ 추가
 
     carbohydrates: item.carbohydrates ?? null,
     protein: item.protein ?? null,
@@ -60,9 +62,12 @@ interface RecipeState {
   getRecipeById: (id: string) => Recipe | undefined;
   fetchRecipeById: (id: string) => Promise<Recipe | null>;
 
-  searchRecipes: (query: string) => Promise<Recipe[]>;
+  searchRecipes: (query: string, limit?: number) => Promise<Recipe[]>;
   filterRecipes: (params: any) => Promise<Recipe[]>;
-  loadDashboardRecommendations: () => Promise<Recipe[]>;
+  loadDashboardRecommendations: (
+    limit?: number,
+    skip?: number
+  ) => Promise<Recipe[]>;
 
   loadRecipes: (force?: boolean) => Promise<void>;
 
@@ -130,7 +135,9 @@ export const useRecipeStore = create<RecipeState>()(
 
           const res = await recipeServiceApi.searchRecipes(query, limit);
           if (res.success && res.data) {
-            const recipes = res.data.data; // { total, data }
+            // 백엔드 응답: { success: true, data: Recipe[], total: number }
+            // apiClient가 backendResponse.data를 반환하므로 res.data는 Recipe[] 배열
+            const recipes = Array.isArray(res.data) ? res.data : [];
             const merged = mergeRecipes(get().recipes, recipes);
             set({ recipes: merged, lastSyncedAt: Date.now() });
             return recipes;
@@ -151,7 +158,9 @@ export const useRecipeStore = create<RecipeState>()(
 
           const res = await recipeServiceApi.filterRecipes(params);
           if (res.success && res.data) {
-            const recipes = res.data.data; // { total, data }
+            // 백엔드 응답: { success: true, data: Recipe[], total: number }
+            // apiClient가 backendResponse.data를 반환하므로 res.data는 Recipe[] 배열
+            const recipes = Array.isArray(res.data) ? res.data : [];
             const merged = mergeRecipes(get().recipes, recipes);
             set({ recipes: merged, lastSyncedAt: Date.now() });
             return recipes;
@@ -166,21 +175,46 @@ export const useRecipeStore = create<RecipeState>()(
         }
       },
 
-      loadDashboardRecommendations: async () => {
+      loadDashboardRecommendations: async (limit?: number, skip?: number) => {
         try {
+          logger.log("[RecipeStore] loadDashboardRecommendations 시작:", {
+            limit,
+            skip,
+          });
           set({ isLoading: true, error: null });
 
-          const res = await recipeServiceApi.getDashboardRecommendations();
+          logger.log(
+            "[RecipeStore] recipeServiceApi.getDashboardRecommendations 호출"
+          );
+          const res = await recipeServiceApi.getDashboardRecommendations(
+            limit,
+            skip
+          );
+          logger.log("[RecipeStore] getDashboardRecommendations 응답:", res);
+
           if (res.success && res.data) {
-            const converted = res.data.map(convertRecommendToRecipe);
+            // 백엔드 응답: { success: true, data: RecommendItem[], total: number }
+            // apiClient가 backendResponse.data를 반환하므로 res.data는 RecommendItem[] 배열
+            const recommendItems = Array.isArray(res.data) ? res.data : [];
+            logger.log("[RecipeStore] recommendItems:", {
+              count: recommendItems.length,
+            });
+            const converted = recommendItems.map(convertRecommendToRecipe);
             const merged = mergeRecipes(get().recipes, converted);
             set({ recipes: merged, lastSyncedAt: Date.now() });
+            logger.log("[RecipeStore] 레시피 병합 완료:", {
+              convertedCount: converted.length,
+              totalCount: merged.length,
+            });
             return converted;
           }
+          logger.error("[RecipeStore] 응답 실패:", res.message);
           set({ error: res.message });
           return [];
         } catch (err) {
-          set({ error: getErrorMessage(err, "추천 불러오기 오류") });
+          logger.error("[RecipeStore] loadDashboardRecommendations 예외:", err);
+          const errorMessage = getErrorMessage(err, "추천 불러오기 오류");
+          set({ error: errorMessage });
           return [];
         } finally {
           set({ isLoading: false });
@@ -189,24 +223,47 @@ export const useRecipeStore = create<RecipeState>()(
 
       loadRecipes: async (force = false) => {
         const state = get();
+        logger.log("[RecipeStore] loadRecipes 호출됨", {
+          force,
+          lastSyncedAt: state.lastSyncedAt,
+          recipesCount: state.recipes.length,
+        });
 
         if (!force && state.lastSyncedAt && state.recipes.length > 0) {
-          if (Date.now() - state.lastSyncedAt < 5 * 60 * 1000) return;
+          if (Date.now() - state.lastSyncedAt < 5 * 60 * 1000) {
+            logger.log("[RecipeStore] 캐시된 데이터 사용 (5분 이내)");
+            return;
+          }
         }
 
         try {
           set({ isLoading: true, error: null });
+          logger.log("[RecipeStore] recipeServiceApi.getAllRecipes 호출 시작");
 
           const res = await recipeServiceApi.getAllRecipes();
+          logger.log("[RecipeStore] recipeServiceApi.getAllRecipes 응답:", res);
+
           if (res.success && res.data) {
-            const recipes = res.data.data; // { total, data }
+            // 백엔드 응답: { success: true, data: Recipe[], total: number }
+            // apiClient가 backendResponse.data를 반환하므로 res.data는 Recipe[] 배열
+            const recipes = Array.isArray(res.data) ? res.data : [];
+
+            logger.log("[RecipeStore] 레시피 로드 성공:", {
+              count: recipes.length,
+            });
+
             set({
               recipes,
               lastSyncedAt: Date.now(),
             });
+          } else {
+            logger.error("[RecipeStore] 레시피 로드 실패:", res.message);
+            set({ error: res.message ?? "레시피 로드 실패" });
           }
         } catch (err) {
-          set({ error: getErrorMessage(err, "레시피 로드 오류") });
+          const errorMessage = getErrorMessage(err, "레시피 로드 오류");
+          logger.error("[RecipeStore] loadRecipes 예외 발생:", err);
+          set({ error: errorMessage });
         } finally {
           set({ isLoading: false });
         }

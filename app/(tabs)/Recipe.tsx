@@ -21,10 +21,12 @@ import { useFavoriteRecipeStore } from "../../src/stores/useFavoriteRecipeStore"
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors } from "../../src/styles/common";
 import { Recipe, RecipeFilterParams } from "../../src/types/recipe";
+import { logger } from "../../src/utils/logger";
 
 export default function RecipeScreen() {
-  const recipes = useRecipeStore((s) => s.recipes);
-  const loadRecipes = useRecipeStore((s) => s.loadRecipes);
+  const loadDashboardRecommendations = useRecipeStore(
+    (s) => s.loadDashboardRecommendations
+  );
   const searchRecipes = useRecipeStore((s) => s.searchRecipes);
   const filterRecipes = useRecipeStore((s) => s.filterRecipes);
   const isLoading = useRecipeStore((s) => s.isLoading);
@@ -35,20 +37,50 @@ export default function RecipeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const toggleFavorite = useFavoriteRecipeStore((s) => s.toggleFavorite);
   const [displayedRecipes, setDisplayedRecipes] = useState<Recipe[]>([]);
+  const [skip, setSkip] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showEmptyState, setShowEmptyState] = useState(false);
+
+  // 중복 제거 헬퍼 함수
+  const removeDuplicateRecipes = useCallback((recipes: Recipe[]): Recipe[] => {
+    const seen = new Set<string>();
+    return recipes.filter((recipe) => {
+      if (seen.has(recipe.id)) {
+        return false;
+      }
+      seen.add(recipe.id);
+      return true;
+    });
+  }, []);
 
   useStoreWithError(useRecipeStore);
   useStoreWithError(useFavoriteRecipeStore);
 
-  // loadRecipes 함수 참조를 useRef로 저장하여 안정적인 참조 유지
-  const loadRecipesRef = useRef(loadRecipes);
-  loadRecipesRef.current = loadRecipes;
+  // loadDashboardRecommendations 함수 참조를 useRef로 저장하여 안정적인 참조 유지
+  const loadRecommendationsRef = useRef(loadDashboardRecommendations);
+  loadRecommendationsRef.current = loadDashboardRecommendations;
 
-  // 초기 마운트 시 무조건 GET /recipes 호출
+  // 초기 마운트 시 GET /recipes/recommend?limit=30&skip=0 호출
   useEffect(() => {
-    loadRecipesRef.current(true);
-    // loadRecipes를 의존성 배열에서 제거하고 useRef 사용으로 안정적인 참조 유지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    logger.log(
+      "[Recipe] 컴포넌트 마운트, loadDashboardRecommendations 호출 시작"
+    );
+    const loadInitialRecipes = async () => {
+      try {
+        logger.log("[Recipe] loadDashboardRecommendations 호출 전");
+        const loadedRecipes = await loadRecommendationsRef.current(30, 0);
+        logger.log("[Recipe] loadDashboardRecommendations 완료:", {
+          count: loadedRecipes.length,
+        });
+        setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+        setSkip(30);
+      } catch (error) {
+        logger.error("[Recipe] loadDashboardRecommendations 에러:", error);
+        logger.error("[Recipe] 에러 상세:", JSON.stringify(error, null, 2));
+      }
+    };
+    loadInitialRecipes();
+  }, [removeDuplicateRecipes]);
 
   useAutoLoadData(favoriteRecipes, isLoadingFavorites, loadFavorites, {
     checkLastSynced: true,
@@ -57,12 +89,39 @@ export default function RecipeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setSkip(0);
     try {
-      await Promise.all([loadRecipes(true), loadFavorites(true)]);
+      const loadedRecipes = await loadDashboardRecommendations(30, 0);
+      setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+      setSkip(30);
+      await loadFavorites(true);
     } finally {
       setRefreshing(false);
     }
-  }, [loadRecipes, loadFavorites]);
+  }, [loadDashboardRecommendations, loadFavorites, removeDuplicateRecipes]);
+
+  // 레시피 더보기 버튼 핸들러
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const loadedRecipes = await loadDashboardRecommendations(30, skip);
+      setDisplayedRecipes((prev) =>
+        removeDuplicateRecipes([...prev, ...loadedRecipes])
+      );
+      setSkip((prev) => prev + 30);
+    } catch (error) {
+      logger.error("[Recipe] 레시피 더보기 에러:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [
+    loadDashboardRecommendations,
+    skip,
+    isLoadingMore,
+    removeDuplicateRecipes,
+  ]);
 
   const params = useLocalSearchParams<{ q?: string; ingredients?: string }>();
   const [searchQuery, setSearchQuery] = useState<string>(
@@ -97,26 +156,37 @@ export default function RecipeScreen() {
   const toggleIngredient = useToggleArray(setSelectedIngredients);
 
   // 필터 초기화
-  const clearAllFilters = useCallback(() => {
+  const clearAllFilters = useCallback(async () => {
     setSearchQuery("");
     setSelectedIngredients([]);
     setIncludeExpiring(false);
     setCalorieRange([0, 15000]);
-    // 필터 초기화 시 전체 레시피 표시
-    setDisplayedRecipes(recipes);
-  }, [recipes]);
+    // 필터 초기화 시 추천 레시피 다시 로드
+    setSkip(0);
+    const loadedRecipes = await loadDashboardRecommendations(30, 0);
+    setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+    setSkip(30);
+  }, [loadDashboardRecommendations, removeDuplicateRecipes]);
 
   // 검색 실행 (버튼 클릭 시 호출)
   const handleSearch = useCallback(async () => {
     if (searchQuery.trim() === "") {
-      // 검색어가 없으면 전체 레시피 표시
-      setDisplayedRecipes(recipes);
+      // 검색어가 없으면 추천 레시피 다시 로드
+      setSkip(0);
+      const loadedRecipes = await loadDashboardRecommendations(30, 0);
+      setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+      setSkip(30);
       return;
     }
 
     const results = await searchRecipes(searchQuery.trim());
-    setDisplayedRecipes(results);
-  }, [searchQuery, searchRecipes, recipes]);
+    setDisplayedRecipes(removeDuplicateRecipes(results));
+  }, [
+    searchQuery,
+    searchRecipes,
+    loadDashboardRecommendations,
+    removeDuplicateRecipes,
+  ]);
 
   // 필터 적용 (버튼 클릭 시 호출)
   const handleApplyFilters = useCallback(async () => {
@@ -150,16 +220,20 @@ export default function RecipeScreen() {
         const filtered = results.filter((recipe) =>
           recipe.recipeName.toLowerCase().includes(lowerQuery)
         );
-        setDisplayedRecipes(filtered);
+        setDisplayedRecipes(removeDuplicateRecipes(filtered));
       } else {
-        setDisplayedRecipes(results);
+        setDisplayedRecipes(removeDuplicateRecipes(results));
       }
     } else {
-      // 필터 조건이 없으면 검색어만 적용하거나 전체 레시피 표시
+      // 필터 조건이 없으면 검색어만 적용하거나 추천 레시피 표시
       if (searchQuery.trim() !== "") {
         await handleSearch();
       } else {
-        setDisplayedRecipes(recipes);
+        // 검색어도 없고 필터도 없으면 추천 레시피 다시 로드
+        setSkip(0);
+        const loadedRecipes = await loadDashboardRecommendations(30, 0);
+        setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+        setSkip(30);
       }
     }
   }, [
@@ -169,12 +243,15 @@ export default function RecipeScreen() {
     searchQuery,
     filterRecipes,
     handleSearch,
-    recipes,
+    loadDashboardRecommendations,
+    removeDuplicateRecipes,
   ]);
 
   // URL 파라미터로 받은 ingredients가 있으면 자동으로 필터 적용 (마운트 시 한 번만)
+  // 단, 초기 추천 레시피 로드가 완료된 후에만 실행
   useEffect(() => {
-    if (params.ingredients) {
+    // displayedRecipes가 이미 로드된 경우에만 필터 적용
+    if (params.ingredients && displayedRecipes.length > 0) {
       try {
         const parsed = JSON.parse(params.ingredients as string);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -184,18 +261,47 @@ export default function RecipeScreen() {
           // 파라미터로 받은 재료로 직접 필터 API 호출 (상태 업데이트와 분리)
           const filterParams: RecipeFilterParams = { ingredients: parsed };
           filterRecipes(filterParams).then((results) => {
-            setDisplayedRecipes(results);
+            setDisplayedRecipes(removeDuplicateRecipes(results));
+            setSkip(0); // 필터 적용 시 skip 초기화
           });
         }
       } catch {
         // 파싱 실패 시 무시
       }
-    } else {
-      // 파라미터가 없으면 초기 로드 시 전체 레시피 표시
-      setDisplayedRecipes(recipes);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 마운트 시 한 번만 실행
+  }, [params.ingredients, displayedRecipes.length]); // displayedRecipes가 로드된 후에만 실행
+
+  // 검색어나 필터가 모두 없을 때 자동으로 추천 레시피 로드
+  useEffect(() => {
+    const hasNoFilters =
+      searchQuery.trim() === "" &&
+      selectedIngredients.length === 0 &&
+      !includeExpiring &&
+      calorieRange[0] === 0 &&
+      calorieRange[1] === 15000;
+
+    // 필터가 없고, displayedRecipes가 비어있거나 초기 로드가 완료된 경우에만 실행
+    // (초기 마운트 시 중복 호출 방지)
+    if (hasNoFilters && displayedRecipes.length > 0) {
+      // 이미 추천 레시피가 표시되고 있는지 확인
+      // 검색어나 필터가 모두 제거되었을 때만 추천 레시피 다시 로드
+      const loadRecommendations = async () => {
+        setSkip(0);
+        const loadedRecipes = await loadDashboardRecommendations(30, 0);
+        setDisplayedRecipes(removeDuplicateRecipes(loadedRecipes));
+        setSkip(30);
+      };
+      loadRecommendations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    searchQuery,
+    selectedIngredients,
+    includeExpiring,
+    calorieRange,
+    removeDuplicateRecipes,
+  ]);
 
   // 필터/검색 조건이 활성화되어 있는지 확인 (UI 표시용)
   const hasActiveFilters = useMemo(() => {
@@ -207,6 +313,24 @@ export default function RecipeScreen() {
       calorieRange[1] < 15000
     );
   }, [searchQuery, selectedIngredients, includeExpiring, calorieRange]);
+
+  // 빈 상태 메시지에 2초 딜레이 적용
+  useEffect(() => {
+    if (displayedRecipes.length === 0 && !isLoading && hasActiveFilters) {
+      // 2초 후에 빈 상태 메시지 표시
+      const timer = setTimeout(() => {
+        setShowEmptyState(true);
+      }, 2000);
+
+      return () => {
+        clearTimeout(timer);
+        setShowEmptyState(false);
+      };
+    } else {
+      // 레시피가 있거나 로딩 중이면 빈 상태 메시지 숨김
+      setShowEmptyState(false);
+    }
+  }, [displayedRecipes.length, isLoading, hasActiveFilters]);
 
   return (
     <View style={styles.container}>
@@ -274,9 +398,12 @@ export default function RecipeScreen() {
       </View>
 
       {/* 레시피 목록 */}
-      {isLoading && recipes.length === 0 && !hasActiveFilters ? (
+      {isLoading && displayedRecipes.length === 0 ? (
         <LoadingSpinner message="레시피를 불러오는 중..." fullScreen />
-      ) : displayedRecipes.length === 0 && !isLoading ? (
+      ) : displayedRecipes.length === 0 &&
+        !isLoading &&
+        hasActiveFilters &&
+        showEmptyState ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>
             선택한 조건에 맞는 레시피가 없습니다.
@@ -288,6 +415,11 @@ export default function RecipeScreen() {
             <Text style={styles.clearFiltersText}>필터 초기화</Text>
           </TouchableOpacity>
         </View>
+      ) : displayedRecipes.length === 0 &&
+        !isLoading &&
+        hasActiveFilters &&
+        !showEmptyState ? (
+        <LoadingSpinner message="레시피를 불러오는 중..." fullScreen />
       ) : (
         <ScrollView
           style={styles.recipesList}
@@ -316,6 +448,17 @@ export default function RecipeScreen() {
               }}
             />
           ))}
+
+          {/* 레시피 더보기 버튼 */}
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={handleLoadMore}
+            disabled={isLoadingMore || isLoading}
+          >
+            <Text style={styles.loadMoreButtonText}>
+              {isLoadingMore ? "로딩 중..." : "레시피 더보기"}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -449,6 +592,21 @@ const styles = StyleSheet.create({
   clearFiltersText: {
     color: Colors.textLight,
     fontSize: 14,
+    fontWeight: "600",
+  },
+  loadMoreButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadMoreButtonText: {
+    color: Colors.textLight,
+    fontSize: 16,
     fontWeight: "600",
   },
 });

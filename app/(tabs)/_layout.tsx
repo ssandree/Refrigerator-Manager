@@ -8,7 +8,6 @@ import {
   User,
   UtensilsCrossed,
 } from "lucide-react-native";
-import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ProfileCircle from "../../src/components/ProfileCircle";
@@ -30,17 +29,20 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         headerStyle: {
-          height: 120,
+          height: 100,
         },
         headerTitleStyle: {
           fontSize: FontSizes.xl,
           fontWeight: "bold",
         },
+        headerTitleContainerStyle: {
+          paddingLeft: 20,
+        },
         headerTintColor: Colors.textSecondary,
         tabBarStyle: {
-          height: 60 + insets.bottom,
+          height: 70 + insets.bottom,
           paddingBottom: 4 + insets.bottom,
-          paddingTop: 8,
+          paddingTop: 10,
           borderTopWidth: 1,
           borderTopColor: Colors.borderLight,
           backgroundColor: Colors.surface,
@@ -59,6 +61,21 @@ export default function TabsLayout() {
         name="Fridge"
         options={{
           title: "냉장고",
+          headerShown: true,
+          headerRight: () => (
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/_pages/Notifications")}
+              >
+                <Bell size={22} color={Colors.textPrimary} strokeWidth={2} />
+              </TouchableOpacity>
+              <ProfileCircle
+                size={36}
+                onPress={() => router.push("/(tabs)/MyInfo")}
+              />
+            </View>
+          ),
           tabBarIcon: ({ color, size, focused }) => (
             <Refrigerator
               size={size}

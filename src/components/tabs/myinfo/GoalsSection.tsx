@@ -6,7 +6,7 @@ import { useHealthGoalStore } from "../../../stores/useHealthGoalStore";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { tabsStyles } from "../../../styles/tabs";
 
-const goalCardShadow = createShadowStyle({
+const SimpleAchieveCardShadow = createShadowStyle({
   opacity: 0.1,
   radius: 3.84,
   elevation: 5,
@@ -27,7 +27,7 @@ export default function GoalsSection({ onEditGoals }: GoalsSectionProps) {
           <Text style={styles.editButtonText}>목표 수정</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.goalCard}>
+      <View style={styles.SimpleAchieveCard}>
         {selectedGoals.length > 0 ? (
           selectedGoals.map((goal, index) => (
             <View
@@ -88,12 +88,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 12,
   },
-  goalCard: {
+  SimpleAchieveCard: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    ...goalCardShadow,
+    ...SimpleAchieveCardShadow,
   },
   goalItem: {
     paddingVertical: 12,

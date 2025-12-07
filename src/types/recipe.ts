@@ -28,6 +28,7 @@ export interface Recipe extends RecipeRecord {
   ingredientsOwned?: number;
   totalIngredients?: number;
   isFavorite?: boolean;
+  matchedGoals?: MatchedGoal[];
 }
 
 // 백엔드 /recipes/filter 엔드포인트용 필터 파라미터
@@ -41,6 +42,12 @@ export interface RecipeFilterParams {
   maxCalories?: number;
 }
 
+export interface MatchedGoal {
+  id: number;
+  title: string;
+  score: number;
+}
+
 export interface RecommendItem {
   id: string;
   recipeName: string;
@@ -51,6 +58,7 @@ export interface RecommendItem {
   imageUrl?: string | null;
   sourceUrl?: string | null; // ⭐ 추가
   requiredfoods?: string[]; // ⭐ 추천
+  matchedGoals?: MatchedGoal[];
 
   carbohydrates?: number | null;
   protein?: number | null;

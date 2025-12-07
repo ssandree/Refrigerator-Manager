@@ -3,6 +3,7 @@ import axios, {
   InternalAxiosRequestConfig,
   isAxiosError,
 } from "axios";
+import { logger } from "../utils/logger";
 import { getToken } from "./tokenStorage";
 
 // Expo Go를 사용할 때는 컴퓨터의 로컬 네트워크 IP 주소를 사용해야 합니다
@@ -15,6 +16,7 @@ import { getToken } from "./tokenStorage";
 // - iOS 시뮬레이터: "http://localhost:8000" 사용
 // - 실제 기기/Expo Go: 컴퓨터의 실제 로컬 IP 사용 (예: "http://172.16.69.179:8000")
 const API_BASE_URL =
+  // process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.2:8000";
   process.env.EXPO_PUBLIC_API_URL || "http://172.16.69.179:8000";
 
 // 성공 응답 타입
@@ -60,7 +62,7 @@ class ApiClient {
   constructor(baseURL: string) {
     this.axiosInstance = axios.create({
       baseURL,
-      timeout: 5000, // 5초 타임아웃
+      timeout: 7000, // 7초 타임아웃
       headers: {
         "Content-Type": "application/json",
       },
@@ -72,20 +74,39 @@ class ApiClient {
     this.axiosInstance.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         const token = await getToken();
+        logger.log("[ApiClient] 요청 인터셉터:", {
+          url: config.url,
+          method: config.method,
+          hasToken: !!token,
+        });
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
       (error) => {
+        logger.error("[ApiClient] 요청 인터셉터 에러:", error);
         return Promise.reject(error);
       }
     );
 
     // 응답 인터셉터: 에러 처리
     this.axiosInstance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        logger.log("[ApiClient] 응답 인터셉터 성공:", {
+          url: response.config.url,
+          status: response.status,
+        });
+        return response;
+      },
       async (error: AxiosError) => {
+        logger.error("[ApiClient] 응답 인터셉터 에러:", {
+          url: error.config?.url,
+          status: error.response?.status,
+          message: error.message,
+          code: error.code,
+          response: error.response?.data,
+        });
         // 401 Unauthorized - 토큰 만료 또는 인증 실패
         if (error.response?.status === 401) {
           // 토큰 삭제는 호출하는 쪽에서 처리하도록 함
@@ -108,40 +129,64 @@ class ApiClient {
       body?: unknown;
     }
   ): Promise<ApiResponse<T>> {
+    const fullURL = `${this.axiosInstance.defaults.baseURL}${endpoint}`;
+    logger.log("[ApiClient] request 호출:", {
+      method: options.method,
+      endpoint,
+      baseURL: this.axiosInstance.defaults.baseURL,
+      fullURL: fullURL,
+    });
     try {
       let response;
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
 
       switch (options.method) {
         case "GET":
-          response = await this.axiosInstance.get<ApiSuccessResponse<T>>(
+          logger.log("[ApiClient] GET 요청 시작:", endpoint);
+          logger.log("[ApiClient] GET 요청 상세:", {
             endpoint,
-            config
-          );
+            baseURL: this.axiosInstance.defaults.baseURL,
+            fullURL: `${this.axiosInstance.defaults.baseURL}${endpoint}`,
+          });
+          try {
+            // config 없이 직접 호출 (인터셉터가 자동으로 헤더 처리)
+            response = await this.axiosInstance.get<ApiSuccessResponse<T>>(
+              endpoint
+            );
+            logger.log("[ApiClient] GET 응답 받음:", {
+              status: response.status,
+              data: response.data,
+            });
+          } catch (axiosError) {
+            const axiosErr = axiosError as AxiosError;
+            logger.error("[ApiClient] GET 요청 중 에러 발생:", {
+              message: axiosErr.message,
+              code: axiosErr.code,
+              status: axiosErr.response?.status,
+              statusText: axiosErr.response?.statusText,
+              responseData: axiosErr.response?.data,
+              requestURL: axiosErr.config?.url,
+              requestMethod: axiosErr.config?.method,
+              requestHeaders: axiosErr.config?.headers,
+            });
+            throw axiosError;
+          }
           break;
         case "POST":
           response = await this.axiosInstance.post<ApiSuccessResponse<T>>(
             endpoint,
-            options.body,
-            config
+            options.body
           );
           break;
         case "PUT":
           response = await this.axiosInstance.put<ApiSuccessResponse<T>>(
             endpoint,
-            options.body,
-            config
+            options.body
           );
           break;
         case "PATCH":
           response = await this.axiosInstance.patch<ApiSuccessResponse<T>>(
             endpoint,
-            options.body,
-            config
+            options.body
           );
           break;
         case "DELETE":
@@ -149,14 +194,12 @@ class ApiClient {
             response = await this.axiosInstance.delete<ApiSuccessResponse<T>>(
               endpoint,
               {
-                ...config,
                 data: options.body,
               }
             );
           } else {
             response = await this.axiosInstance.delete<ApiSuccessResponse<T>>(
-              endpoint,
-              config
+              endpoint
             );
           }
           break;
@@ -280,6 +323,7 @@ class ApiClient {
   }
 
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    logger.log("[ApiClient] get 메서드 호출:", endpoint);
     return this.request<T>(endpoint, { method: "GET" });
   }
 

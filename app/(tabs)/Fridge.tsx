@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
-import ProfileCircle from "../../src/components/ProfileCircle";
 import QuickFoodAdd from "../../src/components/QuickFoodAdd";
 import FoodCard from "../../src/components/tabs/fridge/FoodCard";
 import {
@@ -170,24 +169,6 @@ export default function FridgeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft} />
-          <Text style={styles.headerTitle}>냉장고</Text>
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push("/_pages/Notifications")}
-            >
-              <Ionicons name="notifications-outline" size={24} color="#333" />
-            </TouchableOpacity>
-            <ProfileCircle
-              size={40}
-              onPress={() => router.push("/(tabs)/MyInfo")}
-            />
-          </View>
-        </View>
-
         {/* 검색 & 필터 */}
         <View style={styles.filterBar}>
           <View style={styles.searchIconContainer}>
@@ -397,35 +378,6 @@ export default function FridgeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.background },
   container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: Colors.surface,
-  },
-  headerLeft: {
-    width: 80, // headerRight와 동일한 너비로 가운데 정렬
-  },
-  headerTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-    textAlign: "center",
-    flex: 1,
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    width: 80, // headerLeft와 동일한 너비
-    justifyContent: "flex-end",
-  },
-  iconButton: { padding: 8 },
   filterBar: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,6 +1,6 @@
 import { authStyles } from "@/styles/auth";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Control, Controller, FieldErrors } from "react-hook-form";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Colors } from "../styles/colors";
@@ -34,6 +34,9 @@ export const InputForm: React.FC<InputFormProps> = ({
   onToggleShowConfirmPassword,
   showNameField = false,
 }) => {
+  // 비밀번호 확인 필드의 텍스트 표시/숨김을 내부에서 관리
+  const [showConfirmPasswordText, setShowConfirmPasswordText] = useState(false);
+
   return (
     <View style={authStyles.formContainer}>
       {/* 이름 필드 (회원가입 시에만 표시) */}
@@ -134,7 +137,7 @@ export const InputForm: React.FC<InputFormProps> = ({
       </View>
 
       {/* 비밀번호 확인 필드 (회원가입 시에만 표시) */}
-      {showConfirmPassword && onToggleShowConfirmPassword && (
+      {showConfirmPassword && (
         <View style={authStyles.inputContainer}>
           <Text style={[authStyles.inputLabel, { textAlign: "left" }]}>
             비밀번호 확인
@@ -150,7 +153,7 @@ export const InputForm: React.FC<InputFormProps> = ({
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  secureTextEntry={!showConfirmPassword}
+                  secureTextEntry={!showConfirmPasswordText}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -158,10 +161,15 @@ export const InputForm: React.FC<InputFormProps> = ({
             />
             <TouchableOpacity
               style={authStyles.eyeButton}
-              onPress={onToggleShowConfirmPassword}
+              onPress={() => {
+                setShowConfirmPasswordText(!showConfirmPasswordText);
+                onToggleShowConfirmPassword?.();
+              }}
             >
               <Ionicons
-                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                name={
+                  showConfirmPasswordText ? "eye-off-outline" : "eye-outline"
+                }
                 size={20}
                 color={Colors.textSecondary}
               />

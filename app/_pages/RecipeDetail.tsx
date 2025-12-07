@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingSpinner from "../../src/components/LoadingSpinner";
 import { useStoreWithError } from "../../src/hooks/useStoreWithError";
-import { useDateStore } from "../../src/stores/useDateStore";
 import { useMealStore } from "../../src/stores/useMealStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
@@ -44,10 +43,6 @@ export default function RecipeDetail() {
       const localRecipe = getRecipeById(recipeId);
       if (localRecipe) {
         setRecipe(localRecipe);
-        // sourceUrl이 있으면 바로 웹뷰 열기
-        if (localRecipe.sourceUrl) {
-          WebBrowser.openBrowserAsync(localRecipe.sourceUrl);
-        }
         return;
       }
 
@@ -55,41 +50,38 @@ export default function RecipeDetail() {
       const fetchedRecipe = await fetchRecipeById(recipeId);
       if (fetchedRecipe) {
         setRecipe(fetchedRecipe);
-        // sourceUrl이 있으면 바로 웹뷰 열기
-        if (fetchedRecipe.sourceUrl) {
-          WebBrowser.openBrowserAsync(fetchedRecipe.sourceUrl);
-        }
       }
     };
 
     loadRecipe();
   }, [recipeId, fetchRecipeById, getRecipeById]);
 
-  const handleRegisterMeal = async () => {
+  const handleRegisterMeal = () => {
     if (!recipe) {
       Alert.alert("오류", "레시피 정보를 찾을 수 없습니다.");
       return;
     }
 
-    // POST /meals API 호출
-    const success = await addMeal({
-      recipeId: recipe.id,
-      foodIds: [],
-      quantity: "1인분",
-      consumedAt: useDateStore.getState().now.toISOString(),
-      notes: recipe.recipeName,
-      mealType: null,
+    // RegisterMeal.tsx로 이동하면서 레시피 정보 전달
+    router.push({
+      pathname: "/_pages/RegisterMeal",
+      params: {
+        recipeId: recipe.id,
+        recipeName: recipe.recipeName,
+      },
     });
+  };
 
-    if (success) {
-      Alert.alert("성공", "식사가 등록되었습니다.", [
-        {
-          text: "확인",
-          onPress: () => router.replace("/(tabs)/Meal"),
-        },
-      ]);
-    } else if (mealError) {
-      // 에러는 useStoreWithError가 토스트로 표시하므로 여기서는 추가 처리 불필요
+  const handleOpenRecipeLink = async () => {
+    if (!recipe?.sourceUrl) {
+      Alert.alert("알림", "레시피 링크가 없습니다.");
+      return;
+    }
+
+    try {
+      await WebBrowser.openBrowserAsync(recipe.sourceUrl);
+    } catch (error) {
+      Alert.alert("오류", "링크를 열 수 없습니다.");
     }
   };
 
@@ -130,6 +122,18 @@ export default function RecipeDetail() {
             ) : recipe ? (
               <>
                 <Text style={styles.title}>{recipe.recipeName}</Text>
+
+                {/* 레시피 링크 바로가기 버튼 */}
+                {recipe.sourceUrl && (
+                  <TouchableOpacity
+                    style={styles.recipeLinkButton}
+                    onPress={handleOpenRecipeLink}
+                  >
+                    <Text style={styles.recipeLinkButtonText}>
+                      레시피 링크 바로가기
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* 영양 성분 섹션 */}
                 <View style={styles.nutritionSection}>
@@ -263,6 +267,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.text,
     marginBottom: 24,
+  },
+  recipeLinkButton: {
+    backgroundColor: Colors.secondary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.secondaryDark,
+  },
+  recipeLinkButtonText: {
+    fontSize: FontSizes.lg,
+    fontWeight: "600",
+    color: Colors.surface,
   },
   nutritionSection: {
     marginBottom: 24,

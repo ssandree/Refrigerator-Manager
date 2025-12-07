@@ -31,10 +31,14 @@ export default function TodayMeals({
   const todayDate = useDateStore((s) => s.todayISO);
 
   const normalizeDate = useCallback((value: string) => {
+    // ISO 문자열을 한국 시간 기준으로 파싱하여 날짜 부분만 추출
+    // 절대 split("T")[0]를 사용하지 않음 - UTC 기준 날짜가 잘못될 수 있음
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
-      return value.split("T")[0] ?? value;
+      // 파싱 실패 시 빈 문자열 반환 (필터링에서 제외됨)
+      return "";
     }
+    // 한국 시간 기준으로 날짜 추출
     return toKoreaDateISO(date);
   }, []);
 
@@ -100,9 +104,11 @@ export default function TodayMeals({
     if (Number.isNaN(date.getTime())) {
       return value;
     }
+    // ISO 문자열을 한국 시간 기준으로 표시
     return date.toLocaleTimeString("ko-KR", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Seoul",
     });
   };
 

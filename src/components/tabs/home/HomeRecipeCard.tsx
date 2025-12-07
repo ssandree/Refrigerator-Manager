@@ -1,6 +1,5 @@
 import { router } from "expo-router";
 import { Flame, Target, UtensilsCrossed } from "lucide-react-native";
-import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors, createShadowStyle } from "../../../styles/common";
 import { Recipe } from "../../../types/recipe";
@@ -54,7 +53,11 @@ export default function HomeRecipeCard({
       {/* 이미지 영역 */}
       <View style={styles.imageContainer}>
         <Image
-          source={require("../../../assets/images/tomato.jpg")}
+          source={
+            recipe.imageUrl
+              ? { uri: recipe.imageUrl }
+              : require("../../../assets/images/tomato.jpg")
+          }
           style={styles.recipeImage}
           resizeMode="cover"
         />

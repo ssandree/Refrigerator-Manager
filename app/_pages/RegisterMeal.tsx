@@ -2,7 +2,6 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,10 +17,18 @@ import { Meal, useMealStore } from "../../src/stores/useMealStore";
 import { useRecipeStore } from "../../src/stores/useRecipeStore";
 import { Colors, FontSizes } from "../../src/styles/common";
 import { Recipe } from "../../src/types/recipe";
-import { toKoreaDateISO } from "../../src/utils/dateUtils";
+import {
+  getKoreaNowISO,
+  parseKoreaDate,
+  toKoreaDateISO,
+} from "../../src/utils/dateUtils";
 
 export default function RegisterMeal() {
-  const { mealId } = useLocalSearchParams<{ mealId: string }>();
+  const { mealId, recipeId, recipeName } = useLocalSearchParams<{
+    mealId?: string;
+    recipeId?: string;
+    recipeName?: string;
+  }>();
   const addMeal = useMealStore((s) => s.addMeal);
   const updateMeal = useMealStore((s) => s.updateMeal);
   const getMealById = useMealStore((s) => s.getMealById);
@@ -29,6 +36,8 @@ export default function RegisterMeal() {
   const meals = useMealStore((s) => s.meals);
   const { clearError } = useStoreWithError(useMealStore);
   const searchRecipes = useRecipeStore((s) => s.searchRecipes);
+  const getRecipeById = useRecipeStore((s) => s.getRecipeById);
+  const fetchRecipeById = useRecipeStore((s) => s.fetchRecipeById);
   // searchRecipes 함수 참조를 useRef로 저장하여 안정적인 참조 유지
   const searchRecipesRef = useRef(searchRecipes);
   searchRecipesRef.current = searchRecipes;
@@ -47,6 +56,7 @@ export default function RegisterMeal() {
   >();
   const [quantity, setQuantity] = useState<string>("1인분");
   const [consumedAt, setConsumedAt] = useState<string>(todayStr);
+  const [consumedTime, setConsumedTime] = useState<string>("");
   const [foodName, setFoodName] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
@@ -72,7 +82,7 @@ export default function RegisterMeal() {
       setIsSearching(true);
       try {
         // useRef를 통해 안정적인 함수 참조 사용
-        const results = await searchRecipesRef.current(foodName.trim(), 10); // limit=10으로 고정
+        const results = await searchRecipesRef.current(foodName.trim(), 20); // limit=20으로 제한
         setSearchResults(results);
         setShowSearchResults(results.length > 0);
       } catch (error) {
@@ -106,13 +116,67 @@ export default function RegisterMeal() {
     if (recipe.zinc !== null) setZinc(String(recipe.zinc));
   }, []);
 
+  // recipeId가 파라미터로 전달된 경우 레시피 로드
+  useEffect(() => {
+    const loadRecipeFromParams = async () => {
+      if (!recipeId) return;
+
+      // 먼저 로컬 스토어에서 확인
+      const localRecipe = getRecipeById(recipeId);
+      if (localRecipe) {
+        handleSelectRecipe(localRecipe);
+        return;
+      }
+
+      // 로컬에 없으면 서버에서 가져오기
+      const fetchedRecipe = await fetchRecipeById(recipeId);
+      if (fetchedRecipe) {
+        handleSelectRecipe(fetchedRecipe);
+      } else if (recipeName) {
+        // 레시피를 찾을 수 없지만 recipeName이 있으면 이름만 설정
+        setFoodName(recipeName);
+      }
+    };
+
+    loadRecipeFromParams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipeId, recipeName]);
+
   // mealId가 있으면 수정 모드로 동작
   const formatDateInputValue = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value.split("T")[0] ?? value;
+    // ISO 문자열을 한국 시간 기준으로 파싱하여 날짜 부분만 추출
+    // 절대 split("T")[0]를 사용하지 않음 - UTC 기준 날짜가 잘못될 수 있음
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        // 파싱 실패 시 원본 반환
+        return value;
+      }
+      // 한국 시간 기준으로 날짜 추출
+      return toKoreaDateISO(date);
+    } catch {
+      // 에러 발생 시 원본 반환
+      return value;
     }
-    return toKoreaDateISO(date);
+  };
+
+  // ISO 문자열에서 시간 부분 추출 (HH:MM 형식)
+  const formatTimeInputValue = (value: string) => {
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+      // 한국 시간 기준으로 시간 추출
+      const koreaDate = new Date(
+        date.getTime() + (date.getTimezoneOffset() + 9 * 60) * 60 * 1000
+      );
+      const hours = String(koreaDate.getHours()).padStart(2, "0");
+      const minutes = String(koreaDate.getMinutes()).padStart(2, "0");
+      return `${hours}:${minutes}`;
+    } catch {
+      return "";
+    }
   };
 
   useEffect(() => {
@@ -125,6 +189,7 @@ export default function RegisterMeal() {
       setMealType(foundMeal.mealType ?? undefined);
       setQuantity(foundMeal.quantity ?? "1인분");
       setConsumedAt(formatDateInputValue(foundMeal.consumedAt));
+      setConsumedTime(formatTimeInputValue(foundMeal.consumedAt));
       // notes에서 음식명과 메모 분리 (간단한 파싱)
       const notesStr = foundMeal.notes || "";
       if (notesStr.includes(" - ")) {
@@ -170,6 +235,7 @@ export default function RegisterMeal() {
       setMealType(remoteMeal.mealType ?? undefined);
       setQuantity(remoteMeal.quantity ?? "1인분");
       setConsumedAt(formatDateInputValue(remoteMeal.consumedAt));
+      setConsumedTime(formatTimeInputValue(remoteMeal.consumedAt));
       const notesStr = remoteMeal.notes || "";
       if (notesStr.includes(" - ")) {
         const [name, ...rest] = notesStr.split(" - ");
@@ -191,18 +257,58 @@ export default function RegisterMeal() {
     })();
   }, [mealId, getMealById, fetchMealById]);
 
-  const toISODateTime = (value: string) => {
-    if (!value) {
-      return useDateStore.getState().now.toISOString();
+  const toISODateTime = (dateValue: string, timeValue: string) => {
+    if (!dateValue) {
+      // 현재 한국 시간을 ISO 문자열로 반환
+      return getKoreaNowISO();
     }
-    const parsed = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) {
-      const fallback = new Date(value);
-      return Number.isNaN(fallback.getTime())
-        ? useDateStore.getState().now.toISOString()
-        : fallback.toISOString();
+    // YYYY-MM-DD 형식의 날짜와 HH:MM 형식의 시간을 한국 시간 기준으로 파싱
+    try {
+      const parsed = parseKoreaDate(dateValue);
+
+      // 시간이 입력된 경우 시간 정보 추가
+      if (timeValue && timeValue.trim() && timeValue.includes(":")) {
+        const [hoursStr, minutesStr] = timeValue.split(":");
+        const hours = Number.parseInt(hoursStr, 10);
+        const minutes = Number.parseInt(minutesStr || "0", 10);
+
+        if (
+          !Number.isNaN(hours) &&
+          !Number.isNaN(minutes) &&
+          hours >= 0 &&
+          hours < 24 &&
+          minutes >= 0 &&
+          minutes < 60
+        ) {
+          // parseKoreaDate는 UTC로 생성하므로, 한국 시간으로 해석하려면 9시간을 더해야 함
+          // 하지만 우리가 원하는 것은 한국 시간 기준의 날짜/시간을 UTC ISO로 변환하는 것
+          // 예: 한국 시간 2024-12-07 12:30 -> UTC 2024-12-07 03:30
+          const koreaDateTime = new Date(
+            Date.UTC(
+              parsed.getUTCFullYear(),
+              parsed.getUTCMonth(),
+              parsed.getUTCDate(),
+              hours,
+              minutes,
+              0,
+              0
+            )
+          );
+          // 한국 시간을 UTC로 변환 (9시간 빼기)
+          const utcDateTime = new Date(
+            koreaDateTime.getTime() - 9 * 60 * 60 * 1000
+          );
+          return utcDateTime.toISOString();
+        }
+      }
+
+      // 시간이 없으면 날짜만 사용 (00:00:00)
+      const koreaMidnightUTC = new Date(parsed.getTime() - 9 * 60 * 60 * 1000);
+      return koreaMidnightUTC.toISOString();
+    } catch {
+      // 파싱 실패 시 현재 한국 시간 반환
+      return getKoreaNowISO();
     }
-    return parsed.toISOString();
   };
 
   const onSave = async () => {
@@ -223,7 +329,7 @@ export default function RegisterMeal() {
 
     const isEditMode = !!mealId && !!meal;
 
-    const consumedAtISO = toISODateTime(consumedAt);
+    const consumedAtISO = toISODateTime(consumedAt, consumedTime);
 
     if (isEditMode) {
       // 수정 모드: PUT API 호출
@@ -231,6 +337,7 @@ export default function RegisterMeal() {
         quantity: quantity || null,
         notes: combinedNotes || null,
         mealType: mealType ?? null,
+        consumedAt: consumedAtISO,
       });
 
       if (success) {
@@ -368,11 +475,14 @@ export default function RegisterMeal() {
                         <Text style={styles.searchResultText}>검색 중...</Text>
                       </View>
                     )}
-                    <FlatList
-                      data={searchResults}
-                      keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                    <ScrollView
+                      style={styles.searchResultsList}
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator={true}
+                    >
+                      {searchResults.map((item) => (
                         <TouchableOpacity
+                          key={item.id}
                           style={styles.searchResultItem}
                           onPress={() => handleSelectRecipe(item)}
                         >
@@ -385,10 +495,8 @@ export default function RegisterMeal() {
                             </Text>
                           )}
                         </TouchableOpacity>
-                      )}
-                      style={styles.searchResultsList}
-                      nestedScrollEnabled
-                    />
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
               </View>
@@ -420,6 +528,30 @@ export default function RegisterMeal() {
                 onChangeText={setConsumedAt}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={Colors.textSecondary}
+              />
+            </View>
+
+            {/* 섭취 시간 */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>섭취 시간</Text>
+              <TextInput
+                style={styles.textInput}
+                value={consumedTime}
+                onChangeText={(text) => {
+                  // HH:MM 형식으로 제한
+                  const formatted = text
+                    .replace(/[^\d:]/g, "")
+                    .replace(/^(\d{2}):(\d{2}).*/, "$1:$2")
+                    .replace(/^(\d{2})(\d)/, "$1:$2")
+                    .replace(/^(\d):/, "0$1:");
+                  if (formatted.length <= 5) {
+                    setConsumedTime(formatted);
+                  }
+                }}
+                placeholder="HH:MM (예: 12:30)"
+                placeholderTextColor={Colors.textSecondary}
+                keyboardType="numeric"
+                maxLength={5}
               />
             </View>
 

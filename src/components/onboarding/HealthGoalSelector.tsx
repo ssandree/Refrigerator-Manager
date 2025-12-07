@@ -10,7 +10,7 @@ import {
 import { HealthGoal } from "../../stores/useHealthGoalStore";
 import { Colors, createShadowStyle, FontSizes } from "../../styles/common";
 
-const goalCardShadow = createShadowStyle({
+const SimpleAchieveCardShadow = createShadowStyle({
   opacity: 0.1,
   radius: 4,
   elevation: 3,
@@ -43,9 +43,9 @@ export const HealthGoalSelector: React.FC<HealthGoalSelectorProps> = ({
           <TouchableOpacity
             key={goal.id}
             style={[
-              styles.goalCard,
-              isSelected && styles.goalCardSelected,
-              isDisabled && styles.goalCardDisabled,
+              styles.SimpleAchieveCard,
+              isSelected && styles.SimpleAchieveCardSelected,
+              isDisabled && styles.SimpleAchieveCardDisabled,
             ]}
             onPress={() => onGoalToggle(goal.id)}
             disabled={isDisabled}
@@ -111,20 +111,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  goalCard: {
+  SimpleAchieveCard: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
     marginBottom: 12,
     padding: 16,
     borderWidth: 2,
     borderColor: Colors.border,
-    ...goalCardShadow,
+    ...SimpleAchieveCardShadow,
   },
-  goalCardSelected: {
+  SimpleAchieveCardSelected: {
     borderColor: Colors.primary,
     backgroundColor: "#E8F5E9", // 연한 초록색 배경
   },
-  goalCardDisabled: {
+  SimpleAchieveCardDisabled: {
     opacity: 0.5,
     backgroundColor: Colors.background,
   },

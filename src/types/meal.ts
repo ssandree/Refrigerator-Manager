@@ -24,6 +24,7 @@ export interface MealUpdatePayload {
   quantity?: string | null;
   notes?: string | null;
   mealType?: MealTypeOption | null;
+  consumedAt?: string | null;
 }
 
 export interface MealQueryParams {

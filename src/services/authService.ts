@@ -1,4 +1,5 @@
 // Authentication service for user login, logout, and user management
+import { logger } from "../utils/logger";
 import apiClient from "./apiClient";
 import { deleteToken, getToken, saveToken } from "./tokenStorage";
 
@@ -76,14 +77,20 @@ class AuthService {
    * Register a new user
    */
   async register(userData: RegisterRequest) {
+    logger.log("[AuthService] register 호출:", userData);
+    logger.log("[AuthService] API 엔드포인트:", `${this.basePath}/register`);
+
     const response = await apiClient.post<AuthDataResponse>(
       `${this.basePath}/register`,
       userData
     );
 
+    logger.log("[AuthService] register 응답:", response);
+
     if (response.success && response.data?.token) {
       // 보안 저장소에 토큰 저장 (apiClient 인터셉터가 자동으로 헤더에 추가)
       await saveToken(response.data.token);
+      logger.log("[AuthService] 토큰 저장 완료");
     }
 
     return response;

@@ -1,7 +1,7 @@
 import { getToken } from "@/services/tokenStorage";
 import { router, Stack } from "expo-router";
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "../src/components/Buttons";
 import LoadingSpinner from "../src/components/LoadingSpinner";
 import { useAuthStore } from "../src/stores/useAuthStore";
@@ -70,6 +70,16 @@ export default function Cover() {
       />
       <View style={styles.container}>
         <View style={styles.content}>
+          <Image
+            source={require("../assets/icon.png")}
+            style={{
+              width: 110,
+              height: 100,
+              shadowOpacity: 0,
+              shadowRadius: 0,
+            }}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>냉장고 매니징</Text>
           <Text style={styles.subtitle}>
             신선한 재료로 건강한 식단을 만들어보세요
@@ -104,6 +114,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes["4xl"],
     fontWeight: "bold",
     color: Colors.textPrimary,
+    marginTop: 12,
     marginBottom: 16,
     textAlign: "center",
   },
